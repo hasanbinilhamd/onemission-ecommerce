@@ -9,23 +9,25 @@ type ImageItem = {
 
 const IMAGES: ImageItem[] = [
   {
-    src: 'https://fifth-gentle-45902158.figma.site/_components/v2/4de492f6d9cf8244ad5293233e5c6f52407d42fc/1.02464a56.png',
-    bg: '#F4845F',
-    panel: '#F79B7F',
+    // src: 'https://fifth-gentle-45902158.figma.site/_components/v2/4de492f6d9cf8244ad5293233e5c6f52407d42fc/1.02464a56.png',
+    src: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/OKOWW.png?updatedAt=1782468174527',
+    bg: '#8e9296',
+    panel: '#1F2128',
   },
   {
-    src: 'https://fifth-gentle-45902158.figma.site/_components/v2/4de492f6d9cf8244ad5293233e5c6f52407d42fc/2.b977faab.png',
-    bg: '#6BBF7A',
-    panel: '#85CC92',
+    // src: 'https://fifth-gentle-45902158.figma.site/_components/v2/4de492f6d9cf8244ad5293233e5c6f52407d42fc/2.b977faab.png',
+    src: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/WEEE.png?updatedAt=1782468174345',
+    bg: '#2D3142',
+    panel: '#4F5D75',
   },
   {
-    src: 'https://fifth-gentle-45902158.figma.site/_components/v2/4de492f6d9cf8244ad5293233e5c6f52407d42fc/3.4df853b4.png',
-    bg: '#E882B4',
+    src: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/kmkmksss.png?updatedAt=1782468173729',
+    bg: '#d1d5db', 
     panel: '#ED9DC4',
   },
   {
-    src: 'https://fifth-gentle-45902158.figma.site/_components/v2/4de492f6d9cf8244ad5293233e5c6f52407d42fc/4.4457fbce.png',
-    bg: '#6EB5FF',
+    src: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/QW.png?updatedAt=1782468169304',
+    bg: '#0B0C10',
     panel: '#8DC4FF',
   },
 ];
@@ -151,7 +153,7 @@ function App() {
             zIndex: 2,
             top: '18%',
             fontFamily: "'Anton', sans-serif",
-            fontSize: 'clamp(90px, 28vw, 380px)',
+            fontSize: 'clamp(40px, 17vw, 380px)',
             fontWeight: 900,
             color: '#ffffff',
             opacity: 1,
@@ -159,6 +161,7 @@ function App() {
             textTransform: 'uppercase',
             letterSpacing: '-0.02em',
             whiteSpace: 'nowrap',
+            padding: '0 10px',
           }}
         >
           VALUES MATTER
@@ -174,7 +177,12 @@ function App() {
             letterSpacing: '0.18em',
           }}
         >
-          <span className="text-xs font-semibold uppercase">TOONHUB</span>
+          {/* <span className="text-lg font-semibold uppercase">ONEMISSION</span> */}
+          <img
+            src="https://ik.imagekit.io/edyl3oplm/Onemission/logos/AMAN_ONEMISSION.png?updatedAt=1782542636942"
+            alt="ONEMISSION"
+            className="h-8 md:h-12 w-auto"
+          />
         </div>
 
         {/* Carousel */}

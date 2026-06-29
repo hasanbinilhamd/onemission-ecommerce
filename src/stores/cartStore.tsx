@@ -16,8 +16,10 @@ interface AddCartItemInput {
 interface CartContextValue {
   cart: Cart;
   isMiniCartOpen: boolean;
+  isMiniCartVisible: boolean;
   openMiniCart: () => void;
   closeMiniCart: () => void;
+  setMiniCartVisible: (visible: boolean) => void;
   addItem: (item: AddCartItemInput) => void;
   incrementItem: (productId: string, variantId?: string) => void;
   decrementItem: (productId: string, variantId?: string) => void;
@@ -52,9 +54,14 @@ function recalculateCart(items: CartItem[], previous: Cart): Cart {
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<Cart>(initialCart);
   const [isMiniCartOpen, setIsMiniCartOpen] = useState(false);
+  const [isMiniCartVisible, setIsMiniCartVisible] = useState(false);
 
-  const openMiniCart = useCallback(() => setIsMiniCartOpen(true), []);
+  const openMiniCart = useCallback(() => {
+    setIsMiniCartOpen(true);
+    setIsMiniCartVisible(true);
+  }, []);
   const closeMiniCart = useCallback(() => setIsMiniCartOpen(false), []);
+  const setMiniCartVisible = useCallback((visible: boolean) => setIsMiniCartVisible(visible), []);
 
   const addItem = useCallback((item: AddCartItemInput) => {
     setCart(previous => {
@@ -75,6 +82,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return recalculateCart(nextItems, previous);
     });
     setIsMiniCartOpen(true);
+    setIsMiniCartVisible(true);
   }, []);
 
   const incrementItem = useCallback((productId: string, variantId?: string) => {
@@ -116,8 +124,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const value = useMemo<CartContextValue>(() => ({
     cart,
     isMiniCartOpen,
+    isMiniCartVisible,
     openMiniCart,
     closeMiniCart,
+    setMiniCartVisible,
     addItem,
     incrementItem,
     decrementItem,
@@ -127,8 +137,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }), [
     cart,
     isMiniCartOpen,
+    isMiniCartVisible,
     openMiniCart,
     closeMiniCart,
+    setMiniCartVisible,
     addItem,
     incrementItem,
     decrementItem,

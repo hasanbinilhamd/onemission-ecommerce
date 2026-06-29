@@ -4,10 +4,10 @@ import { useNavigationTheme } from '../navigation';
 import { SearchTrigger } from '../search';
 
 export function FloatingNavigation() {
-  const { totalItems, openMiniCart, isMiniCartOpen } = useCartStore();
+  const { totalItems, openMiniCart, isMiniCartVisible } = useCartStore();
   const { colors } = useNavigationTheme();
 
-  if (isMiniCartOpen) return null;
+  if (isMiniCartVisible) return null;
 
   return (
     <div

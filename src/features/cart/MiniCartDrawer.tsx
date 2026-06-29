@@ -1,8 +1,10 @@
+import { useEffect } from 'react';
 import { ShoppingCart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Drawer, EmptyState, Button } from '../../components/shared';
 import { useCartStore } from '../../stores';
 import { formatCurrency } from '../../utils/formatting';
+import { DURATION } from '../../utils/motion';
 import { CartLineItem, summaryLabelStyle, summaryValueStyle } from './CartLineItem';
 
 export function MiniCartDrawer() {
@@ -11,6 +13,7 @@ export function MiniCartDrawer() {
     cart,
     isMiniCartOpen,
     closeMiniCart,
+    setMiniCartVisible,
     incrementItem,
     decrementItem,
     removeItem,
@@ -19,6 +22,16 @@ export function MiniCartDrawer() {
   } = useCartStore();
 
   const isEmpty = cart.items.length === 0;
+
+  useEffect(() => {
+    if (isMiniCartOpen) {
+      setMiniCartVisible(true);
+      return;
+    }
+
+    const timer = window.setTimeout(() => setMiniCartVisible(false), DURATION.normal);
+    return () => window.clearTimeout(timer);
+  }, [isMiniCartOpen, setMiniCartVisible]);
 
   return (
     <Drawer

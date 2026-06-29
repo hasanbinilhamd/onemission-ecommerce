@@ -42,7 +42,7 @@ export function drawerTransition(duration = DURATION.normal): string {
 }
 
 /** Opacity transition — used by Overlay and Fade. */
-export function fadeTransition(duration = DURATION.fast): string {
+export function fadeTransition(duration: number = DURATION.fast): string {
   return `opacity ${duration}ms ${EASING.standard}`;
 }
 

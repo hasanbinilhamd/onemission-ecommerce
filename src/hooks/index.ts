@@ -1,7 +1,8 @@
 // ─── Shared custom React hooks ────────────────────────────────────────────────
-// Add feature-agnostic, reusable hooks here as the app grows.
 
 import { useState, useEffect } from 'react';
+
+// ─── Inline utility hooks ─────────────────────────────────────────────────────
 
 /** Debounce a rapidly-changing value (e.g. search input). */
 export function useDebounce<T>(value: T, delay = 300): T {
@@ -37,3 +38,9 @@ export function useToggle(initial = false): [boolean, () => void] {
   const toggle = () => setValue((v) => !v);
   return [value, toggle];
 }
+
+// ─── Motion / Navigation hooks ────────────────────────────────────────────────
+
+export { useFocusTrap } from './useFocusTrap';
+export { useScrollLock } from './useScrollLock';
+export { useKeyPress } from './useKeyPress';

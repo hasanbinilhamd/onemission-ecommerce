@@ -9,7 +9,9 @@ export type { BadgeVariant } from './Badge';
 export { Modal } from './Modal';
 
 export { Drawer } from './Drawer';
-export type { DrawerPosition } from './Drawer';
+export type { DrawerPosition, DrawerWidth } from './Drawer';
+
+export { Overlay } from './Overlay';
 
 export { EmptyState } from './EmptyState';
 

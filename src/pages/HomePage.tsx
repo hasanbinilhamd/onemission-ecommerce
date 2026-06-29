@@ -1,34 +1,36 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { HERO_THEMES, createHeroGradient } from '../features/hero/theme';
 
 type ImageItem = {
   src: string;
-  bg: string;
   panel: string;
+  theme: {
+    title: string;
+    accentColor: string;
+  };
 };
 
 const IMAGES: ImageItem[] = [
   {
-    // src: 'https://fifth-gentle-45902158.figma.site/_components/v2/4de492f6d9cf8244ad5293233e5c6f52407d42fc/1.02464a56.png',
     src: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/OKOWW.png?updatedAt=1782468174527',
-    bg: '#8e9296',
     panel: '#1F2128',
+    theme: HERO_THEMES[0],
   },
   {
-    // src: 'https://fifth-gentle-45902158.figma.site/_components/v2/4de492f6d9cf8244ad5293233e5c6f52407d42fc/2.b977faab.png',
     src: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/WEEE.png?updatedAt=1782468174345',
-    bg: '#2D3142',
     panel: '#4F5D75',
+    theme: HERO_THEMES[1],
   },
   {
     src: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/kmkmksss.png?updatedAt=1782468173729',
-    bg: '#d1d5db', 
     panel: '#ED9DC4',
+    theme: HERO_THEMES[2],
   },
   {
     src: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/QW.png?updatedAt=1782468169304',
-    bg: '#0B0C10',
     panel: '#8DC4FF',
+    theme: HERO_THEMES[3],
   },
 ];
 
@@ -127,18 +129,41 @@ export function HomePage({ onDiscover }: HomePageProps) {
     window.setTimeout(() => setIsAnimating(false), DURATION);
   };
 
-  const active = IMAGES[activeIndex];
+  const heroThemes = useMemo(
+    () => IMAGES.map(item => createHeroGradient(item.theme.accentColor)),
+    [],
+  );
 
   return (
     <div
       style={{
-        backgroundColor: active.bg,
-        transition: `background-color ${DURATION}ms ${EASE}`,
         fontFamily: 'Inter, sans-serif',
       }}
       className="relative w-full overflow-hidden"
     >
       <div className="relative w-full" style={{ height: '100vh', overflow: 'hidden' }}>
+        {IMAGES.map((item, index) => (
+          <div
+            key={item.src}
+            aria-hidden="true"
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              zIndex: index === activeIndex ? 0 : -1,
+              opacity: index === activeIndex ? 1 : 0,
+              backgroundImage: heroThemes[index],
+              transition: 'opacity 520ms cubic-bezier(0.4, 0, 0.2, 1)',
+              willChange: 'opacity',
+            }}
+          />
+        ))}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            zIndex: 1,
+            background: 'linear-gradient(180deg, rgba(10,10,10,0.12) 0%, rgba(10,10,10,0.04) 44%, rgba(229,228,226,0.08) 100%)',
+          }}
+        />
         {/* Grain overlay */}
         <div
           className="absolute inset-0 pointer-events-none"

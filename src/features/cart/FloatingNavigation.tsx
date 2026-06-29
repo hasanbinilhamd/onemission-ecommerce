@@ -1,4 +1,4 @@
-import { ShoppingBag } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 import { useCartStore } from '../../stores';
 import { useNavigationTheme } from '../navigation';
 import { SearchTrigger } from '../search';
@@ -38,7 +38,7 @@ export function FloatingNavigation() {
           position: 'relative',
         }}
       >
-        <ShoppingBag size={typeof window !== 'undefined' && window.innerWidth < 640 ? 18 : 20} strokeWidth={2} />
+        <ShoppingCart size={typeof window !== 'undefined' && window.innerWidth < 640 ? 18 : 20} strokeWidth={2} />
         {totalItems > 0 && (
           <span
             style={{

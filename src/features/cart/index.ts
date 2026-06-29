@@ -1,2 +1,2 @@
 export { MiniCartDrawer } from './MiniCartDrawer';
-export { CartButton } from './CartButton';
+export { FloatingNavigation } from './FloatingNavigation';

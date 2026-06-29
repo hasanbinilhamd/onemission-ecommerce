@@ -4,7 +4,7 @@ import { MainLayout } from './layouts/MainLayout';
 import { HomePage } from './pages/HomePage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { CatalogDrawer } from './features/catalog';
-import { CartButton, MiniCartDrawer } from './features/cart';
+import { FloatingNavigation, MiniCartDrawer } from './features/cart';
 import { NavigationThemeProvider } from './features/navigation';
 import { DURATION, EASING } from './utils/motion';
 
@@ -102,7 +102,7 @@ function App() {
         />
       )}
 
-      <CartButton />
+      <FloatingNavigation />
       <MiniCartDrawer />
     </>
   );

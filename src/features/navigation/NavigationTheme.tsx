@@ -24,10 +24,7 @@ const NAVIGATION_THEME_TOKENS: Record<NavigationTheme, NavigationThemeValue['col
   },
 };
 
-const NavigationThemeContext = createContext<NavigationThemeValue>({
-  theme: 'dark',
-  colors: NAVIGATION_THEME_TOKENS.dark,
-});
+const NavigationThemeContext = createContext<NavigationThemeValue | null>(null);
 
 export function NavigationThemeProvider({
   theme,
@@ -49,5 +46,9 @@ export function NavigationThemeProvider({
 }
 
 export function useNavigationTheme(): NavigationThemeValue {
-  return useContext(NavigationThemeContext);
+  const context = useContext(NavigationThemeContext);
+  if (!context) {
+    throw new Error('useNavigationTheme must be used within a NavigationThemeProvider');
+  }
+  return context;
 }

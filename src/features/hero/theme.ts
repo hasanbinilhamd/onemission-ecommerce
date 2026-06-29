@@ -11,20 +11,8 @@ export function createHeroGradient(accentColor: string): string {
 }
 
 export const HERO_THEMES: readonly HeroTheme[] = [
-  {
-    title: 'Theme 1',
-    accentColor: '#536878',
-  },
-  {
-    title: 'Theme 2',
-    accentColor: '#5A6F7F',
-  },
-  {
-    title: 'Theme 3',
-    accentColor: '#5F6E67',
-  },
-  {
-    title: 'Theme 4',
-    accentColor: '#5C5564',
-  },
+  { title: 'Theme 1', accentColor: '#536878' },
+  { title: 'Theme 2', accentColor: '#A6B6C7' },
+  { title: 'Theme 3', accentColor: '#6F8076' },
+  { title: 'Theme 4', accentColor: '#70697D' },
 ] as const;

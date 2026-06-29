@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { HERO_THEMES, createHeroGradient } from '../features/hero/theme';
 
@@ -11,7 +11,7 @@ type ImageItem = {
   };
 };
 
-const IMAGES: ImageItem[] = [
+const IMAGES: readonly ImageItem[] = [
   {
     src: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/OKOWW.png?updatedAt=1782468174527',
     panel: '#1F2128',
@@ -24,21 +24,22 @@ const IMAGES: ImageItem[] = [
   },
   {
     src: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/kmkmksss.png?updatedAt=1782468173729',
-    panel: '#ED9DC4',
+    panel: '#76837A',
     theme: HERO_THEMES[2],
   },
   {
     src: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/QW.png?updatedAt=1782468169304',
-    panel: '#8DC4FF',
+    panel: '#7B7487',
     theme: HERO_THEMES[3],
   },
-];
+] as const;
 
 type Role = 'center' | 'left' | 'right' | 'back';
 type Direction = 'next' | 'prev';
 
 const EASE = 'cubic-bezier(0.4, 0, 0.2, 1)';
 const DURATION = 650;
+const GRADIENT_FADE_DURATION = 520;
 
 function getRole(index: number, activeIndex: number): Role {
   if (index === activeIndex) return 'center';
@@ -95,8 +96,114 @@ function roleStyle(role: Role, isMobile: boolean): React.CSSProperties {
 const GRAIN_SVG =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E";
 
+const HERO_GRADIENTS = IMAGES.map(item => createHeroGradient(item.theme.accentColor));
+
+const HeroGradientBackground = memo(function HeroGradientBackground({ activeIndex }: { activeIndex: number }) {
+  const [frontLayerIndex, setFrontLayerIndex] = useState(0);
+  const [frontGradient, setFrontGradient] = useState(HERO_GRADIENTS[0]);
+  const [backGradient, setBackGradient] = useState(HERO_GRADIENTS[0]);
+  const activeRequestRef = useRef(0);
+
+  useEffect(() => {
+    const nextGradient = HERO_GRADIENTS[activeIndex];
+    const currentVisibleGradient = frontLayerIndex === 0 ? frontGradient : backGradient;
+
+    if (nextGradient === currentVisibleGradient) return;
+
+    const requestId = activeRequestRef.current + 1;
+    activeRequestRef.current = requestId;
+
+    if (frontLayerIndex === 0) {
+      setBackGradient(nextGradient);
+    } else {
+      setFrontGradient(nextGradient);
+    }
+
+    const raf = requestAnimationFrame(() => {
+      if (activeRequestRef.current === requestId) {
+        setFrontLayerIndex(current => (current === 0 ? 1 : 0));
+      }
+    });
+
+    return () => cancelAnimationFrame(raf);
+  }, [activeIndex, backGradient, frontGradient, frontLayerIndex]);
+
+  const baseLayerStyle: React.CSSProperties = useMemo(() => ({
+    position: 'absolute',
+    inset: 0,
+    pointerEvents: 'none',
+    transition: `opacity ${GRADIENT_FADE_DURATION}ms ${EASE}`,
+    willChange: 'opacity',
+    transform: 'translateZ(0)',
+    backfaceVisibility: 'hidden',
+    WebkitBackfaceVisibility: 'hidden',
+  }), []);
+
+  return (
+    <>
+      <div
+        aria-hidden="true"
+        style={{
+          ...baseLayerStyle,
+          zIndex: 0,
+          opacity: frontLayerIndex === 0 ? 1 : 0,
+          backgroundImage: frontGradient,
+        }}
+      />
+      <div
+        aria-hidden="true"
+        style={{
+          ...baseLayerStyle,
+          zIndex: 0,
+          opacity: frontLayerIndex === 1 ? 1 : 0,
+          backgroundImage: backGradient,
+        }}
+      />
+    </>
+  );
+});
+
+const HeroCarouselImages = memo(function HeroCarouselImages({ activeIndex, isMobile }: { activeIndex: number; isMobile: boolean }) {
+  return (
+    <div className="absolute inset-0" style={{ zIndex: 3 }}>
+      {IMAGES.map((img, index) => {
+        const style = roleStyle(getRole(index, activeIndex), isMobile);
+        return (
+          <div
+            key={img.src}
+            style={{
+              position: 'absolute',
+              left: style.left,
+              bottom: style.bottom,
+              height: style.height,
+              aspectRatio: '0.6 / 1',
+              transform: style.transform,
+              filter: style.filter,
+              opacity: style.opacity,
+              zIndex: style.zIndex,
+              transition: `transform ${DURATION}ms ${EASE}, filter ${DURATION}ms ${EASE}, opacity ${DURATION}ms ${EASE}, left ${DURATION}ms ${EASE}`,
+              willChange: 'transform, filter, opacity',
+            }}
+          >
+            <img
+              src={img.src}
+              alt=""
+              draggable={false}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+                objectPosition: 'bottom center',
+              }}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+});
+
 interface HomePageProps {
-  /** Called when the user clicks "Discover It". */
   onDiscover?: () => void;
 }
 
@@ -104,7 +211,7 @@ export function HomePage({ onDiscover }: HomePageProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isMobile, setIsMobile] = useState(
-    typeof window !== 'undefined' ? window.innerWidth < 640 : false
+    typeof window !== 'undefined' ? window.innerWidth < 640 : false,
   );
 
   useEffect(() => {
@@ -124,15 +231,10 @@ export function HomePage({ onDiscover }: HomePageProps) {
     if (isAnimating) return;
     setIsAnimating(true);
     setActiveIndex((prev) =>
-      dir === 'next' ? (prev + 1) % 4 : (prev + 3) % 4
+      dir === 'next' ? (prev + 1) % IMAGES.length : (prev + IMAGES.length - 1) % IMAGES.length,
     );
     window.setTimeout(() => setIsAnimating(false), DURATION);
   };
-
-  const heroThemes = useMemo(
-    () => IMAGES.map(item => createHeroGradient(item.theme.accentColor)),
-    [],
-  );
 
   return (
     <div
@@ -142,20 +244,8 @@ export function HomePage({ onDiscover }: HomePageProps) {
       className="relative w-full overflow-hidden"
     >
       <div className="relative w-full" style={{ height: '100vh', overflow: 'hidden' }}>
-        {IMAGES.map((item, index) => (
-          <div
-            key={item.src}
-            aria-hidden="true"
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              zIndex: index === activeIndex ? 0 : -1,
-              opacity: index === activeIndex ? 1 : 0,
-              backgroundImage: heroThemes[index],
-              transition: 'opacity 520ms cubic-bezier(0.4, 0, 0.2, 1)',
-              willChange: 'opacity',
-            }}
-          />
-        ))}
+        <HeroGradientBackground activeIndex={activeIndex} />
+
         <div
           aria-hidden="true"
           className="absolute inset-0 pointer-events-none"
@@ -164,7 +254,7 @@ export function HomePage({ onDiscover }: HomePageProps) {
             background: 'linear-gradient(180deg, rgba(10,10,10,0.12) 0%, rgba(10,10,10,0.04) 44%, rgba(229,228,226,0.08) 100%)',
           }}
         />
-        {/* Grain overlay */}
+
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
@@ -176,7 +266,6 @@ export function HomePage({ onDiscover }: HomePageProps) {
           }}
         />
 
-        {/* Giant ghost text */}
         <div
           className="absolute inset-x-0 flex items-center justify-center pointer-events-none select-none"
           style={{
@@ -197,7 +286,6 @@ export function HomePage({ onDiscover }: HomePageProps) {
           VALUES MATTER
         </div>
 
-        {/* Top-left brand */}
         <div
           className="absolute top-6 left-4 sm:left-8"
           style={{
@@ -207,7 +295,6 @@ export function HomePage({ onDiscover }: HomePageProps) {
             letterSpacing: '0.18em',
           }}
         >
-          {/* <span className="text-lg font-semibold uppercase">ONEMISSION</span> */}
           <img
             src="https://ik.imagekit.io/edyl3oplm/Onemission/logos/AMAN_ONEMISSION.png?updatedAt=1782542636942"
             alt="ONEMISSION"
@@ -215,45 +302,8 @@ export function HomePage({ onDiscover }: HomePageProps) {
           />
         </div>
 
-        {/* Carousel */}
-        <div className="absolute inset-0" style={{ zIndex: 3 }}>
-          {IMAGES.map((img, index) => {
-            const role = getRole(index, activeIndex);
-            const style = roleStyle(role, isMobile);
-            return (
-              <div
-                key={img.src}
-                style={{
-                  position: 'absolute',
-                  left: style.left,
-                  bottom: style.bottom,
-                  height: style.height,
-                  aspectRatio: '0.6 / 1',
-                  transform: style.transform,
-                  filter: style.filter,
-                  opacity: style.opacity,
-                  zIndex: style.zIndex,
-                  transition: `transform ${DURATION}ms ${EASE}, filter ${DURATION}ms ${EASE}, opacity ${DURATION}ms ${EASE}, left ${DURATION}ms ${EASE}`,
-                  willChange: 'transform, filter, opacity',
-                }}
-              >
-                <img
-                  src={img.src}
-                  alt=""
-                  draggable={false}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'contain',
-                    objectPosition: 'bottom center',
-                  }}
-                />
-              </div>
-            );
-          })}
-        </div>
+        <HeroCarouselImages activeIndex={activeIndex} isMobile={isMobile} />
 
-        {/* Bottom-left text + nav */}
         <div
           className="absolute bottom-6 left-4 sm:bottom-20 sm:left-24"
           style={{ zIndex: 60, maxWidth: '320px' }}
@@ -295,8 +345,7 @@ export function HomePage({ onDiscover }: HomePageProps) {
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'scale(1.08)';
-                e.currentTarget.style.backgroundColor =
-                  'rgba(255,255,255,0.12)';
+                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.12)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'scale(1)';
@@ -318,8 +367,7 @@ export function HomePage({ onDiscover }: HomePageProps) {
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'scale(1.08)';
-                e.currentTarget.style.backgroundColor =
-                  'rgba(255,255,255,0.12)';
+                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.12)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'scale(1)';
@@ -331,7 +379,6 @@ export function HomePage({ onDiscover }: HomePageProps) {
           </div>
         </div>
 
-        {/* Bottom-right link — opens Catalog Drawer */}
         <a
           href="#"
           onClick={(e) => { e.preventDefault(); onDiscover?.(); }}
@@ -358,10 +405,7 @@ export function HomePage({ onDiscover }: HomePageProps) {
           }}
         >
           DISCOVER IT
-          <ArrowRight
-            className="w-5 h-5 sm:w-8 sm:h-8"
-            strokeWidth={2.25}
-          />
+          <ArrowRight className="w-5 h-5 sm:w-8 sm:h-8" strokeWidth={2.25} />
         </a>
       </div>
     </div>

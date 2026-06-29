@@ -1,5 +1,5 @@
-// ─── Product feature ──────────────────────────────────────────────────────────
-// Scope: product detail page, image gallery, variant selector, reviews summary.
-// Implement when Sprint 2 (Product Detail) begins.
+// ─── Product Detail feature ───────────────────────────────────────────────────
+// Sprint 3: /product/:slug — gallery, variants, quantity, accordion,
+// related products. Uses Navigation Foundation (Sprint 1) + catalog mocks.
 
-export {};
+export { ProductDetailPage } from '../../pages/ProductDetailPage';

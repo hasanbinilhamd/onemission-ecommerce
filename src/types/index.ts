@@ -1,5 +1,4 @@
 // ─── Shared TypeScript models ─────────────────────────────────────────────────
-// Minimal placeholder interfaces — expand as each feature module is implemented.
 
 export interface Category {
   id: string;
@@ -13,6 +12,8 @@ export interface Variant {
   id: string;
   sku: string;
   color?: string;
+  /** Hex value for colour swatch rendering. */
+  colorHex?: string;
   size?: string;
   stock: number;
   price: number;
@@ -22,12 +23,22 @@ export interface Product {
   id: string;
   name: string;
   slug: string;
+  /** One-line teaser shown on cards and in catalog. */
   description?: string;
+  /** Longer marketing copy shown on Product Detail. */
+  longDescription?: string;
   price: number;
   imageUrl?: string;
+  /** Ordered gallery images — first is the main image shown in catalog. */
+  images?: string[];
   category?: Category;
   variants?: Variant[];
   tags?: string[];
+  /** Display SKU shown on the Product Detail page. */
+  sku?: string;
+  materials?: string;
+  care?: string;
+  shipping?: string;
 }
 
 export interface Customer {
@@ -64,7 +75,13 @@ export interface OrderItem {
   name: string;
 }
 
-export type OrderStatus = 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+export type OrderStatus =
+  | 'pending'
+  | 'confirmed'
+  | 'processing'
+  | 'shipped'
+  | 'delivered'
+  | 'cancelled';
 
 export interface Order {
   id: string;

@@ -54,57 +54,57 @@ function App() {
   );
 
   return (
-    <>
-      <NavigationThemeProvider theme={isHome ? 'light' : 'dark'}>
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <MainLayout>
-              {/*
-               * Hero wrapper — blurred/dimmed/non-interactive while the
-               * Catalog Drawer is open. Transition matches DURATION.normal
-               * so the hero and drawer animate in sync.
-               */}
-              <div
-                style={{
-                  transition: `filter ${DURATION.normal}ms ${EASING.standard}, opacity ${DURATION.normal}ms ${EASING.standard}`,
-                  filter: catalogOpen ? 'blur(4px) brightness(0.7)' : 'none',
-                  opacity: catalogOpen ? 0.85 : 1,
-                  pointerEvents: catalogOpen ? 'none' : 'auto',
-                  willChange: 'filter, opacity',
-                }}
-              >
-                <HomePage onDiscover={handleDiscover} />
-              </div>
-            </MainLayout>
-          }
-        />
+    <NavigationThemeProvider theme={isHome ? 'light' : 'dark'}>
+      <>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <MainLayout>
+                {/*
+                 * Hero wrapper — blurred/dimmed/non-interactive while the
+                 * Catalog Drawer is open. Transition matches DURATION.normal
+                 * so the hero and drawer animate in sync.
+                 */}
+                <div
+                  style={{
+                    transition: `filter ${DURATION.normal}ms ${EASING.standard}, opacity ${DURATION.normal}ms ${EASING.standard}`,
+                    filter: catalogOpen ? 'blur(4px) brightness(0.7)' : 'none',
+                    opacity: catalogOpen ? 0.85 : 1,
+                    pointerEvents: catalogOpen ? 'none' : 'auto',
+                    willChange: 'filter, opacity',
+                  }}
+                >
+                  <HomePage onDiscover={handleDiscover} />
+                </div>
+              </MainLayout>
+            }
+          />
 
-        <Route path="/product/:slug" element={<ProductDetailPage />} />
+          <Route path="/product/:slug" element={<ProductDetailPage />} />
 
-        {/* Fallback → home */}
-        <Route path="*" element={<MainLayout><HomePage onDiscover={handleDiscover} /></MainLayout>} />
-      </Routes>
-      </NavigationThemeProvider>
+          {/* Fallback → home */}
+          <Route path="*" element={<MainLayout><HomePage onDiscover={handleDiscover} /></MainLayout>} />
+        </Routes>
 
-      {/*
-       * CatalogDrawer is intentionally outside <Routes>.
-       * It stays mounted on every route so its React state is preserved
-       * across navigation. The `open` prop controls visibility.
-       * On non-home routes the Drawer is not open so it renders null.
-       */}
-      {isHome && (
-        <CatalogDrawer
-          open={catalogOpen}
-          onClose={handleCatalogClose}
-          onProductSelect={handleProductSelect}
-        />
-      )}
+        {/*
+         * CatalogDrawer is intentionally outside <Routes>.
+         * It stays mounted on every route so its React state is preserved
+         * across navigation. The `open` prop controls visibility.
+         * On non-home routes the Drawer is not open so it renders null.
+         */}
+        {isHome && (
+          <CatalogDrawer
+            open={catalogOpen}
+            onClose={handleCatalogClose}
+            onProductSelect={handleProductSelect}
+          />
+        )}
 
-      <FloatingNavigation />
-      <MiniCartDrawer />
-    </>
+        <FloatingNavigation />
+        <MiniCartDrawer />
+      </>
+    </NavigationThemeProvider>
   );
 }
 

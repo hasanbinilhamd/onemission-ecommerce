@@ -1,6 +1,10 @@
 import type { Product } from '../types';
+import { MOCK_CATEGORIES } from './categories';
+
+const [figurines, apparel, accessories] = MOCK_CATEGORIES;
 
 export const MOCK_PRODUCTS: Product[] = [
+  // ─── Figurines ─────────────────────────────────────────────────────────────
   {
     id: 'prod-001',
     name: 'Toonhub Figurine — Series 1',
@@ -8,6 +12,7 @@ export const MOCK_PRODUCTS: Product[] = [
     description: 'Limited edition 3D-crafted figurine. Flawless finish, museum-grade resin.',
     price: 250000,
     imageUrl: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/OKOWW.png?updatedAt=1782468174527',
+    category: figurines,
     tags: ['figurine', 'limited', 'series-1'],
   },
   {
@@ -17,6 +22,7 @@ export const MOCK_PRODUCTS: Product[] = [
     description: 'Second drop of the iconic Toonhub series. Bold design, premium craft.',
     price: 275000,
     imageUrl: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/WEEE.png?updatedAt=1782468174345',
+    category: figurines,
     tags: ['figurine', 'limited', 'series-2'],
   },
   {
@@ -26,15 +32,101 @@ export const MOCK_PRODUCTS: Product[] = [
     description: 'Pastel edition — inspired by heritage and craft.',
     price: 275000,
     imageUrl: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/kmkmksss.png?updatedAt=1782468173729',
+    category: figurines,
     tags: ['figurine', 'limited', 'series-3'],
   },
   {
     id: 'prod-004',
     name: 'Toonhub Figurine — Night Edition',
     slug: 'toonhub-figurine-night-edition',
-    description: 'Dark colourway — collector\'s exclusive, midnight release.',
+    description: "Dark colourway — collector's exclusive, midnight release.",
     price: 300000,
     imageUrl: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/QW.png?updatedAt=1782468169304',
+    category: figurines,
     tags: ['figurine', 'limited', 'night-edition'],
+  },
+  {
+    id: 'prod-005',
+    name: 'Toonhub Figurine — Coral',
+    slug: 'toonhub-figurine-coral',
+    description: 'Warm coral colourway. A statement piece for any shelf.',
+    price: 265000,
+    imageUrl: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/OKOWW.png?updatedAt=1782468174527',
+    category: figurines,
+    tags: ['figurine', 'coral'],
+  },
+  {
+    id: 'prod-006',
+    name: 'Toonhub Figurine — Steel Blue',
+    slug: 'toonhub-figurine-steel-blue',
+    description: 'Steel-blue edition with a matte finish.',
+    price: 265000,
+    imageUrl: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/WEEE.png?updatedAt=1782468174345',
+    category: figurines,
+    tags: ['figurine', 'blue'],
+  },
+
+  // ─── Apparel ───────────────────────────────────────────────────────────────
+  {
+    id: 'prod-007',
+    name: 'Values Tee — Onyx',
+    slug: 'values-tee-onyx',
+    description: 'Heavyweight cotton tee. Minimal, intentional, built to last.',
+    price: 185000,
+    imageUrl: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/QW.png?updatedAt=1782468169304',
+    category: apparel,
+    tags: ['tee', 'onyx', 'cotton'],
+  },
+  {
+    id: 'prod-008',
+    name: 'Values Tee — Chalk',
+    slug: 'values-tee-chalk',
+    description: 'Off-white canvas tee — pairs with anything.',
+    price: 185000,
+    imageUrl: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/kmkmksss.png?updatedAt=1782468173729',
+    category: apparel,
+    tags: ['tee', 'chalk', 'cotton'],
+  },
+  {
+    id: 'prod-009',
+    name: 'OM Hoodie — Midnight',
+    slug: 'om-hoodie-midnight',
+    description: 'Brushed fleece, relaxed fit. The hoodie you reach for every time.',
+    price: 320000,
+    imageUrl: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/QW.png?updatedAt=1782468169304',
+    category: apparel,
+    tags: ['hoodie', 'midnight', 'fleece'],
+  },
+
+  // ─── Accessories ───────────────────────────────────────────────────────────
+  {
+    id: 'prod-010',
+    name: 'OM Cap — Washed Black',
+    slug: 'om-cap-washed-black',
+    description: 'Six-panel, unstructured cap. Worn-in from day one.',
+    price: 120000,
+    imageUrl: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/OKOWW.png?updatedAt=1782468174527',
+    category: accessories,
+    tags: ['cap', 'black', 'accessories'],
+  },
+  {
+    id: 'prod-011',
+    name: 'OM Tote — Natural',
+    slug: 'om-tote-natural',
+    description: 'Heavy-duty canvas tote. Carry everything you value.',
+    price: 95000,
+    imageUrl: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/WEEE.png?updatedAt=1782468174345',
+    category: accessories,
+    tags: ['tote', 'natural', 'canvas'],
+  },
+  {
+    id: 'prod-012',
+    name: 'OM Sticker Pack',
+    slug: 'om-sticker-pack',
+    description: 'Five die-cut stickers. Stick your values everywhere.',
+    price: 35000,
+    imageUrl: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/kmkmksss.png?updatedAt=1782468173729',
+    category: accessories,
+    tags: ['sticker', 'pack'],
   },
 ];

@@ -13,7 +13,7 @@ export function CartButton() {
       aria-label={`Open cart${totalItems > 0 ? ` with ${totalItems} item${totalItems > 1 ? 's' : ''}` : ''}`}
       style={{
         position: 'fixed',
-        top: '24px',
+        top: '16px',
         right: '16px',
         zIndex: 80,
         border: 'none',
@@ -28,7 +28,7 @@ export function CartButton() {
       }}
       className="sm:right-8"
     >
-      <ShoppingCart size={24} strokeWidth={2} />
+      <ShoppingCart size={20} strokeWidth={2} />
       {totalItems > 0 && (
         <span
           style={{

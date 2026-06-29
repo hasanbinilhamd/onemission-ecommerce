@@ -16,6 +16,7 @@ interface DrawerProps {
   position?: DrawerPosition;
   title?: string;
   width?: DrawerWidth;
+  mobileFullScreen?: boolean;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -40,7 +41,9 @@ const VISIBLE_TRANSFORM = 'translate3d(0,0,0)';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function panelStyle(position: DrawerPosition, width: DrawerWidth): CSSProperties {
+function panelStyle(position: DrawerPosition, width: DrawerWidth, mobileFullScreen: boolean): CSSProperties {
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth < 640 : false;
+
   const base: CSSProperties = {
     position: 'fixed',
     zIndex: Z_PANEL,
@@ -73,9 +76,10 @@ function panelStyle(position: DrawerPosition, width: DrawerWidth): CSSProperties
       top: 0,
       right: 0,
       bottom: 0,
-      width: DRAWER_WIDTHS[width],
+      width: mobileFullScreen && isMobile ? '100vw' : DRAWER_WIDTHS[width],
       maxWidth: '100vw',
-      boxShadow: '-8px 0 48px rgba(0,0,0,0.18)',
+      height: mobileFullScreen && isMobile ? '100vh' : undefined,
+      boxShadow: mobileFullScreen && isMobile ? 'none' : '-8px 0 48px rgba(0,0,0,0.18)',
     };
   }
 
@@ -111,6 +115,7 @@ export function Drawer({
   position = 'right',
   title,
   width = 'md',
+  mobileFullScreen = false,
 }: DrawerProps) {
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -148,7 +153,7 @@ export function Drawer({
         aria-label={title ?? 'Drawer'}
         tabIndex={-1}
         style={{
-          ...panelStyle(position, width),
+          ...panelStyle(position, width, mobileFullScreen),
           transform: visible ? VISIBLE_TRANSFORM : HIDDEN_TRANSFORM[position],
         }}
       >

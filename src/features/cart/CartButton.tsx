@@ -11,36 +11,35 @@ export function CartButton() {
       aria-label={`Open cart${totalItems > 0 ? ` with ${totalItems} item${totalItems > 1 ? 's' : ''}` : ''}`}
       style={{
         position: 'fixed',
-        right: '20px',
-        bottom: '20px',
-        zIndex: 70,
-        width: '56px',
-        height: '56px',
-        borderRadius: '9999px',
+        top: '24px',
+        right: '16px',
+        zIndex: 80,
         border: 'none',
-        backgroundColor: '#111827',
+        background: 'none',
         color: '#FFFFFF',
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
         cursor: 'pointer',
-        boxShadow: '0 10px 24px rgba(17,24,39,0.24)',
+        padding: '8px',
+        lineHeight: 1,
       }}
+      className="sm:right-8"
     >
-      <ShoppingBag size={22} strokeWidth={2} />
+      <ShoppingBag size={24} strokeWidth={2} />
       {totalItems > 0 && (
         <span
           style={{
             position: 'absolute',
-            top: '-3px',
-            right: '-3px',
-            minWidth: '22px',
-            height: '22px',
-            padding: '0 6px',
+            top: '0px',
+            right: '0px',
+            minWidth: '18px',
+            height: '18px',
+            padding: '0 5px',
             borderRadius: '9999px',
             backgroundColor: '#F4845F',
             color: '#111827',
-            fontSize: '11px',
+            fontSize: '10px',
             fontWeight: 700,
             display: 'inline-flex',
             alignItems: 'center',

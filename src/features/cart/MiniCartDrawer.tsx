@@ -169,7 +169,14 @@ export function MiniCartDrawer() {
   const isEmpty = cart.items.length === 0;
 
   return (
-    <Drawer open={isMiniCartOpen} onClose={closeMiniCart} position="right" width="md" title="Mini Cart">
+    <Drawer
+      open={isMiniCartOpen}
+      onClose={closeMiniCart}
+      position="right"
+      width="md"
+      title="Mini Cart"
+      mobileFullScreen
+    >
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
         <div style={{ flex: 1 }}>
           {isEmpty ? (

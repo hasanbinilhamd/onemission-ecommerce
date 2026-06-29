@@ -5,6 +5,7 @@ import { HomePage } from './pages/HomePage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { CatalogDrawer } from './features/catalog';
 import { FloatingNavigation, MiniCartDrawer } from './features/cart';
+import { SearchOverlay } from './features/search';
 import { NavigationThemeProvider } from './features/navigation';
 import { DURATION, EASING } from './utils/motion';
 
@@ -103,6 +104,7 @@ function App() {
 
         <FloatingNavigation />
         <MiniCartDrawer />
+        <SearchOverlay />
       </>
     </NavigationThemeProvider>
   );

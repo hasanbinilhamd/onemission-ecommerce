@@ -10,6 +10,7 @@ import { formatCurrency } from '../utils/formatting';
 import { IMAGE_PLACEHOLDER } from '../app/constants';
 import { useCartStore } from '../stores';
 import { DURATION, EASING } from '../utils/motion';
+import { NavigationThemeProvider, useNavigationTheme } from '../features/navigation';
 
 // ─── Accordion ────────────────────────────────────────────────────────────────
 
@@ -244,7 +245,7 @@ if (typeof document !== 'undefined') {
   }
 }
 
-export function ProductDetailPage() {
+function ProductDetailContent() {
   const { slug } = useParams<{ slug: string }>();
   const navigate  = useNavigate();
   const location  = useLocation();
@@ -253,6 +254,7 @@ export function ProductDetailPage() {
   const [isLoading, setIsLoading]  = useState(true);
   const [qty, setQty]              = useState(1);
   const { addItem }                = useCartStore();
+  const { colors }                 = useNavigationTheme();
 
   // Find product
   const product = useMemo(
@@ -424,20 +426,20 @@ export function ProductDetailPage() {
             cursor: 'pointer',
             fontSize: '13px',
             fontWeight: 500,
-            color: '#374151',
+            color: colors.muted,
             padding: '6px 0',
             transition: `color ${DURATION.fast}ms ease`,
           }}
-          onMouseEnter={e => { e.currentTarget.style.color = '#111827'; }}
-          onMouseLeave={e => { e.currentTarget.style.color = '#374151'; }}
+          onMouseEnter={e => { e.currentTarget.style.color = colors.foreground; }}
+          onMouseLeave={e => { e.currentTarget.style.color = colors.muted; }}
         >
           <ArrowLeft size={16} strokeWidth={2} />
           {fromCatalog ? 'Back to Collection' : 'Back'}
         </button>
 
         {/* Breadcrumb (desktop) */}
-        <p className="hidden sm:block" style={{ fontSize: '12px', color: '#9CA3AF', flex: 1, textAlign: 'center' }}>
-          {product.category?.name ?? 'Products'} / <span style={{ color: '#374151' }}>{product.name}</span>
+        <p className="hidden sm:block" style={{ fontSize: '12px', color: colors.muted, flex: 1, textAlign: 'center' }}>
+          {product.category?.name ?? 'Products'} / <span style={{ color: colors.foreground }}>{product.name}</span>
         </p>
 
         <div style={{ width: '120px' }} />
@@ -619,5 +621,13 @@ export function ProductDetailPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export function ProductDetailPage() {
+  return (
+    <NavigationThemeProvider theme="dark">
+      <ProductDetailContent />
+    </NavigationThemeProvider>
   );
 }

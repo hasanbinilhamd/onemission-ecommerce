@@ -1,8 +1,10 @@
 import { ShoppingBag } from 'lucide-react';
 import { useCartStore } from '../../stores';
+import { useNavigationTheme } from '../navigation';
 
 export function CartButton() {
   const { totalItems, openMiniCart } = useCartStore();
+  const { colors } = useNavigationTheme();
 
   return (
     <button
@@ -16,7 +18,7 @@ export function CartButton() {
         zIndex: 80,
         border: 'none',
         background: 'none',
-        color: '#FFFFFF',
+        color: colors.foreground,
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -44,7 +46,7 @@ export function CartButton() {
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            border: '2px solid #FFFFFF',
+            border: `2px solid ${colors.badgeBorder}`,
             lineHeight: 1,
           }}
         >

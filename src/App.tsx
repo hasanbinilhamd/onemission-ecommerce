@@ -3,6 +3,8 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
 import { HomePage } from './pages/HomePage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
+import { CartPage } from './pages/CartPage';
+import { CheckoutPage } from './pages/CheckoutPage';
 import { CatalogDrawer } from './features/catalog';
 import { FloatingNavigation, MiniCartDrawer } from './features/cart';
 import { SearchOverlay } from './features/search';
@@ -83,6 +85,8 @@ function App() {
           />
 
           <Route path="/product/:slug" element={<ProductDetailPage />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
 
           {/* Fallback → home */}
           <Route path="*" element={<MainLayout><HomePage onDiscover={handleDiscover} /></MainLayout>} />

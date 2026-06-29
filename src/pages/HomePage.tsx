@@ -99,34 +99,50 @@ const GRAIN_SVG =
 const HERO_GRADIENTS = IMAGES.map(item => createHeroGradient(item.theme.accentColor));
 
 const HeroGradientBackground = memo(function HeroGradientBackground({ activeIndex }: { activeIndex: number }) {
-  const [frontLayerIndex, setFrontLayerIndex] = useState(0);
-  const [frontGradient, setFrontGradient] = useState(HERO_GRADIENTS[0]);
-  const [backGradient, setBackGradient] = useState(HERO_GRADIENTS[0]);
-  const activeRequestRef = useRef(0);
+  const [visibleLayer, setVisibleLayer] = useState<0 | 1>(0);
+  const [layerGradients, setLayerGradients] = useState<[string, string]>([
+    HERO_GRADIENTS[0],
+    HERO_GRADIENTS[0],
+  ]);
+  const visibleLayerRef = useRef<0 | 1>(0);
+  const layerGradientsRef = useRef<[string, string]>([HERO_GRADIENTS[0], HERO_GRADIENTS[0]]);
+  const transitionTokenRef = useRef(0);
+
+  useEffect(() => {
+    visibleLayerRef.current = visibleLayer;
+  }, [visibleLayer]);
+
+  useEffect(() => {
+    layerGradientsRef.current = layerGradients;
+  }, [layerGradients]);
 
   useEffect(() => {
     const nextGradient = HERO_GRADIENTS[activeIndex];
-    const currentVisibleGradient = frontLayerIndex === 0 ? frontGradient : backGradient;
+    const currentVisibleLayer = visibleLayerRef.current;
+    const currentVisibleGradient = layerGradientsRef.current[currentVisibleLayer];
 
     if (nextGradient === currentVisibleGradient) return;
 
-    const requestId = activeRequestRef.current + 1;
-    activeRequestRef.current = requestId;
+    const hiddenLayer = currentVisibleLayer === 0 ? 1 : 0;
+    const token = transitionTokenRef.current + 1;
+    transitionTokenRef.current = token;
 
-    if (frontLayerIndex === 0) {
-      setBackGradient(nextGradient);
-    } else {
-      setFrontGradient(nextGradient);
-    }
+    setLayerGradients((current) => {
+      if (current[hiddenLayer] === nextGradient) return current;
+      const next: [string, string] = [...current] as [string, string];
+      next[hiddenLayer] = nextGradient;
+      layerGradientsRef.current = next;
+      return next;
+    });
 
     const raf = requestAnimationFrame(() => {
-      if (activeRequestRef.current === requestId) {
-        setFrontLayerIndex(current => (current === 0 ? 1 : 0));
-      }
+      if (transitionTokenRef.current !== token) return;
+      setVisibleLayer(hiddenLayer);
+      visibleLayerRef.current = hiddenLayer;
     });
 
     return () => cancelAnimationFrame(raf);
-  }, [activeIndex, backGradient, frontGradient, frontLayerIndex]);
+  }, [activeIndex]);
 
   const baseLayerStyle: React.CSSProperties = useMemo(() => ({
     position: 'absolute',
@@ -134,9 +150,11 @@ const HeroGradientBackground = memo(function HeroGradientBackground({ activeInde
     pointerEvents: 'none',
     transition: `opacity ${GRADIENT_FADE_DURATION}ms ${EASE}`,
     willChange: 'opacity',
-    transform: 'translateZ(0)',
+    transform: 'translate3d(0,0,0)',
     backfaceVisibility: 'hidden',
     WebkitBackfaceVisibility: 'hidden',
+    backgroundRepeat: 'no-repeat',
+    backgroundSize: 'cover',
   }), []);
 
   return (
@@ -146,8 +164,8 @@ const HeroGradientBackground = memo(function HeroGradientBackground({ activeInde
         style={{
           ...baseLayerStyle,
           zIndex: 0,
-          opacity: frontLayerIndex === 0 ? 1 : 0,
-          backgroundImage: frontGradient,
+          opacity: visibleLayer === 0 ? 1 : 0,
+          backgroundImage: layerGradients[0],
         }}
       />
       <div
@@ -155,8 +173,8 @@ const HeroGradientBackground = memo(function HeroGradientBackground({ activeInde
         style={{
           ...baseLayerStyle,
           zIndex: 0,
-          opacity: frontLayerIndex === 1 ? 1 : 0,
-          backgroundImage: backGradient,
+          opacity: visibleLayer === 1 ? 1 : 0,
+          backgroundImage: layerGradients[1],
         }}
       />
     </>

@@ -5,6 +5,7 @@ import { HomePage } from './pages/HomePage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { CatalogDrawer } from './features/catalog';
 import { CartButton, MiniCartDrawer } from './features/cart';
+import { NavigationThemeProvider } from './features/navigation';
 import { DURATION, EASING } from './utils/motion';
 
 /**
@@ -54,6 +55,7 @@ function App() {
 
   return (
     <>
+      <NavigationThemeProvider theme={isHome ? 'light' : 'dark'}>
       <Routes>
         <Route
           path="/"
@@ -84,6 +86,7 @@ function App() {
         {/* Fallback → home */}
         <Route path="*" element={<MainLayout><HomePage onDiscover={handleDiscover} /></MainLayout>} />
       </Routes>
+      </NavigationThemeProvider>
 
       {/*
        * CatalogDrawer is intentionally outside <Routes>.

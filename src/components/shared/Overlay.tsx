@@ -1,7 +1,6 @@
 import { fadeTransition, DURATION } from '../../utils/motion';
 
 interface OverlayProps {
-  /** Controls opacity and pointer-events — the overlay stays mounted during exit. */
   visible: boolean;
   onClick?: () => void;
   className?: string;
@@ -11,13 +10,13 @@ interface OverlayProps {
 /**
  * Overlay
  *
- * A full-screen semi-transparent backdrop with a fade in/out transition.
- * Reused by Drawer, Modal, and any future sheet-style components.
+ * Full-screen semi-transparent backdrop with fade in/out.
  *
- * The caller controls mounting — keep the Overlay in the DOM during the exit
- * animation so the fade-out plays before the parent unmounts.
+ * Opacity is intentionally kept low (0.25) when used alongside the
+ * App-level blur/dim effect on the hero — the two layers combine to
+ * create the right visual depth without over-darkening.
  */
-export function Overlay({ visible, onClick, className = '', zIndex = 40 }: OverlayProps) {
+export function Overlay({ visible, onClick, className = '', zIndex = 100 }: OverlayProps) {
   return (
     <div
       aria-hidden="true"
@@ -27,10 +26,12 @@ export function Overlay({ visible, onClick, className = '', zIndex = 40 }: Overl
         position: 'fixed',
         inset: 0,
         zIndex,
-        backgroundColor: 'rgba(0, 0, 0, 0.48)',
+        backgroundColor: 'rgba(0, 0, 0, 0.28)',
         opacity: visible ? 1 : 0,
         pointerEvents: visible ? 'auto' : 'none',
         transition: fadeTransition(DURATION.normal),
+        // GPU layer so the fade doesn't trigger paint
+        willChange: 'opacity',
       }}
     />
   );

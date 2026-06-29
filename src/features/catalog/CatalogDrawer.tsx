@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import type { Product } from '../../types';
 import { Drawer } from '../../components/shared/Drawer';
 import { EmptyState } from '../../components/shared/EmptyState';
@@ -15,15 +15,13 @@ import type { FilterState } from './FilterDrawer';
 type SortOption = 'newest' | 'best_selling' | 'price_asc' | 'price_desc';
 
 const SORT_LABELS: Record<SortOption, string> = {
-  newest: 'Newest',
+  newest:       'Newest',
   best_selling: 'Best Selling',
-  price_asc: 'Price: Low → High',
-  price_desc: 'Price: High → Low',
+  price_asc:    'Price: Low → High',
+  price_desc:   'Price: High → Low',
 };
 
 const PAGE_SIZE = 8;
-
-// ─── Props ────────────────────────────────────────────────────────────────────
 
 interface CatalogDrawerProps {
   open: boolean;
@@ -33,49 +31,65 @@ interface CatalogDrawerProps {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 type CategoryChip = { id: string | null; name: string };
-
 const ALL_CHIP: CategoryChip = { id: null, name: 'All' };
 
 function countActiveFilters(f: FilterState): number {
-  return f.colors.length + f.sizes.length + (f.minPrice > 0 ? 1 : 0) + (f.maxPrice < 999999 ? 1 : 0);
+  return (
+    f.colors.length +
+    f.sizes.length +
+    (f.minPrice > 0 ? 1 : 0) +
+    (f.maxPrice < 999999 ? 1 : 0)
+  );
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function CatalogDrawer({ open, onClose }: CatalogDrawerProps) {
-  const [search, setSearch] = useState('');
+  const [search, setSearch]               = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [sort, setSort] = useState<SortOption>('newest');
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const [isLoading, setIsLoading] = useState(false);
+  const [sort, setSort]                   = useState<SortOption>('newest');
+  const [filterOpen, setFilterOpen]       = useState(false);
+  const [filters, setFilters]             = useState<FilterState>(DEFAULT_FILTERS);
+  const [visibleCount, setVisibleCount]   = useState(PAGE_SIZE);
+  const [isLoading, setIsLoading]         = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  // Track IDs of products added on the latest Load More — used to play
+  // the fade-in entrance animation only on newly appended cards.
+  const [newProductIds, setNewProductIds] = useState<ReadonlySet<string>>(new Set());
+
+  // Stable ref so handleLoadMore can read visibleCount without a re-create
+  const visibleCountRef = useRef(visibleCount);
+  useEffect(() => { visibleCountRef.current = visibleCount; }, [visibleCount]);
 
   const debouncedSearch = useDebounce(search, 300);
 
-  // Simulate loading + reset state when drawer opens/closes
+  // ─── Open / close lifecycle ─────────────────────────────────────────────────
+
   useEffect(() => {
     if (open) {
       setIsLoading(true);
       const t = setTimeout(() => setIsLoading(false), 700);
       return () => clearTimeout(t);
     } else {
+      // Reset all transient state when drawer closes so the next open is fresh
       setSearch('');
       setActiveCategory(null);
       setSort('newest');
+      setFilters(DEFAULT_FILTERS);
       setVisibleCount(PAGE_SIZE);
       setSelectedProduct(null);
+      setNewProductIds(new Set());
       setFilterOpen(false);
     }
   }, [open]);
 
-  // Reset visible count when filter/search changes
+  // Reset pagination when any filter/sort axis changes
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
+    setNewProductIds(new Set());
   }, [debouncedSearch, activeCategory, sort, filters]);
 
-  // ─── Derived data ────────────────────────────────────────────────────────────
+  // ─── Derived data ───────────────────────────────────────────────────────────
 
   const categoryChips: CategoryChip[] = useMemo(
     () => [ALL_CHIP, ...MOCK_CATEGORIES.map(c => ({ id: c.id, name: c.name }))],
@@ -85,12 +99,10 @@ export function CatalogDrawer({ open, onClose }: CatalogDrawerProps) {
   const filtered = useMemo(() => {
     let list = [...MOCK_PRODUCTS];
 
-    // Category
     if (activeCategory !== null) {
       list = list.filter(p => p.category?.id === activeCategory);
     }
 
-    // Search
     if (debouncedSearch.trim()) {
       const q = debouncedSearch.toLowerCase();
       list = list.filter(
@@ -101,7 +113,6 @@ export function CatalogDrawer({ open, onClose }: CatalogDrawerProps) {
       );
     }
 
-    // Filters
     if (filters.colors.length > 0) {
       list = list.filter(p =>
         filters.colors.some(c => p.tags?.includes(c.toLowerCase())),
@@ -119,57 +130,62 @@ export function CatalogDrawer({ open, onClose }: CatalogDrawerProps) {
       list = list.filter(p => p.price <= filters.maxPrice);
     }
 
-    // Sort
     switch (sort) {
-      case 'price_asc':
-        list.sort((a, b) => a.price - b.price);
-        break;
-      case 'price_desc':
-        list.sort((a, b) => b.price - a.price);
-        break;
-      case 'best_selling':
-        list.sort((a, b) => b.id.localeCompare(a.id));
-        break;
-      default:
-        break;
+      case 'price_asc':    list.sort((a, b) => a.price - b.price); break;
+      case 'price_desc':   list.sort((a, b) => b.price - a.price); break;
+      case 'best_selling': list.sort((a, b) => b.id.localeCompare(a.id)); break;
+      default: break;
     }
 
     return list;
   }, [activeCategory, debouncedSearch, sort, filters]);
 
   const visibleProducts = filtered.slice(0, visibleCount);
-  const hasMore = visibleCount < filtered.length;
+  const hasMore         = visibleCount < filtered.length;
   const activeFilterCount = countActiveFilters(filters);
 
-  // ─── Handlers ────────────────────────────────────────────────────────────────
+  // ─── Stable callbacks (memoised so ProductCard.memo bails out) ─────────────
 
-  const handleLoadMore = () => {
+  /**
+   * Append the next page without touching already-rendered cards.
+   * Uses a ref for visibleCount to avoid re-creating this callback on every
+   * count change — React.memo on ProductCard can then bail out reliably.
+   */
+  const handleLoadMore = useCallback(() => {
+    const currentCount = visibleCountRef.current;
+    const nextPage = filtered.slice(currentCount, currentCount + PAGE_SIZE);
+    const nextIds  = new Set(nextPage.map(p => p.id));
+
     setIsLoading(true);
     setTimeout(() => {
+      setNewProductIds(nextIds);       // mark only the new batch
       setVisibleCount(c => c + PAGE_SIZE);
       setIsLoading(false);
-    }, 400);
-  };
+    }, 380);
+  }, [filtered]);
 
-  const handleProductClick = (product: Product) => {
+  const handleProductClick = useCallback((product: Product) => {
     setSelectedProduct(product);
-  };
+  }, []);
 
-  const handleDismissNotice = () => {
+  const handleDismissNotice = useCallback(() => {
     setSelectedProduct(null);
-  };
+  }, []);
 
-  const handleApplyFilters = (f: FilterState) => {
+  const handleApplyFilters = useCallback((f: FilterState) => {
     setFilters(f);
-  };
+  }, []);
 
-  const handleResetFilters = () => {
+  const handleResetFilters = useCallback(() => {
     setFilters(DEFAULT_FILTERS);
-  };
+  }, []);
 
-  // ─── Styles ───────────────────────────────────────────────────────────────────
+  const handleOpenFilter  = useCallback(() => setFilterOpen(true),  []);
+  const handleCloseFilter = useCallback(() => setFilterOpen(false), []);
 
-  const chipStyle = (active: boolean): React.CSSProperties => ({
+  // ─── Chip style helper ──────────────────────────────────────────────────────
+
+  const chipStyle = useCallback((active: boolean): React.CSSProperties => ({
     flexShrink: 0,
     padding: '5px 14px',
     borderRadius: '20px',
@@ -181,9 +197,9 @@ export function CatalogDrawer({ open, onClose }: CatalogDrawerProps) {
     cursor: 'pointer',
     transition: 'all 150ms ease',
     whiteSpace: 'nowrap' as const,
-  });
+  }), []);
 
-  // ─── Render ───────────────────────────────────────────────────────────────────
+  // ─── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <Drawer open={open} onClose={onClose} position="left" width="full" title="Collection">
@@ -202,12 +218,9 @@ export function CatalogDrawer({ open, onClose }: CatalogDrawerProps) {
         {/* Search */}
         <div style={{ position: 'relative', marginBottom: '12px' }}>
           <svg
-            width="15"
-            height="15"
+            width="15" height="15"
             viewBox="0 0 24 24"
-            fill="none"
-            stroke="#9CA3AF"
-            strokeWidth="2"
+            fill="none" stroke="#9CA3AF" strokeWidth="2"
             style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
           >
             <circle cx="11" cy="11" r="8" />
@@ -230,23 +243,14 @@ export function CatalogDrawer({ open, onClose }: CatalogDrawerProps) {
               transition: 'border-color 150ms ease',
             }}
             onFocus={e => { e.currentTarget.style.borderColor = '#111827'; }}
-            onBlur={e => { e.currentTarget.style.borderColor = '#E5E7EB'; }}
+            onBlur={e =>  { e.currentTarget.style.borderColor = '#E5E7EB'; }}
           />
         </div>
 
         {/* Category chips + Sort + Filter */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {/* Category chips (scrollable) */}
-          <div
-            style={{
-              display: 'flex',
-              gap: '6px',
-              flex: 1,
-              overflowX: 'auto',
-              paddingBottom: '2px',
-              scrollbarWidth: 'none',
-            }}
-          >
+          {/* Scrollable chips */}
+          <div style={{ display: 'flex', gap: '6px', flex: 1, overflowX: 'auto', paddingBottom: '2px', scrollbarWidth: 'none' }}>
             {categoryChips.map(cat => (
               <button
                 key={cat.id ?? 'all'}
@@ -264,16 +268,7 @@ export function CatalogDrawer({ open, onClose }: CatalogDrawerProps) {
             value={sort}
             onChange={e => setSort(e.target.value as SortOption)}
             aria-label="Sort products"
-            style={{
-              flexShrink: 0,
-              padding: '6px 8px',
-              border: '1px solid #E5E7EB',
-              borderRadius: '8px',
-              fontSize: '12px',
-              cursor: 'pointer',
-              outline: 'none',
-              backgroundColor: '#fff',
-            }}
+            style={{ flexShrink: 0, padding: '6px 8px', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', outline: 'none', backgroundColor: '#fff' }}
           >
             {(Object.entries(SORT_LABELS) as [SortOption, string][]).map(([value, label]) => (
               <option key={value} value={value}>{label}</option>
@@ -283,7 +278,7 @@ export function CatalogDrawer({ open, onClose }: CatalogDrawerProps) {
           {/* Filter button */}
           <button
             type="button"
-            onClick={() => setFilterOpen(true)}
+            onClick={handleOpenFilter}
             aria-label="Open filters"
             style={{
               flexShrink: 0,
@@ -311,8 +306,8 @@ export function CatalogDrawer({ open, onClose }: CatalogDrawerProps) {
         </div>
       </div>
 
-      {/* ── Content area ───────────────────────────────────────────────────── */}
-      <div style={{ padding: '16px 20px 40px' }}>
+      {/* ── Content ────────────────────────────────────────────────────────── */}
+      <div style={{ padding: '16px 20px 48px' }}>
 
         {/* Product count */}
         {!isLoading && (
@@ -323,50 +318,18 @@ export function CatalogDrawer({ open, onClose }: CatalogDrawerProps) {
 
         {/* Product Detail coming-soon notice */}
         {selectedProduct && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'space-between',
-              gap: '12px',
-              marginBottom: '20px',
-              padding: '14px 16px',
-              backgroundColor: '#F9FAFB',
-              border: '1px solid #E5E7EB',
-              borderRadius: '8px',
-            }}
-          >
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '20px', padding: '14px 16px', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '8px' }}>
             <div>
-              <p style={{ margin: '0 0 3px', fontSize: '13px', fontWeight: 600, color: '#111827' }}>
-                {selectedProduct.name}
-              </p>
-              <p style={{ margin: 0, fontSize: '12px', color: '#6B7280' }}>
-                Product Detail will be available in the next sprint.
-              </p>
+              <p style={{ margin: '0 0 3px', fontSize: '13px', fontWeight: 600, color: '#111827' }}>{selectedProduct.name}</p>
+              <p style={{ margin: 0, fontSize: '12px', color: '#6B7280' }}>Product Detail will be available in the next sprint.</p>
             </div>
-            <button
-              type="button"
-              onClick={handleDismissNotice}
-              aria-label="Dismiss notice"
-              style={{
-                flexShrink: 0,
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0,
-                color: '#9CA3AF',
-                fontSize: '16px',
-                lineHeight: 1,
-              }}
-            >
-              ✕
-            </button>
+            <button type="button" onClick={handleDismissNotice} aria-label="Dismiss" style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#9CA3AF', fontSize: '16px', lineHeight: 1 }}>✕</button>
           </div>
         )}
 
         {/* Loading skeletons */}
         {isLoading && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" style={{ gap: '16px', display: 'grid' }}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" style={{ display: 'grid', gap: '20px 16px' }}>
             {Array.from({ length: PAGE_SIZE }).map((_, i) => (
               <ProductCardSkeleton key={i} />
             ))}
@@ -377,12 +340,19 @@ export function CatalogDrawer({ open, onClose }: CatalogDrawerProps) {
         {!isLoading && filtered.length === 0 && (
           <EmptyState
             title="No products found"
-            description="Try adjusting your search, category, or filters to find what you're looking for."
+            description="Try adjusting your search, category, or filters."
           />
         )}
 
-        {/* Product grid */}
-        {!isLoading && filtered.length > 0 && (
+        {/*
+         * Product grid
+         *
+         * Each card is rendered with a stable key (product.id) so React
+         * never unmounts/remounts existing cards on Load More.
+         * ProductCard is memoised — it only re-renders if its own props change.
+         * New cards receive isNew=true which plays the fade-in animation.
+         */}
+        {!isLoading && visibleProducts.length > 0 && (
           <>
             <div
               className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
@@ -393,12 +363,13 @@ export function CatalogDrawer({ open, onClose }: CatalogDrawerProps) {
                   key={product.id}
                   product={product}
                   onClick={handleProductClick}
+                  isNew={newProductIds.has(product.id)}
                 />
               ))}
             </div>
 
             {/* Load More */}
-            {hasMore && !isLoading && (
+            {hasMore && (
               <div style={{ textAlign: 'center', marginTop: '40px' }}>
                 <button
                   type="button"
@@ -416,14 +387,8 @@ export function CatalogDrawer({ open, onClose }: CatalogDrawerProps) {
                     cursor: 'pointer',
                     transition: 'background-color 150ms ease, color 150ms ease',
                   }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.backgroundColor = '#111827';
-                    e.currentTarget.style.color = '#fff';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                    e.currentTarget.style.color = '#111827';
-                  }}
+                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#111827'; e.currentTarget.style.color = '#fff'; }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#111827'; }}
                 >
                   Load More
                 </button>
@@ -433,10 +398,10 @@ export function CatalogDrawer({ open, onClose }: CatalogDrawerProps) {
         )}
       </div>
 
-      {/* Filter Drawer (bottom sheet, nested) */}
+      {/* Filter bottom sheet */}
       <FilterDrawer
         open={filterOpen}
-        onClose={() => setFilterOpen(false)}
+        onClose={handleCloseFilter}
         filters={filters}
         onApply={handleApplyFilters}
         onReset={handleResetFilters}

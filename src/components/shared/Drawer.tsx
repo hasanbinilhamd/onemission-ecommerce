@@ -10,41 +10,48 @@ export type DrawerPosition = 'left' | 'right' | 'bottom';
 export type DrawerWidth = keyof typeof DRAWER_WIDTHS;
 
 interface DrawerProps {
-  /** Controls open/close state. */
   open: boolean;
-  /** Called when the user dismisses the drawer (ESC, overlay click, close button). */
   onClose: () => void;
   children: ReactNode;
-  /** Which edge the drawer slides in from. Default: 'right'. */
   position?: DrawerPosition;
-  /** Optional header title. */
   title?: string;
-  /** Panel width preset (ignored for bottom position). Default: 'md'. */
   width?: DrawerWidth;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
+// z-index values intentionally above any hero / page content (hero uses ≤ z-60)
+const Z_OVERLAY = 100;
+const Z_PANEL   = 110;
+
 const PANEL_TRANSITION = `transform ${DURATION.normal}ms ${EASING.standard}`;
 
-/** Off-screen transform applied when the drawer is closed. */
+/**
+ * Off-screen transforms use translate3d so the GPU composites the layer.
+ * This avoids layout reflow during animation.
+ */
 const HIDDEN_TRANSFORM: Record<DrawerPosition, string> = {
-  left: 'translateX(-100%)',
-  right: 'translateX(100%)',
-  bottom: 'translateY(100%)',
+  left:   'translate3d(-100%,0,0)',
+  right:  'translate3d(100%,0,0)',
+  bottom: 'translate3d(0,100%,0)',
 };
+
+const VISIBLE_TRANSFORM = 'translate3d(0,0,0)';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function panelStyle(position: DrawerPosition, width: DrawerWidth): CSSProperties {
   const base: CSSProperties = {
     position: 'fixed',
-    zIndex: 50,
+    zIndex: Z_PANEL,
     backgroundColor: '#ffffff',
     display: 'flex',
     flexDirection: 'column',
     transition: PANEL_TRANSITION,
+    // Force GPU compositing — avoids paint during slide
     willChange: 'transform',
+    backfaceVisibility: 'hidden',
+    WebkitBackfaceVisibility: 'hidden',
     outline: 'none',
   };
 
@@ -56,7 +63,7 @@ function panelStyle(position: DrawerPosition, width: DrawerWidth): CSSProperties
       bottom: 0,
       width: DRAWER_WIDTHS[width],
       maxWidth: '100vw',
-      boxShadow: '8px 0 32px rgba(0,0,0,0.12)',
+      boxShadow: '8px 0 48px rgba(0,0,0,0.18)',
     };
   }
 
@@ -68,7 +75,7 @@ function panelStyle(position: DrawerPosition, width: DrawerWidth): CSSProperties
       bottom: 0,
       width: DRAWER_WIDTHS[width],
       maxWidth: '100vw',
-      boxShadow: '-8px 0 32px rgba(0,0,0,0.12)',
+      boxShadow: '-8px 0 48px rgba(0,0,0,0.18)',
     };
   }
 
@@ -80,7 +87,7 @@ function panelStyle(position: DrawerPosition, width: DrawerWidth): CSSProperties
     bottom: 0,
     maxHeight: '90vh',
     borderRadius: '16px 16px 0 0',
-    boxShadow: '0 -8px 32px rgba(0,0,0,0.12)',
+    boxShadow: '0 -8px 48px rgba(0,0,0,0.18)',
   };
 }
 
@@ -89,18 +96,13 @@ function panelStyle(position: DrawerPosition, width: DrawerWidth): CSSProperties
 /**
  * Drawer
  *
- * A fully accessible, animated slide-in panel.
+ * Fully accessible, GPU-accelerated slide-in panel.
  *
- * Features:
- * - Smooth CSS transform enter / exit animations
- * - Overlay backdrop with fade
- * - Body scroll lock (restores scroll position on close)
- * - ESC key to close
- * - Click outside (overlay) to close
- * - Focus trap with Tab / Shift+Tab cycling
- * - Focus restoration to previously focused element
- * - Responsive: configurable width, full-width on mobile via CSS max-width
- * - Positions: left | right | bottom
+ * - translate3d transforms → GPU compositing, no layout reflow
+ * - z-index 110 / overlay 100 → always above hero content (≤ z-60)
+ * - Double-rAF mount pattern → initial position painted off-screen before
+ *   the transition fires, making open and close feel identical
+ * - Exit transition completes before unmount via setTimeout(DURATION.normal)
  */
 export function Drawer({
   open,
@@ -110,7 +112,6 @@ export function Drawer({
   title,
   width = 'md',
 }: DrawerProps) {
-  // `mounted` gates DOM presence; `visible` drives the CSS animation.
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
 
@@ -120,15 +121,14 @@ export function Drawer({
 
   useEffect(() => {
     if (open) {
-      // Mount first, then trigger the enter animation in the next two frames
-      // so the browser has time to paint the initial (off-screen) position.
       setMounted(true);
+      // Two frames: first paints off-screen, second triggers the transition.
+      // This guarantees opening and closing use the exact same duration.
       const raf = requestAnimationFrame(() => {
         requestAnimationFrame(() => setVisible(true));
       });
       return () => cancelAnimationFrame(raf);
     } else {
-      // Trigger exit animation, then unmount after the transition completes.
       setVisible(false);
       const timer = setTimeout(() => setMounted(false), DURATION.normal);
       return () => clearTimeout(timer);
@@ -139,7 +139,7 @@ export function Drawer({
 
   return (
     <>
-      <Overlay visible={visible} onClick={onClose} zIndex={40} />
+      <Overlay visible={visible} onClick={onClose} zIndex={Z_OVERLAY} />
 
       <div
         ref={containerRef}
@@ -149,7 +149,7 @@ export function Drawer({
         tabIndex={-1}
         style={{
           ...panelStyle(position, width),
-          transform: visible ? 'translate(0)' : HIDDEN_TRANSFORM[position],
+          transform: visible ? VISIBLE_TRANSFORM : HIDDEN_TRANSFORM[position],
         }}
       >
         {/* ── Header ── */}

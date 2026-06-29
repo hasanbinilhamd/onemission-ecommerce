@@ -11,7 +11,7 @@ export function FloatingNavigation() {
     <div
       style={{
         position: 'fixed',
-        top: '24px',
+        top: '16px',
         right: '16px',
         zIndex: 140,
         display: 'flex',
@@ -38,7 +38,7 @@ export function FloatingNavigation() {
           position: 'relative',
         }}
       >
-        <ShoppingBag size={24} strokeWidth={2} />
+        <ShoppingBag size={typeof window !== 'undefined' && window.innerWidth < 640 ? 18 : 20} strokeWidth={2} />
         {totalItems > 0 && (
           <span
             style={{

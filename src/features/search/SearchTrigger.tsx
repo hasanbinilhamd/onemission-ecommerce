@@ -23,7 +23,7 @@ export function SearchTrigger() {
         lineHeight: 1,
       }}
     >
-      <Search size={24} strokeWidth={2} />
+      <Search size={typeof window !== 'undefined' && window.innerWidth < 640 ? 18 : 20} strokeWidth={2} />
     </button>
   );
 }

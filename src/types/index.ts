@@ -56,6 +56,9 @@ export interface CartItem {
   price: number;
   name: string;
   imageUrl?: string;
+  color?: string;
+  size?: string;
+  slug?: string;
 }
 
 export interface Cart {

@@ -8,6 +8,7 @@ import { EmptyState } from '../components/shared/EmptyState';
 import { LoadingSkeleton } from '../components/shared/LoadingSkeleton';
 import { formatCurrency } from '../utils/formatting';
 import { IMAGE_PLACEHOLDER } from '../app/constants';
+import { useCartStore } from '../stores';
 import { DURATION, EASING } from '../utils/motion';
 
 // ─── Accordion ────────────────────────────────────────────────────────────────
@@ -251,6 +252,7 @@ export function ProductDetailPage() {
 
   const [isLoading, setIsLoading]  = useState(true);
   const [qty, setQty]              = useState(1);
+  const { addItem }                = useCartStore();
 
   // Find product
   const product = useMemo(
@@ -320,6 +322,38 @@ export function ProductDetailPage() {
 
   const decrement = useCallback(() => setQty(q => Math.max(1, q - 1)), []);
   const increment = useCallback(() => setQty(q => q + 1), []);
+
+  const selectedVariant = useMemo(() => {
+    if (!product?.variants?.length) return undefined;
+
+    return product.variants.find(variant => {
+      const colorMatches = selectedColor ? variant.color === selectedColor : true;
+      const sizeMatches = selectedSize ? variant.size === selectedSize : true;
+      return colorMatches && sizeMatches;
+    })
+    ?? product.variants.find(variant => (selectedColor ? variant.color === selectedColor : false))
+    ?? product.variants.find(variant => (selectedSize ? variant.size === selectedSize : false))
+    ?? product.variants[0];
+  }, [product, selectedColor, selectedSize]);
+
+  const displaySku = selectedVariant?.sku ?? product?.sku;
+  const displayPrice = selectedVariant?.price ?? product?.price ?? 0;
+
+  const handleAddToCart = useCallback(() => {
+    if (!product) return;
+
+    addItem({
+      productId: product.id,
+      variantId: selectedVariant?.id,
+      quantity: qty,
+      price: selectedVariant?.price ?? product.price,
+      name: product.name,
+      imageUrl: product.imageUrl,
+      color: selectedVariant?.color ?? (selectedColor || undefined),
+      size: selectedVariant?.size ?? (selectedSize || undefined),
+      slug: product.slug,
+    });
+  }, [addItem, product, qty, selectedColor, selectedSize, selectedVariant]);
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
@@ -435,9 +469,7 @@ export function ProductDetailPage() {
               )}
               {product.sku && (
                 <span style={{ fontSize: '11px', color: '#9CA3AF', fontFamily: 'monospace' }}>
-                  {product.sku}
-                  {selectedColor && `-${selectedColor.slice(0,3).toUpperCase()}`}
-                  {selectedSize && `-${selectedSize.toUpperCase().replace(/\s/g, '')}`}
+                  {displaySku}
                 </span>
               )}
             </div>
@@ -449,7 +481,7 @@ export function ProductDetailPage() {
 
             {/* Price */}
             <p style={{ margin: '0 0 16px', fontSize: '22px', fontWeight: 600, color: '#111827' }}>
-              {formatCurrency(product.price)}
+              {formatCurrency(displayPrice)}
             </p>
 
             {/* Short description */}
@@ -505,6 +537,7 @@ export function ProductDetailPage() {
             {/* Add to Cart */}
             <button
               type="button"
+              onClick={handleAddToCart}
               style={{
                 width: '100%',
                 display: 'flex',

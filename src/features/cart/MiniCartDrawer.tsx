@@ -1,5 +1,5 @@
 import { memo, useMemo } from 'react';
-import { Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
+import { Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react';
 import { Drawer, EmptyState, Button } from '../../components/shared';
 import { useCartStore } from '../../stores';
 import { formatCurrency } from '../../utils/formatting';
@@ -182,7 +182,7 @@ export function MiniCartDrawer() {
           {isEmpty ? (
             <div style={{ padding: '12px 20px 24px' }}>
               <EmptyState
-                icon={<ShoppingBag size={34} />}
+                icon={<ShoppingCart size={34} />}
                 title="Your cart is empty"
                 description="Add something you love, then come back here to review it."
                 action={

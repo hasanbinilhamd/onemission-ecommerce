@@ -1,4 +1,4 @@
-import { ShoppingBag } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 import { useCartStore } from '../../stores';
 
 export function CartButton() {
@@ -26,7 +26,7 @@ export function CartButton() {
       }}
       className="sm:right-8"
     >
-      <ShoppingBag size={24} strokeWidth={2} />
+      <ShoppingCart size={24} strokeWidth={2} />
       {totalItems > 0 && (
         <span
           style={{
@@ -37,7 +37,7 @@ export function CartButton() {
             height: '18px',
             padding: '0 5px',
             borderRadius: '9999px',
-            backgroundColor: '#F4845F',
+            backgroundColor: '#f26168',
             color: '#111827',
             fontSize: '10px',
             fontWeight: 700,

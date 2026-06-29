@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, type ReactNode } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, Minus, Plus, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Minus, Plus, ShoppingCart } from 'lucide-react';
 import type { Product } from '../types';
 import { MOCK_PRODUCTS } from '../mocks/products';
 import { ProductCard } from '../features/catalog/ProductCard';
@@ -558,7 +558,7 @@ export function ProductDetailPage() {
               onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937'; }}
               onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#111827'; }}
             >
-              <ShoppingBag size={16} strokeWidth={2} />
+              <ShoppingCart size={16} strokeWidth={2} />
               Add to Cart
             </button>
 

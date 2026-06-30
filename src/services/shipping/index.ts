@@ -1,14 +1,29 @@
-import type { ShippingService } from './ShippingService';
-import { MockShippingService } from './MockShippingService';
+import { serviceLayerConfig } from '../config';
+import { ShippingService } from './ShippingService';
+import { MockShippingProvider } from './providers/MockShippingProvider';
+import { FutureRajaOngkirProvider } from './providers/FutureRajaOngkirProvider';
+import type { ShippingProvider } from './types';
 
-/**
- * Current local implementation for Sprint 9.
- *
- * When external shipping integration is approved, replace this single line
- * with `new RajaOngkirShippingService()` and keep the Checkout UI unchanged.
- */
-export const shippingService: ShippingService = new MockShippingService();
+function createShippingProvider(): ShippingProvider {
+  if (serviceLayerConfig.providers.shipping === 'future-rajaongkir') {
+    return new FutureRajaOngkirProvider();
+  }
 
-export type { ShippingService } from './ShippingService';
-export { RajaOngkirShippingService } from './RajaOngkirShippingService';
+  return new MockShippingProvider({
+    latencyMs: serviceLayerConfig.featureFlags.simulateMockLatency ? 450 : 0,
+  });
+}
+
+export const shippingService = new ShippingService(createShippingProvider());
+
+export { ShippingService } from './ShippingService';
 export { ShippingServiceError, getShippingServiceErrorMessage } from './errors';
+export type {
+  ShippingCity,
+  ShippingDistrict,
+  ShippingProvider,
+  ShippingProvince,
+  ShippingRate,
+  ShippingRateRequest,
+  ShippingServiceResource,
+} from './types';

@@ -1,4 +1,4 @@
-export type ShippingServiceResource = 'provinces' | 'cities' | 'districts' | 'rates';
+import type { ShippingServiceResource } from './types';
 
 export class ShippingServiceError extends Error {
   resource: ShippingServiceResource;

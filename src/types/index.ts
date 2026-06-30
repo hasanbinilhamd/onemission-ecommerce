@@ -70,6 +70,36 @@ export interface Cart {
   updatedAt: string;
 }
 
+export interface CheckoutContactInformation {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+}
+
+export interface CheckoutShippingAddress {
+  country: string;
+  province: string;
+  city: string;
+  district: string;
+  postalCode: string;
+  streetAddress: string;
+}
+
+export interface CheckoutDeliveryOption {
+  id: string;
+  courierName: string;
+  serviceName: string;
+  estimatedDelivery: string;
+  price: number;
+}
+
+export interface CheckoutPaymentOption {
+  id: string;
+  label: string;
+  description: string;
+}
+
 export interface OrderItem {
   productId: string;
   variantId?: string;

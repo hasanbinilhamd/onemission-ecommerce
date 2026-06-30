@@ -1,5 +1,5 @@
 import { IMAGE_PLACEHOLDER } from '../../app/constants';
-import { useCartStore } from '../../stores';
+import { useCartStore, useCheckoutStore } from '../../stores';
 import { formatCurrency } from '../../utils/formatting';
 
 interface CheckoutOrderSummaryProps {
@@ -8,6 +8,9 @@ interface CheckoutOrderSummaryProps {
 
 export function CheckoutOrderSummary({ className = '' }: CheckoutOrderSummaryProps) {
   const { cart, subtotal, totalItems } = useCartStore();
+  const { checkout } = useCheckoutStore();
+  const shippingCost = checkout.deliveryMethod?.price ?? 0;
+  const total = subtotal + shippingCost;
 
   return (
     <aside className={className} style={{ alignSelf: 'start' }}>
@@ -98,15 +101,9 @@ export function CheckoutOrderSummary({ className = '' }: CheckoutOrderSummaryPro
             <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#111827' }}>{formatCurrency(subtotal)}</p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-            <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Estimated Shipping</p>
-            <p style={{ margin: 0, fontSize: '13px', color: '#6B7280', textAlign: 'right' }}>
-              Calculated after shipping selection.
-            </p>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-            <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Estimated Tax</p>
-            <p style={{ margin: 0, fontSize: '13px', color: '#6B7280', textAlign: 'right' }}>
-              Calculated in a future sprint.
+            <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Shipping Cost</p>
+            <p style={{ margin: 0, fontSize: '13px', color: '#111827', textAlign: 'right', fontWeight: shippingCost > 0 ? 600 : 500 }}>
+              {shippingCost > 0 ? formatCurrency(shippingCost) : 'Select a delivery method'}
             </p>
           </div>
         </div>
@@ -115,7 +112,7 @@ export function CheckoutOrderSummary({ className = '' }: CheckoutOrderSummaryPro
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
           <p style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: '#111827' }}>Total</p>
-          <p style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#111827' }}>{formatCurrency(subtotal)}</p>
+          <p style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#111827' }}>{formatCurrency(total)}</p>
         </div>
       </div>
     </aside>

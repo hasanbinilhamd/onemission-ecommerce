@@ -1,38 +1,47 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
-
-export interface CheckoutContactInformation {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phoneNumber: string;
-}
+import type {
+  CheckoutContactInformation,
+  CheckoutDeliveryOption,
+  CheckoutPaymentOption,
+  CheckoutShippingAddress,
+} from '../types';
 
 export type CheckoutContactField = keyof CheckoutContactInformation;
+export type CheckoutShippingField = keyof CheckoutShippingAddress;
 
 export interface CheckoutState {
   contactInformation: CheckoutContactInformation;
-  shippingAddress: null;
-  deliveryMethod: null;
-  paymentMethod: null;
+  shippingAddress: CheckoutShippingAddress;
+  deliveryMethod: CheckoutDeliveryOption | null;
+  paymentMethod: CheckoutPaymentOption | null;
 }
 
 interface CheckoutContextValue {
   checkout: CheckoutState;
   updateContactField: (field: CheckoutContactField, value: string) => void;
   updateContactInformation: (values: Partial<CheckoutContactInformation>) => void;
+  updateShippingField: (field: CheckoutShippingField, value: string) => void;
+  updateShippingAddress: (values: Partial<CheckoutShippingAddress>) => void;
+  setDeliveryMethod: (method: CheckoutDeliveryOption | null) => void;
+  setPaymentMethod: (method: CheckoutPaymentOption | null) => void;
   resetCheckout: () => void;
 }
 
-export const initialCheckoutContactInformation: CheckoutContactInformation = {
-  firstName: '',
-  lastName: '',
-  email: '',
-  phoneNumber: '',
-};
-
 const initialCheckoutState: CheckoutState = {
-  contactInformation: initialCheckoutContactInformation,
-  shippingAddress: null,
+  contactInformation: {
+    firstName: '',
+    lastName: '',
+    email: '',
+    phoneNumber: '',
+  },
+  shippingAddress: {
+    country: '',
+    province: '',
+    city: '',
+    district: '',
+    postalCode: '',
+    streetAddress: '',
+  },
   deliveryMethod: null,
   paymentMethod: null,
 };
@@ -62,6 +71,40 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const updateShippingField = useCallback((field: CheckoutShippingField, value: string) => {
+    setCheckout(previous => ({
+      ...previous,
+      shippingAddress: {
+        ...previous.shippingAddress,
+        [field]: value,
+      },
+    }));
+  }, []);
+
+  const updateShippingAddress = useCallback((values: Partial<CheckoutShippingAddress>) => {
+    setCheckout(previous => ({
+      ...previous,
+      shippingAddress: {
+        ...previous.shippingAddress,
+        ...values,
+      },
+    }));
+  }, []);
+
+  const setDeliveryMethod = useCallback((method: CheckoutDeliveryOption | null) => {
+    setCheckout(previous => ({
+      ...previous,
+      deliveryMethod: method,
+    }));
+  }, []);
+
+  const setPaymentMethod = useCallback((method: CheckoutPaymentOption | null) => {
+    setCheckout(previous => ({
+      ...previous,
+      paymentMethod: method,
+    }));
+  }, []);
+
   const resetCheckout = useCallback(() => {
     setCheckout(initialCheckoutState);
   }, []);
@@ -70,8 +113,21 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
     checkout,
     updateContactField,
     updateContactInformation,
+    updateShippingField,
+    updateShippingAddress,
+    setDeliveryMethod,
+    setPaymentMethod,
     resetCheckout,
-  }), [checkout, updateContactField, updateContactInformation, resetCheckout]);
+  }), [
+    checkout,
+    updateContactField,
+    updateContactInformation,
+    updateShippingField,
+    updateShippingAddress,
+    setDeliveryMethod,
+    setPaymentMethod,
+    resetCheckout,
+  ]);
 
   return <CheckoutContext.Provider value={value}>{children}</CheckoutContext.Provider>;
 }

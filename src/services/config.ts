@@ -1,24 +1,23 @@
 import { env } from '../app/config/env';
 
-export type ShippingProviderKey = 'mock' | 'future-rajaongkir';
-export type PaymentProviderKey = 'mock' | 'future-midtrans';
+export type ShippingProviderKey = 'mock' | 'rajaongkir';
 export type ProductProviderKey = 'mock' | 'future-hq';
 
 /**
  * External service layer foundation.
  *
- * Keep provider selection centralized so future vendor integrations can be
- * activated in one place without touching UI components.
+ * Provider selection stays centralized here so the Checkout UI remains vendor
+ * agnostic. When RajaOngkir credentials are unavailable, Shipping falls back
+ * to the Mock provider inside the shipping module entry point.
  */
 export const serviceLayerConfig = {
   environment: env.mode,
   providers: {
-    shipping: 'mock' as ShippingProviderKey,
-    payment: 'mock' as PaymentProviderKey,
+    shipping: 'rajaongkir' as ShippingProviderKey,
     product: 'mock' as ProductProviderKey,
   },
   featureFlags: {
     simulateMockLatency: true,
-    enableFutureProviders: false,
+    enableFutureProductProvider: false,
   },
 } as const;

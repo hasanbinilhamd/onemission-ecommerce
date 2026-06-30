@@ -10,7 +10,6 @@ export type {
 export { SearchProvider, useSearchStore } from './searchStore';
 export type {
   CheckoutContactInformation,
-  CheckoutPaymentOption,
   CheckoutShippingAddress,
   ShippingCity,
   ShippingDistrict,

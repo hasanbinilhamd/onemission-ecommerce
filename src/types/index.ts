@@ -120,12 +120,7 @@ export interface ShippingRateRequest {
   city: string;
   district: string;
   postalCode: string;
-}
-
-export interface CheckoutPaymentOption {
-  id: string;
-  label: string;
-  description: string;
+  weightGrams?: number;
 }
 
 export interface OrderItem {

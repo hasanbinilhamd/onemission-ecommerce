@@ -1,7 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import type {
   CheckoutContactInformation,
-  CheckoutPaymentOption,
   CheckoutShippingAddress,
   ShippingCity,
   ShippingDistrict,
@@ -27,7 +26,6 @@ export interface CheckoutState {
   contactInformation: CheckoutContactInformation;
   shippingAddress: CheckoutShippingAddress;
   shipping: CheckoutShippingState;
-  paymentMethod: CheckoutPaymentOption | null;
 }
 
 interface CheckoutContextValue {
@@ -45,7 +43,6 @@ interface CheckoutContextValue {
   setSelectedShippingRate: (rate: ShippingRate | null) => void;
   setShippingLoading: (resource: ShippingAsyncResource, value: boolean) => void;
   setShippingError: (resource: ShippingAsyncResource, message: string | null) => void;
-  setPaymentMethod: (method: CheckoutPaymentOption | null) => void;
   resetCheckout: () => void;
 }
 
@@ -85,7 +82,6 @@ const initialCheckoutState: CheckoutState = {
     streetAddress: '',
   },
   shipping: initialShippingState,
-  paymentMethod: null,
 };
 
 const CheckoutContext = createContext<CheckoutContextValue | null>(null);
@@ -152,7 +148,6 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
           rates: null,
         },
       },
-      paymentMethod: null,
     }));
   }, []);
 
@@ -181,7 +176,6 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
           rates: null,
         },
       },
-      paymentMethod: null,
     }));
   }, []);
 
@@ -209,7 +203,6 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
             rates: null,
           },
         },
-        paymentMethod: null,
       };
     });
   }, []);
@@ -290,13 +283,6 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const setPaymentMethod = useCallback((method: CheckoutPaymentOption | null) => {
-    setCheckout((previous) => ({
-      ...previous,
-      paymentMethod: method,
-    }));
-  }, []);
-
   const resetCheckout = useCallback(() => {
     setCheckout(initialCheckoutState);
   }, []);
@@ -316,7 +302,6 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
     setSelectedShippingRate,
     setShippingLoading,
     setShippingError,
-    setPaymentMethod,
     resetCheckout,
   }), [
     checkout,
@@ -333,7 +318,6 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
     setSelectedShippingRate,
     setShippingLoading,
     setShippingError,
-    setPaymentMethod,
     resetCheckout,
   ]);
 

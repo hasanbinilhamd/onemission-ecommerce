@@ -1,12 +1,22 @@
+import { env } from '../../app/config/env';
 import { serviceLayerConfig } from '../config';
 import { ShippingService } from './ShippingService';
 import { MockShippingProvider } from './providers/MockShippingProvider';
-import { FutureRajaOngkirProvider } from './providers/FutureRajaOngkirProvider';
+import { RajaOngkirProvider } from './providers/RajaOngkirProvider';
 import type { ShippingProvider } from './types';
 
 function createShippingProvider(): ShippingProvider {
-  if (serviceLayerConfig.providers.shipping === 'future-rajaongkir') {
-    return new FutureRajaOngkirProvider();
+  const wantsRajaOngkir = serviceLayerConfig.providers.shipping === 'rajaongkir';
+  const hasCredentials = Boolean(env.rajaOngkirApiKey.trim()) && Boolean(env.rajaOngkirBaseUrl.trim());
+
+  if (wantsRajaOngkir && hasCredentials) {
+    return new RajaOngkirProvider();
+  }
+
+  if (wantsRajaOngkir && !hasCredentials) {
+    console.warn(
+      '[shippingService] RajaOngkir credentials are missing. Falling back to MockShippingProvider.',
+    );
   }
 
   return new MockShippingProvider({

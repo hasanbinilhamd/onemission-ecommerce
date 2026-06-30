@@ -1,3 +1,4 @@
+import { ShippingServiceError } from '../errors';
 import type {
   ShippingProvider,
   ShippingProviderCityDto,
@@ -7,7 +8,6 @@ import type {
   ShippingRateRequest,
   ShippingServiceResource,
 } from '../types';
-import { ShippingServiceError } from '../errors';
 
 interface MockShippingDistrictRecord extends ShippingProviderDistrictDto {
   baseRegularCost: number;

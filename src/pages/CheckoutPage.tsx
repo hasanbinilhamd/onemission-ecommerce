@@ -10,7 +10,6 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { Badge, Button, EmptyState, Input, Select } from '../components/shared';
 import {
-  CHECKOUT_PAYMENT_OPTIONS,
   CheckoutErrorState,
   CheckoutFieldSkeleton,
   CheckoutOptionsSkeleton,
@@ -25,7 +24,6 @@ import {
   useCheckoutStore,
   type CheckoutContactField,
   type CheckoutContactInformation,
-  type CheckoutPaymentOption,
   type CheckoutShippingAddress,
   type ShippingRate,
 } from '../stores';
@@ -36,7 +34,7 @@ import {
 import { formatCurrency } from '../utils/formatting';
 import { isEmail, isRequired } from '../utils/validation';
 
-type CheckoutSectionKey = 'contact' | 'shipping' | 'delivery' | 'payment';
+type CheckoutSectionKey = 'contact' | 'shipping' | 'delivery';
 type ShippingValidationField = 'province' | 'city' | 'district' | 'postalCode' | 'streetAddress';
 type ContactValidationErrors = Partial<Record<CheckoutContactField, string>>;
 type ShippingValidationErrors = Partial<Record<ShippingValidationField, string>>;
@@ -66,7 +64,6 @@ const initialSectionCompletionState: SectionCompletionState = {
   contact: false,
   shipping: false,
   delivery: false,
-  payment: false,
 };
 
 function validateContactField(field: CheckoutContactField, value: string): string | undefined {
@@ -182,19 +179,6 @@ function buildDeliverySummary(selectedRate: ShippingRate) {
   );
 }
 
-function buildPaymentSummary(paymentMethod: CheckoutPaymentOption) {
-  return (
-    <div style={{ display: 'grid', gap: '6px' }}>
-      <p style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: '#111827' }}>
-        {paymentMethod.label}
-      </p>
-      <p style={{ margin: 0, fontSize: '14px', color: '#6B7280' }}>
-        {paymentMethod.description}
-      </p>
-    </div>
-  );
-}
-
 function getCompletionBadge() {
   return (
     <Badge variant="success" className="gap-1">
@@ -221,7 +205,6 @@ function CheckoutPageContent() {
     setSelectedShippingRate,
     setShippingLoading,
     setShippingError,
-    setPaymentMethod,
   } = useCheckoutStore();
 
   const [expandedSection, setExpandedSection] = useState<CheckoutSectionKey | null>('contact');
@@ -241,6 +224,10 @@ function CheckoutPageContent() {
   const contactInformation = checkout.contactInformation;
   const shippingAddress = checkout.shippingAddress;
   const shippingState = checkout.shipping;
+  const estimatedShippingWeightGrams = useMemo(
+    () => Math.max(1000, cart.items.reduce((sum, item) => sum + (item.quantity * 500), 0)),
+    [cart.items],
+  );
 
   const nextContactErrors = useMemo(
     () => validateContactInformation(contactInformation),
@@ -255,8 +242,7 @@ function CheckoutPageContent() {
   const isShippingValid = !hasErrors(nextShippingErrors);
   const shippingUnlocked = isContactValid;
   const deliveryUnlocked = isShippingValid;
-  const paymentUnlocked = Boolean(shippingState.selectedRate);
-  const canPlaceOrder = isContactValid && isShippingValid && Boolean(shippingState.selectedRate) && Boolean(checkout.paymentMethod);
+  const canContinueToPayment = isContactValid && isShippingValid && Boolean(shippingState.selectedRate);
   const canRequestShippingRates = shippingUnlocked && Boolean(
     shippingAddress.province
     && shippingAddress.city
@@ -265,11 +251,10 @@ function CheckoutPageContent() {
     && isRequired(shippingAddress.streetAddress),
   );
 
-  const resetDeliveryAndPaymentCompletion = useCallback(() => {
+  const resetDeliveryCompletion = useCallback(() => {
     setSectionCompletion((previous) => ({
       ...previous,
       delivery: false,
-      payment: false,
     }));
   }, []);
 
@@ -338,6 +323,7 @@ function CheckoutPageContent() {
         city: shippingAddress.city,
         district: shippingAddress.district,
         postalCode: shippingAddress.postalCode,
+        weightGrams: estimatedShippingWeightGrams,
       });
       setShippingRates(rates);
     } catch (error) {
@@ -350,6 +336,7 @@ function CheckoutPageContent() {
       setShippingLoading('rates', false);
     }
   }, [
+    estimatedShippingWeightGrams,
     setShippingError,
     setShippingLoading,
     setShippingRates,
@@ -419,6 +406,7 @@ function CheckoutPageContent() {
       shippingAddress.city,
       shippingAddress.district,
       shippingAddress.postalCode,
+      estimatedShippingWeightGrams,
     ].join('|');
 
     if (ratesRequestKeyRef.current === requestKey) {
@@ -429,6 +417,7 @@ function CheckoutPageContent() {
     void loadShippingRates();
   }, [
     canRequestShippingRates,
+    estimatedShippingWeightGrams,
     loadShippingRates,
     setSelectedShippingRate,
     setShippingError,
@@ -448,23 +437,11 @@ function CheckoutPageContent() {
     }
 
     setSectionCompletion((previous) => (
-      previous.delivery || previous.payment
-        ? { ...previous, delivery: false, payment: false }
+      previous.delivery
+        ? { ...previous, delivery: false }
         : previous
     ));
   }, [shippingState.selectedRate]);
-
-  useEffect(() => {
-    if (checkout.paymentMethod) {
-      return;
-    }
-
-    setSectionCompletion((previous) => (
-      previous.payment
-        ? { ...previous, payment: false }
-        : previous
-    ));
-  }, [checkout.paymentMethod]);
 
   const handleContactChange =
     (field: CheckoutContactField) =>
@@ -504,8 +481,7 @@ function CheckoutPageContent() {
       ratesRequestKeyRef.current = '';
       setShippingRates([]);
       setSelectedShippingRate(null);
-      setPaymentMethod(null);
-      resetDeliveryAndPaymentCompletion();
+      resetDeliveryCompletion();
     }
 
     if (shippingTouched.streetAddress) {
@@ -534,7 +510,7 @@ function CheckoutPageContent() {
     ratesRequestKeyRef.current = '';
     selectShippingProvince(nextProvince);
     setSectionCompletion((previous) => ({ ...previous, shipping: false }));
-    resetDeliveryAndPaymentCompletion();
+    resetDeliveryCompletion();
     setStatusMessage('');
     setShippingTouched((previous) => ({
       ...previous,
@@ -559,7 +535,7 @@ function CheckoutPageContent() {
     ratesRequestKeyRef.current = '';
     selectShippingCity(nextCity);
     setSectionCompletion((previous) => ({ ...previous, shipping: false }));
-    resetDeliveryAndPaymentCompletion();
+    resetDeliveryCompletion();
     setStatusMessage('');
     setShippingTouched((previous) => ({
       ...previous,
@@ -581,7 +557,7 @@ function CheckoutPageContent() {
     ratesRequestKeyRef.current = '';
     selectShippingDistrict(nextDistrict);
     setSectionCompletion((previous) => ({ ...previous, shipping: false }));
-    resetDeliveryAndPaymentCompletion();
+    resetDeliveryCompletion();
     setStatusMessage('');
     const nextPostalCode = shippingState.districts.find((district) => district.name === nextDistrict)?.postalCode ?? '';
     setShippingTouched((previous) => ({
@@ -636,13 +612,6 @@ function CheckoutPageContent() {
   const handleDeliverySelection = (option: ShippingRate) => {
     setSelectedShippingRate(option);
     setSectionCompletion((previous) => ({ ...previous, delivery: true }));
-    setExpandedSection(sectionCompletion.payment ? null : 'payment');
-    setStatusMessage('');
-  };
-
-  const handlePaymentSelection = (option: CheckoutPaymentOption) => {
-    setPaymentMethod(option);
-    setSectionCompletion((previous) => ({ ...previous, payment: true }));
     setExpandedSection(null);
     setStatusMessage('');
   };
@@ -680,16 +649,17 @@ function CheckoutPageContent() {
       shippingAddress.city,
       shippingAddress.district,
       shippingAddress.postalCode,
+      estimatedShippingWeightGrams,
     ].join('|');
     void loadShippingRates();
   };
 
-  const handlePlaceOrder = () => {
-    if (!canPlaceOrder) {
+  const handleContinueToPayment = () => {
+    if (!canContinueToPayment) {
       return;
     }
 
-    setStatusMessage('Payment integration will be available in the next sprint.');
+    setStatusMessage('The payment step will be available in the next sprint.');
   };
 
   if (isCartEmpty) {
@@ -722,7 +692,7 @@ function CheckoutPageContent() {
             Complete your checkout details
           </h1>
           <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.7, color: '#6B7280' }}>
-            Complete each checkout section progressively on this page. Shipping data now loads through a dedicated service layer so future courier integrations can replace the service without changing the layout.
+            Complete each checkout section progressively on this page. Delivery Method is the final editable step before reviewing the order summary and continuing to payment.
           </p>
         </div>
 
@@ -814,7 +784,7 @@ function CheckoutPageContent() {
             <CheckoutSection
               stepLabel="Section 2"
               title="Shipping Address"
-              description="Select Province, City and District from the shipping service to load realistic local delivery rates."
+              description="Select Province, City and District from the shipping service to load live-ready courier options."
               statusBadge={sectionCompletion.shipping ? getCompletionBadge() : undefined}
               action={
                 sectionCompletion.shipping && shippingUnlocked ? (
@@ -917,7 +887,7 @@ function CheckoutPageContent() {
                       value={shippingAddress.postalCode}
                       readOnly
                       required
-                      hint="Automatically filled after selecting a district."
+                      hint="Automatically filled after selecting a district when available."
                       onBlur={handleShippingBlur('postalCode')}
                       error={shippingTouched.postalCode ? shippingErrors.postalCode : undefined}
                     />
@@ -972,7 +942,7 @@ function CheckoutPageContent() {
             <CheckoutSection
               stepLabel="Section 3"
               title="Delivery Method"
-              description="Courier options are loaded from the shipping service after the address is complete."
+              description="Courier options are loaded dynamically through the shipping service after the address is complete."
               statusBadge={sectionCompletion.delivery ? getCompletionBadge() : undefined}
               action={
                 sectionCompletion.delivery && deliveryUnlocked ? (
@@ -1013,51 +983,10 @@ function CheckoutPageContent() {
               )}
             </CheckoutSection>
 
-            <CheckoutSection
-              stepLabel="Section 4"
-              title="Payment Method"
-              description="Choose one payment method placeholder for the current sprint."
-              statusBadge={sectionCompletion.payment ? getCompletionBadge() : undefined}
-              action={
-                sectionCompletion.payment && paymentUnlocked ? (
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setExpandedSection('payment')}>
-                    Edit
-                  </Button>
-                ) : undefined
-              }
-            >
-              {!paymentUnlocked ? (
-                <CheckoutPlaceholderCard message="Payment Method will unlock after you select a delivery option." />
-              ) : sectionCompletion.payment && expandedSection !== 'payment' && checkout.paymentMethod ? (
-                buildPaymentSummary(checkout.paymentMethod)
-              ) : (
-                <div style={{ display: 'grid', gap: '14px' }} role="radiogroup" aria-label="Payment Method options">
-                  {CHECKOUT_PAYMENT_OPTIONS.map((option) => (
-                    <CheckoutSelectionCard
-                      key={option.id}
-                      label={option.label}
-                      description={option.description}
-                      selected={checkout.paymentMethod?.id === option.id}
-                      onSelect={() => handlePaymentSelection(option)}
-                    />
-                  ))}
-
-                  {checkout.paymentMethod && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#15803D' }}>
-                      <CheckCircle2 size={16} aria-hidden="true" />
-                      <p style={{ margin: 0, fontSize: '13px', fontWeight: 500 }}>
-                        Payment method selected. You can place the order after reviewing the summary.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CheckoutSection>
-
             <div style={{ display: 'grid', gap: '12px' }}>
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                <Button type="button" onClick={handlePlaceOrder} disabled={!canPlaceOrder}>
-                  Place Order
+                <Button type="button" onClick={handleContinueToPayment} disabled={!canContinueToPayment}>
+                  Continue to Payment
                 </Button>
                 <Button type="button" variant="secondary" onClick={() => navigate('/cart')}>
                   Return to Cart
@@ -1075,7 +1004,7 @@ function CheckoutPageContent() {
                   color: statusMessage ? '#111827' : '#6B7280',
                 }}
               >
-                {statusMessage || 'Complete all sections to place the order. Payment integration will be activated in the next sprint.'}
+                {statusMessage || 'Review your order summary and continue to payment when you are ready.'}
               </p>
             </div>
           </div>

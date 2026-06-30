@@ -8,14 +8,17 @@ export async function getProducts(): Promise<Product[]> {
   return Promise.resolve([]);
 }
 
-export async function getProductBySlug(_slug: string): Promise<Product | null> {
+export async function getProductBySlug(slug: string): Promise<Product | null> {
+  void slug;
   return Promise.resolve(null);
 }
 
-export async function getProductById(_id: string): Promise<Product | null> {
+export async function getProductById(id: string): Promise<Product | null> {
+  void id;
   return Promise.resolve(null);
 }
 
-export async function searchProducts(_query: string): Promise<Product[]> {
+export async function searchProducts(query: string): Promise<Product[]> {
+  void query;
   return Promise.resolve([]);
 }

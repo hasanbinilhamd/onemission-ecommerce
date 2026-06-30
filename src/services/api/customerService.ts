@@ -4,13 +4,16 @@ import type { Customer } from '../../types';
 // Placeholder service layer for customer data.
 // Replace function bodies with real API calls when authentication is set up.
 
-export async function getCustomer(_id: string): Promise<Customer | null> {
+export async function getCustomer(id: string): Promise<Customer | null> {
+  void id;
   return Promise.resolve(null);
 }
 
 export async function updateCustomer(
-  _id: string,
-  _data: Partial<Customer>,
+  id: string,
+  data: Partial<Customer>,
 ): Promise<Customer | null> {
+  void id;
+  void data;
   return Promise.resolve(null);
 }

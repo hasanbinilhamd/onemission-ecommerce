@@ -1,0 +1,123 @@
+import { IMAGE_PLACEHOLDER } from '../../app/constants';
+import { useCartStore } from '../../stores';
+import { formatCurrency } from '../../utils/formatting';
+
+interface CheckoutOrderSummaryProps {
+  className?: string;
+}
+
+export function CheckoutOrderSummary({ className = '' }: CheckoutOrderSummaryProps) {
+  const { cart, subtotal, totalItems } = useCartStore();
+
+  return (
+    <aside className={className} style={{ alignSelf: 'start' }}>
+      <div style={{ border: '1px solid #E5E7EB', borderRadius: '20px', padding: '20px', backgroundColor: '#FFFFFF' }}>
+        <div style={{ marginBottom: '20px' }}>
+          <p style={{ margin: '0 0 8px', fontSize: '12px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9CA3AF', fontWeight: 600 }}>
+            Summary
+          </p>
+          <h2 style={{ margin: 0, fontSize: '22px', lineHeight: 1.2, color: '#111827' }}>
+            Order Summary
+          </h2>
+        </div>
+
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '14px' }}>
+            <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#111827' }}>Products</p>
+            <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>
+              {totalItems} item{totalItems === 1 ? '' : 's'}
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gap: '14px' }}>
+            {cart.items.map((item) => (
+              <div
+                key={`${item.productId}-${item.variantId ?? 'default'}`}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '72px minmax(0, 1fr)',
+                  gap: '14px',
+                  alignItems: 'start',
+                }}
+              >
+                <div
+                  style={{
+                    width: '72px',
+                    height: '92px',
+                    borderRadius: '10px',
+                    overflow: 'hidden',
+                    backgroundColor: '#F5F5F5',
+                  }}
+                >
+                  <img
+                    src={item.imageUrl ?? IMAGE_PLACEHOLDER}
+                    alt={item.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center bottom' }}
+                  />
+                </div>
+
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '8px' }}>
+                    <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.5, fontWeight: 600, color: '#111827' }}>
+                      {item.name}
+                    </p>
+                    <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.5, fontWeight: 600, color: '#111827', textAlign: 'right' }}>
+                      {formatCurrency(item.price * item.quantity)}
+                    </p>
+                  </div>
+
+                  <div style={{ display: 'grid', gap: '4px' }}>
+                    <p style={{ margin: 0, fontSize: '12px', color: '#6B7280' }}>
+                      Quantity: {item.quantity}
+                    </p>
+                    {item.color && (
+                      <p style={{ margin: 0, fontSize: '12px', color: '#6B7280' }}>
+                        Color: {item.color}
+                      </p>
+                    )}
+                    {item.size && (
+                      <p style={{ margin: 0, fontSize: '12px', color: '#6B7280' }}>
+                        Size: {item.size}
+                      </p>
+                    )}
+                    <p style={{ margin: 0, fontSize: '12px', color: '#6B7280' }}>
+                      Unit Price: {formatCurrency(item.price)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ height: '1px', backgroundColor: '#F3F4F6', marginBottom: '20px' }} />
+
+        <div style={{ display: 'grid', gap: '14px', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+            <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Subtotal</p>
+            <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#111827' }}>{formatCurrency(subtotal)}</p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+            <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Estimated Shipping</p>
+            <p style={{ margin: 0, fontSize: '13px', color: '#6B7280', textAlign: 'right' }}>
+              Calculated after shipping selection.
+            </p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+            <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Estimated Tax</p>
+            <p style={{ margin: 0, fontSize: '13px', color: '#6B7280', textAlign: 'right' }}>
+              Calculated in a future sprint.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ height: '1px', backgroundColor: '#F3F4F6', marginBottom: '20px' }} />
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+          <p style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: '#111827' }}>Total</p>
+          <p style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#111827' }}>{formatCurrency(subtotal)}</p>
+        </div>
+      </div>
+    </aside>
+  );
+}

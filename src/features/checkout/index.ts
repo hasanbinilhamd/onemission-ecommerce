@@ -1,5 +1,3 @@
-// ─── Checkout feature ─────────────────────────────────────────────────────────
-// Scope: checkout flow, address form, shipping options, payment integration.
-// Implement when Sprint 4 (Checkout) begins.
-
-export {};
+export { CheckoutOrderSummary } from './CheckoutOrderSummary';
+export { CheckoutPlaceholderCard } from './CheckoutPlaceholderCard';
+export { CheckoutSection } from './CheckoutSection';

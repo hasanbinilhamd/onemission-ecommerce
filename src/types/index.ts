@@ -86,12 +86,40 @@ export interface CheckoutShippingAddress {
   streetAddress: string;
 }
 
-export interface CheckoutDeliveryOption {
+export interface ShippingProvince {
   id: string;
+  name: string;
+}
+
+export interface ShippingCity {
+  id: string;
+  provinceId: string;
+  name: string;
+}
+
+export interface ShippingDistrict {
+  id: string;
+  cityId: string;
+  name: string;
+  postalCode: string;
+}
+
+export interface ShippingRate {
+  id: string;
+  courierCode: string;
   courierName: string;
   serviceName: string;
   estimatedDelivery: string;
-  price: number;
+  cost: number;
+  logoText: string;
+}
+
+export interface ShippingRateRequest {
+  country: string;
+  province: string;
+  city: string;
+  district: string;
+  postalCode: string;
 }
 
 export interface CheckoutPaymentOption {

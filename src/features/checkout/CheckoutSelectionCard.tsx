@@ -5,6 +5,7 @@ interface CheckoutSelectionCardProps {
   description?: string;
   meta?: string;
   priceText?: string;
+  badgeText?: string;
   selected: boolean;
   disabled?: boolean;
   onSelect: () => void;
@@ -15,6 +16,7 @@ export function CheckoutSelectionCard({
   description,
   meta,
   priceText,
+  badgeText,
   selected,
   disabled = false,
   onSelect,
@@ -41,20 +43,44 @@ export function CheckoutSelectionCard({
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
-        <div style={{ minWidth: 0 }}>
-          <p style={{ margin: '0 0 6px', fontSize: '15px', fontWeight: 600, lineHeight: 1.4, color: '#111827' }}>
-            {label}
-          </p>
-          {description && (
-            <p style={{ margin: '0 0 4px', fontSize: '13px', lineHeight: 1.6, color: '#6B7280' }}>
-              {description}
-            </p>
+        <div style={{ minWidth: 0, display: 'grid', gap: '10px' }}>
+          {badgeText && (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 'fit-content',
+                minWidth: '44px',
+                padding: '4px 10px',
+                borderRadius: '9999px',
+                backgroundColor: '#F3F4F6',
+                color: '#111827',
+                fontSize: '11px',
+                fontWeight: 700,
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+              }}
+            >
+              {badgeText}
+            </span>
           )}
-          {meta && (
-            <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.6, color: '#9CA3AF' }}>
-              {meta}
+
+          <div style={{ minWidth: 0 }}>
+            <p style={{ margin: '0 0 6px', fontSize: '15px', fontWeight: 600, lineHeight: 1.4, color: '#111827' }}>
+              {label}
             </p>
-          )}
+            {description && (
+              <p style={{ margin: '0 0 4px', fontSize: '13px', lineHeight: 1.6, color: '#6B7280' }}>
+                {description}
+              </p>
+            )}
+            {meta && (
+              <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.6, color: '#9CA3AF' }}>
+                {meta}
+              </p>
+            )}
+          </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>

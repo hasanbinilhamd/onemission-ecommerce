@@ -9,7 +9,7 @@ interface CheckoutOrderSummaryProps {
 export function CheckoutOrderSummary({ className = '' }: CheckoutOrderSummaryProps) {
   const { cart, subtotal, totalItems } = useCartStore();
   const { checkout } = useCheckoutStore();
-  const shippingCost = checkout.deliveryMethod?.price ?? 0;
+  const shippingCost = checkout.shipping.selectedRate?.cost ?? 0;
   const total = subtotal + shippingCost;
 
   return (
@@ -101,9 +101,9 @@ export function CheckoutOrderSummary({ className = '' }: CheckoutOrderSummaryPro
             <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#111827' }}>{formatCurrency(subtotal)}</p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-            <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Shipping Cost</p>
+            <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Shipping</p>
             <p style={{ margin: 0, fontSize: '13px', color: '#111827', textAlign: 'right', fontWeight: shippingCost > 0 ? 600 : 500 }}>
-              {shippingCost > 0 ? formatCurrency(shippingCost) : 'Select a delivery method'}
+              {shippingCost > 0 ? formatCurrency(shippingCost) : 'Select a courier'}
             </p>
           </div>
         </div>

@@ -1,187 +1,238 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import type { Product } from '../../types';
+import { Button } from '../../components/shared';
 import { Drawer } from '../../components/shared/Drawer';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { ProductCardSkeleton } from '../../components/shared/LoadingSkeleton';
 import { useDebounce } from '../../hooks';
-import { MOCK_PRODUCTS } from '../../mocks/products';
-import { MOCK_CATEGORIES } from '../../mocks/categories';
+import { productService } from '../../services/product';
 import { ProductCard } from './ProductCard';
 import { FilterDrawer, DEFAULT_FILTERS } from './FilterDrawer';
 import type { FilterState } from './FilterDrawer';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+type SortOption = 'newest' | 'price_asc' | 'price_desc' | 'name_asc' | 'name_desc';
 
-type SortOption = 'newest' | 'best_selling' | 'price_asc' | 'price_desc';
+type CategoryChip = { id: string | null; name: string };
 
 const SORT_LABELS: Record<SortOption, string> = {
-  newest:       'Newest',
-  best_selling: 'Best Selling',
-  price_asc:    'Price: Low → High',
-  price_desc:   'Price: High → Low',
+  newest: 'Newest',
+  price_asc: 'Price: Low → High',
+  price_desc: 'Price: High → Low',
+  name_asc: 'Name: A → Z',
+  name_desc: 'Name: Z → A',
 };
 
+const ALL_CHIP: CategoryChip = { id: null, name: 'All' };
 const PAGE_SIZE = 8;
+const MAX_REMOTE_LIMIT = 48;
 
-// ─── Props ────────────────────────────────────────────────────────────────────
+function countActiveFilters(filters: FilterState): number {
+  return (
+    filters.colors.length
+    + filters.sizes.length
+    + (filters.minPrice > 0 ? 1 : 0)
+    + (filters.maxPrice < 999999 ? 1 : 0)
+  );
+}
+
+function getCatalogScrollEl(): HTMLElement | null {
+  const dialog = document.querySelector<HTMLElement>('[role="dialog"][aria-label="Collection"]');
+  return (dialog?.lastElementChild as HTMLElement | null) ?? null;
+}
+
+function matchesColor(product: Product, colors: string[]): boolean {
+  if (colors.length === 0) {
+    return true;
+  }
+
+  return product.variants?.some((variant) => {
+    return Boolean(variant.color) && colors.includes(variant.color!);
+  }) ?? false;
+}
+
+function matchesSize(product: Product, sizes: string[]): boolean {
+  if (sizes.length === 0) {
+    return true;
+  }
+
+  return product.variants?.some((variant) => {
+    return Boolean(variant.size) && sizes.includes(variant.size!);
+  }) ?? false;
+}
 
 interface CatalogDrawerProps {
   open: boolean;
   onClose: () => void;
-  /** Called when a product card is clicked — triggers navigation to its page. */
   onProductSelect: (slug: string) => void;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-type CategoryChip = { id: string | null; name: string };
-const ALL_CHIP: CategoryChip = { id: null, name: 'All' };
-
-function countActiveFilters(f: FilterState): number {
-  return (
-    f.colors.length +
-    f.sizes.length +
-    (f.minPrice > 0 ? 1 : 0) +
-    (f.maxPrice < 999999 ? 1 : 0)
-  );
-}
-
-/** Query the scrollable content container of the Collection drawer. */
-function getCatalogScrollEl(): HTMLElement | null {
-  const dialog = document.querySelector<HTMLElement>(
-    '[role="dialog"][aria-label="Collection"]',
-  );
-  return (dialog?.lastElementChild as HTMLElement | null) ?? null;
-}
-
-// ─── Component ────────────────────────────────────────────────────────────────
-
 export function CatalogDrawer({ open, onClose, onProductSelect }: CatalogDrawerProps) {
-  // ── State ──────────────────────────────────────────────────────────────────
-  // NOTE: These are intentionally NOT reset when the drawer closes so that
-  // state is preserved when returning from Product Detail.
-  const [search, setSearch]                 = useState('');
+  const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [sort, setSort]                     = useState<SortOption>('newest');
-  const [filterOpen, setFilterOpen]         = useState(false);
-  const [filters, setFilters]               = useState<FilterState>(DEFAULT_FILTERS);
-  const [visibleCount, setVisibleCount]     = useState(PAGE_SIZE);
-  const [isLoading, setIsLoading]           = useState(false);
-  const [newProductIds, setNewProductIds]   = useState<ReadonlySet<string>>(new Set());
+  const [sort, setSort] = useState<SortOption>('newest');
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [serverProducts, setServerProducts] = useState<Product[]>([]);
+  const [categoryChips, setCategoryChips] = useState<CategoryChip[]>([ALL_CHIP]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [newProductIds, setNewProductIds] = useState<ReadonlySet<string>>(new Set());
 
-  // Stable ref so Load More handler can read count without becoming a dep
   const visibleCountRef = useRef(visibleCount);
-  useEffect(() => { visibleCountRef.current = visibleCount; }, [visibleCount]);
-
-  // Scroll position: saved before the panel unmounts, restored after loading
   const savedScrollRef = useRef(0);
-
   const debouncedSearch = useDebounce(search, 300);
 
-  // ── Open / close lifecycle ─────────────────────────────────────────────────
+  useEffect(() => {
+    visibleCountRef.current = visibleCount;
+  }, [visibleCount]);
+
+  const loadCategories = useCallback(async () => {
+    setIsLoadingCategories(true);
+
+    try {
+      const categories = await productService.getCategories();
+      setCategoryChips([
+        ALL_CHIP,
+        ...categories.map((category) => ({
+          id: category.slug,
+          name: category.name,
+        })),
+      ]);
+    } catch {
+      setCategoryChips([ALL_CHIP]);
+    } finally {
+      setIsLoadingCategories(false);
+    }
+  }, []);
+
+  const loadProducts = useCallback(async () => {
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const response = await productService.getProducts({
+        page: 1,
+        limit: MAX_REMOTE_LIMIT,
+        search: debouncedSearch || undefined,
+        category: activeCategory || undefined,
+        sort,
+        minPrice: filters.minPrice > 0 ? filters.minPrice : undefined,
+        maxPrice: filters.maxPrice < 999999 ? filters.maxPrice : undefined,
+      });
+
+      setServerProducts(response.products);
+    } catch {
+      setErrorMessage('Unable to load products right now. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeCategory, debouncedSearch, filters.maxPrice, filters.minPrice, sort]);
 
   useEffect(() => {
     if (open) {
       setIsLoading(true);
       setNewProductIds(new Set());
-      const t = setTimeout(() => setIsLoading(false), 650);
-      return () => clearTimeout(t);
+      void loadCategories();
+      void loadProducts();
     } else {
-      // Save scroll before the Drawer panel unmounts (via its own animation)
       const scrollEl = getCatalogScrollEl();
       if (scrollEl) savedScrollRef.current = scrollEl.scrollTop;
       setFilterOpen(false);
-      // Search / category / sort / filters / visibleCount are preserved.
     }
-  }, [open]);
+  }, [loadCategories, loadProducts, open]);
 
-  // Restore scroll after loading completes
-  useEffect(() => {
-    if (open && !isLoading && savedScrollRef.current > 0) {
-      const t = setTimeout(() => {
-        const scrollEl = getCatalogScrollEl();
-        if (scrollEl) scrollEl.scrollTop = savedScrollRef.current;
-      }, 60);
-      return () => clearTimeout(t);
-    }
-  }, [open, isLoading]);
-
-  // Reset pagination when any filter / sort axis changes
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
     setNewProductIds(new Set());
   }, [debouncedSearch, activeCategory, sort, filters]);
 
-  // ── Derived data ────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (open && !isLoading && savedScrollRef.current > 0) {
+      const timer = setTimeout(() => {
+        const scrollEl = getCatalogScrollEl();
+        if (scrollEl) {
+          scrollEl.scrollTop = savedScrollRef.current;
+        }
+      }, 60);
 
-  const categoryChips: CategoryChip[] = useMemo(
-    () => [ALL_CHIP, ...MOCK_CATEGORIES.map(c => ({ id: c.id, name: c.name }))],
-    [],
-  );
+      return () => clearTimeout(timer);
+    }
+
+    return undefined;
+  }, [isLoading, open]);
+
+  const availableColors = useMemo(() => {
+    const values = new Set<string>();
+    serverProducts.forEach((product) => {
+      product.variants?.forEach((variant) => {
+        if (variant.color) {
+          values.add(variant.color);
+        }
+      });
+    });
+
+    return Array.from(values.values()).sort((left, right) => left.localeCompare(right));
+  }, [serverProducts]);
+
+  const availableSizes = useMemo(() => {
+    const values = new Set<string>();
+    serverProducts.forEach((product) => {
+      product.variants?.forEach((variant) => {
+        if (variant.size) {
+          values.add(variant.size);
+        }
+      });
+    });
+
+    return Array.from(values.values());
+  }, [serverProducts]);
 
   const filtered = useMemo(() => {
-    let list = [...MOCK_PRODUCTS];
+    return serverProducts.filter((product) => {
+      if (!matchesColor(product, filters.colors)) {
+        return false;
+      }
 
-    if (activeCategory !== null) {
-      list = list.filter(p => p.category?.id === activeCategory);
-    }
-    if (debouncedSearch.trim()) {
-      const q = debouncedSearch.toLowerCase();
-      list = list.filter(
-        p =>
-          p.name.toLowerCase().includes(q) ||
-          p.description?.toLowerCase().includes(q) ||
-          p.tags?.some(tag => tag.includes(q)),
-      );
-    }
-    if (filters.colors.length > 0) {
-      list = list.filter(p =>
-        filters.colors.some(c => p.tags?.includes(c.toLowerCase())),
-      );
-    }
-    if (filters.sizes.length > 0) {
-      list = list.filter(p =>
-        p.variants?.some(v => filters.sizes.includes(v.size ?? '')),
-      );
-    }
-    if (filters.minPrice > 0) list = list.filter(p => p.price >= filters.minPrice);
-    if (filters.maxPrice < 999999) list = list.filter(p => p.price <= filters.maxPrice);
+      if (!matchesSize(product, filters.sizes)) {
+        return false;
+      }
 
-    switch (sort) {
-      case 'price_asc':    list.sort((a, b) => a.price - b.price); break;
-      case 'price_desc':   list.sort((a, b) => b.price - a.price); break;
-      case 'best_selling': list.sort((a, b) => b.id.localeCompare(a.id)); break;
-      default: break;
-    }
-    return list;
-  }, [activeCategory, debouncedSearch, sort, filters]);
+      return true;
+    });
+  }, [filters.colors, filters.sizes, serverProducts]);
 
-  const visibleProducts   = filtered.slice(0, visibleCount);
-  const hasMore           = visibleCount < filtered.length;
+  const visibleProducts = filtered.slice(0, visibleCount);
+  const hasMore = visibleCount < filtered.length;
   const activeFilterCount = countActiveFilters(filters);
 
-  // ── Stable callbacks ────────────────────────────────────────────────────────
-
-  const handleProductClick = useCallback(
-    (product: Product) => { onProductSelect(product.slug); },
-    [onProductSelect],
-  );
+  const handleProductClick = useCallback((product: Product) => {
+    onProductSelect(product.slug);
+  }, [onProductSelect]);
 
   const handleLoadMore = useCallback(() => {
     const currentCount = visibleCountRef.current;
     const nextPage = filtered.slice(currentCount, currentCount + PAGE_SIZE);
     setIsLoading(true);
     setTimeout(() => {
-      setNewProductIds(new Set(nextPage.map(p => p.id)));
-      setVisibleCount(c => c + PAGE_SIZE);
+      setNewProductIds(new Set(nextPage.map((product) => product.id)));
+      setVisibleCount((count) => count + PAGE_SIZE);
       setIsLoading(false);
-    }, 380);
+    }, 250);
   }, [filtered]);
 
-  const handleApplyFilters  = useCallback((f: FilterState) => setFilters(f), []);
-  const handleResetFilters  = useCallback(() => setFilters(DEFAULT_FILTERS), []);
-  const handleOpenFilter    = useCallback(() => setFilterOpen(true), []);
-  const handleCloseFilter   = useCallback(() => setFilterOpen(false), []);
+  const handleApplyFilters = useCallback((nextFilters: FilterState) => {
+    setFilters(nextFilters);
+  }, []);
+
+  const handleResetFilters = useCallback(() => {
+    setFilters(DEFAULT_FILTERS);
+  }, []);
+
+  const handleRetry = useCallback(() => {
+    void loadProducts();
+  }, [loadProducts]);
 
   const chipStyle = useCallback((active: boolean): React.CSSProperties => ({
     flexShrink: 0,
@@ -197,15 +248,9 @@ export function CatalogDrawer({ open, onClose, onProductSelect }: CatalogDrawerP
     whiteSpace: 'nowrap' as const,
   }), []);
 
-  // ── Render ──────────────────────────────────────────────────────────────────
-
   return (
     <Drawer open={open} onClose={onClose} position="left" width="full" title="Collection">
-
-      {/* ── Sticky toolbar ───────────────────────────────────────────────── */}
       <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#fff', borderBottom: '1px solid #F3F4F6', padding: '12px 20px' }}>
-
-        {/* Search */}
         <div style={{ position: 'relative', marginBottom: '12px' }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2"
             style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
@@ -215,38 +260,38 @@ export function CatalogDrawer({ open, onClose, onProductSelect }: CatalogDrawerP
             type="search"
             placeholder="Search products…"
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(event) => setSearch(event.target.value)}
             aria-label="Search products"
             style={{ width: '100%', padding: '9px 12px 9px 36px', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box', transition: 'border-color 150ms ease' }}
             onFocus={e => { e.currentTarget.style.borderColor = '#111827'; }}
-            onBlur={e =>  { e.currentTarget.style.borderColor = '#E5E7EB'; }}
+            onBlur={e => { e.currentTarget.style.borderColor = '#E5E7EB'; }}
           />
         </div>
 
-        {/* Category chips + Sort + Filter */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{ display: 'flex', gap: '6px', flex: 1, overflowX: 'auto', paddingBottom: '2px', scrollbarWidth: 'none' }}>
-            {categoryChips.map(cat => (
-              <button key={cat.id ?? 'all'} type="button" onClick={() => setActiveCategory(cat.id)} style={chipStyle(activeCategory === cat.id)}>
-                {cat.name}
+            {categoryChips.map((category) => (
+              <button key={category.id ?? 'all'} type="button" onClick={() => setActiveCategory(category.id)} style={chipStyle(activeCategory === category.id)}>
+                {category.name}
               </button>
             ))}
           </div>
 
           <select
             value={sort}
-            onChange={e => setSort(e.target.value as SortOption)}
+            onChange={(event) => setSort(event.target.value as SortOption)}
             aria-label="Sort products"
+            disabled={isLoadingCategories}
             style={{ flexShrink: 0, padding: '6px 8px', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', outline: 'none', backgroundColor: '#fff' }}
           >
-            {(Object.entries(SORT_LABELS) as [SortOption, string][]).map(([v, l]) => (
-              <option key={v} value={v}>{l}</option>
+            {(Object.entries(SORT_LABELS) as [SortOption, string][]).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
             ))}
           </select>
 
           <button
             type="button"
-            onClick={handleOpenFilter}
+            onClick={() => setFilterOpen(true)}
             aria-label="Open filters"
             style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 12px', border: activeFilterCount > 0 ? '1px solid #111827' : '1px solid #E5E7EB', borderRadius: '8px', backgroundColor: activeFilterCount > 0 ? '#111827' : '#fff', color: activeFilterCount > 0 ? '#fff' : '#374151', fontSize: '12px', fontWeight: 500, cursor: 'pointer', transition: 'all 150ms ease' }}
           >
@@ -258,32 +303,35 @@ export function CatalogDrawer({ open, onClose, onProductSelect }: CatalogDrawerP
         </div>
       </div>
 
-      {/* ── Content ─────────────────────────────────────────────────────── */}
       <div style={{ padding: '16px 20px 48px' }}>
-
-        {!isLoading && (
+        {!isLoading && !errorMessage && (
           <p style={{ margin: '0 0 16px', fontSize: '12px', color: '#9CA3AF' }}>
             {filtered.length} {filtered.length === 1 ? 'product' : 'products'}
           </p>
         )}
 
-        {/* Skeletons */}
         {isLoading && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" style={{ display: 'grid', gap: '20px 16px' }}>
-            {Array.from({ length: PAGE_SIZE }).map((_, i) => <ProductCardSkeleton key={i} />)}
+            {Array.from({ length: PAGE_SIZE }).map((_, index) => <ProductCardSkeleton key={index} />)}
           </div>
         )}
 
-        {/* Empty */}
-        {!isLoading && filtered.length === 0 && (
+        {!isLoading && errorMessage && (
+          <EmptyState
+            title="Unable to load products"
+            description={errorMessage}
+            action={<Button onClick={handleRetry}>Retry</Button>}
+          />
+        )}
+
+        {!isLoading && !errorMessage && filtered.length === 0 && (
           <EmptyState title="No products found" description="Try adjusting your search, category, or filters." />
         )}
 
-        {/* Grid */}
-        {!isLoading && visibleProducts.length > 0 && (
+        {!isLoading && !errorMessage && visibleProducts.length > 0 && (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" style={{ display: 'grid', gap: '20px 16px' }}>
-              {visibleProducts.map(product => (
+              {visibleProducts.map((product) => (
                 <ProductCard
                   key={product.id}
                   product={product}
@@ -310,13 +358,14 @@ export function CatalogDrawer({ open, onClose, onProductSelect }: CatalogDrawerP
         )}
       </div>
 
-      {/* Filter bottom sheet */}
       <FilterDrawer
         open={filterOpen}
-        onClose={handleCloseFilter}
+        onClose={() => setFilterOpen(false)}
         filters={filters}
         onApply={handleApplyFilters}
         onReset={handleResetFilters}
+        availableColors={availableColors}
+        availableSizes={availableSizes}
       />
     </Drawer>
   );

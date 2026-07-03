@@ -6,6 +6,7 @@ export interface Category {
   slug: string;
   description?: string;
   imageUrl?: string;
+  productCount?: number;
 }
 
 export interface Variant {
@@ -17,6 +18,10 @@ export interface Variant {
   size?: string;
   stock: number;
   price: number;
+  weight?: number;
+  imageUrl?: string;
+  available?: boolean;
+  variantName?: string;
 }
 
 export interface Product {
@@ -25,9 +30,13 @@ export interface Product {
   slug: string;
   /** One-line teaser shown on cards and in catalog. */
   description?: string;
+  shortDescription?: string;
   /** Longer marketing copy shown on Product Detail. */
   longDescription?: string;
   price: number;
+  compareAtPrice?: number | null;
+  discountPercentage?: number;
+  currency?: string;
   imageUrl?: string;
   /** Ordered gallery images — first is the main image shown in catalog. */
   images?: string[];
@@ -39,6 +48,16 @@ export interface Product {
   materials?: string;
   care?: string;
   shipping?: string;
+  stockStatus?: 'IN_STOCK' | 'OUT_OF_STOCK';
+  featured?: boolean;
+  newArrival?: boolean;
+  hasVariants?: boolean;
+  minimumPrice?: number;
+  maximumPrice?: number;
+  rating?: number | null;
+  reviewCount?: number;
+  currentStock?: number;
+  weight?: number;
 }
 
 export interface Customer {

@@ -1,24 +1,31 @@
-import type { Product } from '../../types';
+import type { Category, Product } from '../../types';
+import { productService } from '../product';
+import type { ProductCollectionResult, ProductListQuery } from '../product';
 
-// ─── Product Service ──────────────────────────────────────────────────────────
-// Placeholder service layer for product data.
-// Replace function bodies with real API calls when the backend is connected.
+export async function getProducts(query: ProductListQuery = {}): Promise<ProductCollectionResult> {
+  return productService.getProducts(query);
+}
 
-export async function getProducts(): Promise<Product[]> {
-  return Promise.resolve([]);
+export async function getFeaturedProducts(query: ProductListQuery = {}): Promise<Product[]> {
+  return productService.getFeaturedProducts(query);
+}
+
+export async function getNewArrivalProducts(query: ProductListQuery = {}): Promise<Product[]> {
+  return productService.getNewArrivalProducts(query);
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
-  void slug;
-  return Promise.resolve(null);
+  return productService.getProductDetail(slug);
 }
 
 export async function getProductById(id: string): Promise<Product | null> {
-  void id;
-  return Promise.resolve(null);
+  return productService.getCachedProductById(id);
 }
 
-export async function searchProducts(query: string): Promise<Product[]> {
-  void query;
-  return Promise.resolve([]);
+export async function getCategories(): Promise<Category[]> {
+  return productService.getCategories();
+}
+
+export async function searchProducts(query: string, options: Omit<ProductListQuery, 'search'> = {}): Promise<Product[]> {
+  return productService.searchProducts(query, options);
 }

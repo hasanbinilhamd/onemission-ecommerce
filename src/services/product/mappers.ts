@@ -1,58 +1,140 @@
+import type { Category, Product, Variant } from '../../types';
 import type {
-  ProductCategory,
-  ProductDetail,
-  ProductProviderCategoryDto,
-  ProductProviderProductDto,
-  ProductProviderVariantDto,
-  ProductSummary,
-  ProductVariant,
+  CommerceCategoryApiDto,
+  CommerceProductCardApiDto,
+  CommerceProductDetailApiDto,
+  CommerceProductVariantApiDto,
+  ProductCollectionResult,
+  ProductListFilters,
+  ProductListPagination,
 } from './types';
 
-export function mapProductCategory(dto: ProductProviderCategoryDto): ProductCategory {
+const COLOR_HEX_MAP: Record<string, string> = {
+  black: '#1C1C1C',
+  white: '#F5F5F5',
+  grey: '#9CA3AF',
+  gray: '#9CA3AF',
+  coral: '#F97316',
+  blue: '#4B83C7',
+  'steel blue': '#4B83C7',
+  onyx: '#1C1C1C',
+  natural: '#F0EBE3',
+  chalk: '#F5F2EA',
+  midnight: '#0B0C10',
+  multi: '#6366F1',
+};
+
+function resolveColorHex(color?: string): string | undefined {
+  if (!color) {
+    return undefined;
+  }
+
+  return COLOR_HEX_MAP[color.trim().toLowerCase()] ?? '#9CA3AF';
+}
+
+export function mapCommerceCategory(dto: CommerceCategoryApiDto): Category {
   return {
-    id: dto.category_id,
-    name: dto.category_name,
-    slug: dto.category_slug,
-    description: dto.category_description,
+    id: dto.id,
+    name: dto.name,
+    slug: dto.slug,
+    imageUrl: dto.thumbnail,
+    productCount: dto.productCount,
   };
 }
 
-export function mapProductVariant(dto: ProductProviderVariantDto): ProductVariant {
+export function mapCommerceProductVariant(dto: CommerceProductVariantApiDto): Variant {
   return {
-    id: dto.variant_id,
-    sku: dto.variant_sku,
-    color: dto.color,
-    colorHex: dto.color_hex,
-    size: dto.size,
+    id: dto.id,
+    sku: dto.sku,
+    color: dto.attributes.color,
+    colorHex: resolveColorHex(dto.attributes.color),
+    size: dto.attributes.size,
     stock: dto.stock,
     price: dto.price,
+    weight: dto.weight,
+    imageUrl: dto.image,
+    available: dto.available,
+    variantName: dto.variantName,
   };
 }
 
-export function mapProductSummary(dto: ProductProviderProductDto): ProductSummary {
+function buildCategoryFromName(name: string): Category {
+  const slug = String(name || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
   return {
-    id: dto.product_id,
-    sku: dto.sku,
-    name: dto.product_name,
-    slug: dto.product_slug,
-    description: dto.product_description,
+    id: slug,
+    name,
+    slug,
+  };
+}
+
+export function mapCommerceProductCard(dto: CommerceProductCardApiDto): Product {
+  return {
+    id: dto.id,
+    name: dto.name,
+    slug: dto.slug,
+    description: dto.shortDescription,
+    shortDescription: dto.shortDescription,
     price: dto.price,
-    imageUrl: dto.image_url,
-    category: dto.category ? mapProductCategory(dto.category) : undefined,
-    tags: dto.tags,
+    compareAtPrice: dto.compareAtPrice,
+    discountPercentage: dto.discountPercentage,
+    currency: dto.currency,
+    imageUrl: dto.thumbnail,
+    images: [dto.thumbnail],
+    category: buildCategoryFromName(dto.category),
+    stockStatus: dto.stockStatus,
+    featured: dto.featured,
+    newArrival: dto.newArrival,
+    hasVariants: dto.hasVariants,
+    minimumPrice: dto.minimumPrice,
+    maximumPrice: dto.maximumPrice,
+    rating: dto.rating,
+    reviewCount: dto.reviewCount,
   };
 }
 
-export function mapProductDetail(dto: ProductProviderProductDto): ProductDetail {
-  const summary = mapProductSummary(dto);
-
+export function mapCommerceProductDetail(dto: CommerceProductDetailApiDto): Product {
   return {
-    ...summary,
-    longDescription: dto.long_description,
-    images: dto.image_gallery,
-    variants: dto.variants?.map(mapProductVariant),
-    materials: dto.materials,
-    care: dto.care,
-    shipping: dto.shipping,
+    id: dto.id,
+    name: dto.name,
+    slug: dto.slug,
+    description: dto.shortDescription,
+    shortDescription: dto.shortDescription,
+    longDescription: dto.description,
+    price: dto.price,
+    compareAtPrice: dto.compareAtPrice,
+    discountPercentage: dto.discountPercentage,
+    currency: dto.currency,
+    imageUrl: dto.thumbnail,
+    images: dto.gallery,
+    category: {
+      id: dto.category.id,
+      name: dto.category.name,
+      slug: dto.category.slug,
+    },
+    variants: dto.availableVariants.map(mapCommerceProductVariant),
+    stockStatus: dto.stockStatus,
+    featured: dto.featured,
+    newArrival: dto.newArrival,
+    hasVariants: dto.hasVariants,
+    minimumPrice: dto.minimumPrice,
+    maximumPrice: dto.maximumPrice,
+    currentStock: dto.currentStock,
+    weight: dto.weight,
+  };
+}
+
+export function mapProductCollectionResult(
+  products: Product[],
+  pagination: ProductListPagination,
+  filters: ProductListFilters,
+): ProductCollectionResult {
+  return {
+    products,
+    pagination,
+    filters,
   };
 }

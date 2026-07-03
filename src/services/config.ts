@@ -1,7 +1,7 @@
 import { env } from '../app/config/env';
 
 export type ShippingProviderKey = 'mock' | 'rajaongkir';
-export type ProductProviderKey = 'mock' | 'future-hq';
+export type ProductProviderKey = 'hq-commerce';
 
 /**
  * External service layer foundation.
@@ -14,10 +14,9 @@ export const serviceLayerConfig = {
   environment: env.mode,
   providers: {
     shipping: 'rajaongkir' as ShippingProviderKey,
-    product: 'mock' as ProductProviderKey,
+    product: 'hq-commerce' as ProductProviderKey,
   },
   featureFlags: {
     simulateMockLatency: true,
-    enableFutureProductProvider: false,
   },
 } as const;

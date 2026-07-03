@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Drawer } from '../../components/shared/Drawer';
 
 export interface FilterState {
@@ -21,26 +21,30 @@ interface FilterDrawerProps {
   filters: FilterState;
   onApply: (filters: FilterState) => void;
   onReset: () => void;
+  availableColors: string[];
+  availableSizes: string[];
 }
-
-const AVAILABLE_COLORS = ['Black', 'White', 'Grey', 'Coral', 'Blue', 'Natural'];
-const AVAILABLE_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'One Size'];
 
 function toggleItem(arr: string[], item: string): string[] {
   return arr.includes(item) ? arr.filter(i => i !== item) : [...arr, item];
 }
 
-export function FilterDrawer({ open, onClose, filters, onApply, onReset }: FilterDrawerProps) {
+export function FilterDrawer({
+  open,
+  onClose,
+  filters,
+  onApply,
+  onReset,
+  availableColors,
+  availableSizes,
+}: FilterDrawerProps) {
   const [draft, setDraft] = useState<FilterState>(filters);
 
-  const handleOpen = () => {
-    setDraft(filters);
-  };
-
-  // Sync draft to current filters when drawer opens
-  if (open && JSON.stringify(draft) !== JSON.stringify(filters)) {
-    handleOpen();
-  }
+  useEffect(() => {
+    if (open) {
+      setDraft(filters);
+    }
+  }, [filters, open]);
 
   const toggleColor = (color: string) => {
     setDraft(d => ({ ...d, colors: toggleItem(d.colors, color) }));
@@ -100,27 +104,32 @@ export function FilterDrawer({ open, onClose, filters, onApply, onReset }: Filte
   return (
     <Drawer open={open} onClose={onClose} position="bottom" title="Filter">
       <div style={{ padding: '16px 20px 24px' }}>
-        {/* Color */}
         <div style={{ marginBottom: '24px' }}>
           {sectionTitle('Color')}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {AVAILABLE_COLORS.map(color =>
-              chip(color, draft.colors.includes(color), () => toggleColor(color)),
-            )}
-          </div>
+          {availableColors.length > 0 ? (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {availableColors.map(color =>
+                chip(color, draft.colors.includes(color), () => toggleColor(color)),
+              )}
+            </div>
+          ) : (
+            <p style={{ margin: 0, fontSize: '13px', color: '#9CA3AF' }}>No color filters available.</p>
+          )}
         </div>
 
-        {/* Size */}
         <div style={{ marginBottom: '24px' }}>
           {sectionTitle('Size')}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {AVAILABLE_SIZES.map(size =>
-              chip(size, draft.sizes.includes(size), () => toggleSize(size)),
-            )}
-          </div>
+          {availableSizes.length > 0 ? (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {availableSizes.map(size =>
+                chip(size, draft.sizes.includes(size), () => toggleSize(size)),
+              )}
+            </div>
+          ) : (
+            <p style={{ margin: 0, fontSize: '13px', color: '#9CA3AF' }}>No size filters available.</p>
+          )}
         </div>
 
-        {/* Price Range */}
         <div style={{ marginBottom: '32px' }}>
           {sectionTitle('Price Range')}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -153,7 +162,6 @@ export function FilterDrawer({ open, onClose, filters, onApply, onReset }: Filte
           </div>
         </div>
 
-        {/* Actions */}
         <div style={{ display: 'flex', gap: '10px' }}>
           <button
             type="button"

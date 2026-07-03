@@ -1,24 +1,19 @@
-import { serviceLayerConfig } from '../config';
 import { ProductService } from './ProductService';
-import { FutureHQProductProvider } from './providers/FutureHQProductProvider';
-import { MockProductProvider } from './providers/MockProductProvider';
-import type { ProductProvider } from './types';
+import { HQCommerceProductProvider } from './providers/HQCommerceProductProvider';
 
-function createProductProvider(): ProductProvider {
-  if (serviceLayerConfig.providers.product === 'future-hq') {
-    return new FutureHQProductProvider();
-  }
-
-  return new MockProductProvider();
-}
-
-export const productService = new ProductService(createProductProvider());
+export const productService = new ProductService(new HQCommerceProductProvider());
 
 export { ProductService } from './ProductService';
+export { ProductServiceError, isProductNetworkError, isProductNotFoundError } from './errors';
 export type {
   ProductCategory,
+  ProductCollectionResult,
   ProductDetail,
+  ProductListFilters,
+  ProductListPagination,
+  ProductListQuery,
   ProductProvider,
+  ProductSortOption,
   ProductSummary,
   ProductVariant,
 } from './types';

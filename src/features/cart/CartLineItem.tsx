@@ -1,9 +1,9 @@
-import { memo, useMemo } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { IMAGE_PLACEHOLDER } from '../../app/constants';
+import { productService } from '../../services/product';
 import { formatCurrency } from '../../utils/formatting';
-import { MOCK_PRODUCTS } from '../../mocks/products';
-import type { CartItem } from '../../types';
+import type { CartItem, Product } from '../../types';
 
 const lineMetaTextStyle: React.CSSProperties = {
   margin: 0,
@@ -44,11 +44,41 @@ export const CartLineItem = memo(function CartLineItem({
   showSku = false,
   compact = false,
 }: CartLineItemProps) {
+  const [product, setProduct] = useState<Product | null>(() => {
+    return productService.getCachedProductById(item.productId)
+      ?? (item.slug ? productService.getCachedProductBySlug(item.slug) : null);
+  });
+
+  useEffect(() => {
+    let isActive = true;
+
+    const cached = productService.getCachedProductById(item.productId)
+      ?? (item.slug ? productService.getCachedProductBySlug(item.slug) : null);
+    if (cached) {
+      setProduct(cached);
+      return undefined;
+    }
+
+    if (!item.slug) {
+      return undefined;
+    }
+
+    void productService.getProductDetail(item.slug).then((response) => {
+      if (isActive) {
+        setProduct(response);
+      }
+    }).catch(() => {
+      if (isActive) {
+        setProduct(null);
+      }
+    });
+
+    return () => {
+      isActive = false;
+    };
+  }, [item.productId, item.slug]);
+
   const lineTotal = useMemo(() => item.price * item.quantity, [item.price, item.quantity]);
-  const product = useMemo(
-    () => MOCK_PRODUCTS.find((entry) => entry.id === item.productId) ?? null,
-    [item.productId],
-  );
   const displaySku = product?.variants?.find((variant) => variant.id === item.variantId)?.sku ?? product?.sku;
 
   return (

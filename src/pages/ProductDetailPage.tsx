@@ -2,17 +2,16 @@ import { useState, useCallback, useMemo, useEffect, type ReactNode } from 'react
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, Minus, Plus, ShoppingCart } from 'lucide-react';
 import type { Product } from '../types';
-import { MOCK_PRODUCTS } from '../mocks/products';
+import { Button } from '../components/shared';
 import { ProductCard } from '../features/catalog/ProductCard';
 import { EmptyState } from '../components/shared/EmptyState';
 import { LoadingSkeleton } from '../components/shared/LoadingSkeleton';
+import { productService } from '../services/product';
 import { formatCurrency } from '../utils/formatting';
 import { IMAGE_PLACEHOLDER } from '../app/constants';
 import { useCartStore } from '../stores';
 import { DURATION, EASING } from '../utils/motion';
 import { NavigationThemeProvider, useNavigationTheme } from '../features/navigation';
-
-// ─── Accordion ────────────────────────────────────────────────────────────────
 
 function AccordionSection({ title, children }: { title: string; children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -20,7 +19,7 @@ function AccordionSection({ title, children }: { title: string; children: ReactN
     <div style={{ borderBottom: '1px solid #F3F4F6' }}>
       <button
         type="button"
-        onClick={() => setIsOpen(o => !o)}
+        onClick={() => setIsOpen((open) => !open)}
         style={{
           display: 'flex',
           width: '100%',
@@ -63,8 +62,6 @@ function AccordionSection({ title, children }: { title: string; children: ReactN
   );
 }
 
-// ─── Gallery ──────────────────────────────────────────────────────────────────
-
 function Gallery({ product }: { product: Product }) {
   const images = product.images?.length
     ? product.images
@@ -73,9 +70,12 @@ function Gallery({ product }: { product: Product }) {
   const [mainIndex, setMainIndex] = useState(0);
   const mainSrc = images[mainIndex] ?? IMAGE_PLACEHOLDER;
 
+  useEffect(() => {
+    setMainIndex(0);
+  }, [product.id]);
+
   return (
     <div>
-      {/* Main image */}
       <div
         style={{
           position: 'relative',
@@ -98,36 +98,35 @@ function Gallery({ product }: { product: Product }) {
             height: '100%',
             objectFit: 'contain',
             objectPosition: 'center bottom',
-            animation: `galleryFadeIn 250ms ease forwards`,
+            animation: 'galleryFadeIn 250ms ease forwards',
           }}
         />
       </div>
 
-      {/* Thumbnails */}
       {images.length > 1 && (
         <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
-          {images.map((src, idx) => (
+          {images.map((src, index) => (
             <button
-              key={src + idx}
+              key={`${src}-${index}`}
               type="button"
-              onClick={() => setMainIndex(idx)}
-              aria-label={`View image ${idx + 1}`}
+              onClick={() => setMainIndex(index)}
+              aria-label={`View image ${index + 1}`}
               style={{
                 flexShrink: 0,
                 width: '72px',
                 height: '72px',
-                border: idx === mainIndex ? '2px solid #111827' : '2px solid transparent',
+                border: index === mainIndex ? '2px solid #111827' : '2px solid transparent',
                 borderRadius: '6px',
                 overflow: 'hidden',
                 backgroundColor: '#F5F5F5',
                 cursor: 'pointer',
                 padding: 0,
-                transition: `border-color 150ms ease`,
+                transition: 'border-color 150ms ease',
               }}
             >
               <img
                 src={src}
-                alt={`Thumbnail ${idx + 1}`}
+                alt={`Thumbnail ${index + 1}`}
                 style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center bottom' }}
               />
             </button>
@@ -137,8 +136,6 @@ function Gallery({ product }: { product: Product }) {
     </div>
   );
 }
-
-// ─── Variant selectors ────────────────────────────────────────────────────────
 
 function ColorSelector({
   colors,
@@ -156,29 +153,27 @@ function ColorSelector({
         Color — <span style={{ fontWeight: 400, textTransform: 'none' }}>{selected}</span>
       </p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-        {colors.map(c => (
+        {colors.map((color) => (
           <button
-            key={c.name}
+            key={color.name}
             type="button"
-            onClick={() => onChange(c.name)}
-            title={c.name}
-            aria-label={`Select color ${c.name}`}
+            onClick={() => onChange(color.name)}
+            title={color.name}
+            aria-label={`Select color ${color.name}`}
             style={{
               width: '32px',
               height: '32px',
               borderRadius: '50%',
-              backgroundColor: c.hex,
-              border: selected === c.name
-                ? '3px solid #111827'
-                : '2px solid #E5E7EB',
+              backgroundColor: color.hex,
+              border: selected === color.name ? '3px solid #111827' : '2px solid #E5E7EB',
               cursor: 'pointer',
-              outline: selected === c.name ? '2px solid #fff' : 'none',
+              outline: selected === color.name ? '2px solid #fff' : 'none',
               outlineOffset: '-4px',
               transition: 'border-color 150ms ease, transform 150ms ease',
               boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
             }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.1)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+            onMouseEnter={(event) => { event.currentTarget.style.transform = 'scale(1.1)'; }}
+            onMouseLeave={(event) => { event.currentTarget.style.transform = 'scale(1)'; }}
           />
         ))}
       </div>
@@ -202,7 +197,7 @@ function SizeSelector({
         Size — <span style={{ fontWeight: 400, textTransform: 'none' }}>{selected}</span>
       </p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-        {sizes.map(size => (
+        {sizes.map((size) => (
           <button
             key={size}
             type="button"
@@ -227,14 +222,11 @@ function SizeSelector({
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
-// Inject gallery fade keyframe once
 if (typeof document !== 'undefined') {
-  const STYLE_ID = 'om-gallery-keyframes';
-  if (!document.getElementById(STYLE_ID)) {
+  const styleId = 'om-gallery-keyframes';
+  if (!document.getElementById(styleId)) {
     const style = document.createElement('style');
-    style.id = STYLE_ID;
+    style.id = styleId;
     style.textContent = `
       @keyframes galleryFadeIn {
         from { opacity: 0; }
@@ -247,99 +239,128 @@ if (typeof document !== 'undefined') {
 
 function ProductDetailContent() {
   const { slug } = useParams<{ slug: string }>();
-  const navigate  = useNavigate();
-  const location  = useLocation();
+  const navigate = useNavigate();
+  const location = useLocation();
   const fromCatalog = location.state?.fromCatalog === true;
 
-  const [isLoading, setIsLoading]  = useState(true);
-  const [qty, setQty]              = useState(1);
-  const { addItem }                = useCartStore();
-  const { colors }                 = useNavigationTheme();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [qty, setQty] = useState(1);
+  const { addItem } = useCartStore();
+  const { colors } = useNavigationTheme();
 
-  // Find product
-  const product = useMemo(
-    () => MOCK_PRODUCTS.find(p => p.slug === slug) ?? null,
-    [slug],
-  );
+  const loadProduct = useCallback(async () => {
+    if (!slug) {
+      setProduct(null);
+      setRelatedProducts([]);
+      setErrorMessage(null);
+      setIsLoading(false);
+      return;
+    }
 
-  // Derive selectable variant axes
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const detail = await productService.getProductDetail(slug);
+      setProduct(detail);
+
+      if (!detail) {
+        setRelatedProducts([]);
+        return;
+      }
+
+      const categoryProducts = await productService.getProducts({
+        category: detail.category?.slug,
+        limit: 8,
+        sort: 'newest',
+      });
+
+      const sameCategory = categoryProducts.products.filter((entry) => entry.id !== detail.id);
+
+      if (sameCategory.length >= 4) {
+        setRelatedProducts(sameCategory.slice(0, 4));
+        return;
+      }
+
+      const fallbackProducts = await productService.getProducts({
+        limit: 12,
+        sort: 'newest',
+      });
+
+      const fallback = fallbackProducts.products.filter((entry) => entry.id !== detail.id && !sameCategory.some((item) => item.id === entry.id));
+      setRelatedProducts([...sameCategory, ...fallback].slice(0, 4));
+    } catch {
+      setErrorMessage('Unable to load product details right now. Please try again.');
+      setProduct(null);
+      setRelatedProducts([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [slug]);
+
+  useEffect(() => {
+    void loadProduct();
+  }, [loadProduct]);
+
   const uniqueColors = useMemo(() => {
     if (!product?.variants) return [];
     const seen = new Set<string>();
     return product.variants
-      .filter(v => v.color && !seen.has(v.color) && seen.add(v.color))
-      .map(v => ({ name: v.color!, hex: v.colorHex ?? '#9CA3AF' }));
+      .filter((variant) => variant.color && !seen.has(variant.color) && seen.add(variant.color))
+      .map((variant) => ({ name: variant.color!, hex: variant.colorHex ?? '#9CA3AF' }));
   }, [product]);
 
   const uniqueSizes = useMemo(() => {
     if (!product?.variants) return [];
     const seen = new Set<string>();
     return product.variants
-      .filter(v => v.size && !seen.has(v.size) && seen.add(v.size))
-      .map(v => v.size!);
+      .filter((variant) => variant.size && !seen.has(variant.size) && seen.add(variant.size))
+      .map((variant) => variant.size!);
   }, [product]);
 
-  const [selectedColor, setSelectedColor] = useState<string>('');
-  const [selectedSize, setSelectedSize]   = useState<string>('');
+  const [selectedColor, setSelectedColor] = useState('');
+  const [selectedSize, setSelectedSize] = useState('');
 
-  // Init variant selections when product loads
   useEffect(() => {
-    if (uniqueColors.length > 0) setSelectedColor(uniqueColors[0].name);
-    if (uniqueSizes.length > 0)  setSelectedSize(uniqueSizes[0]);
-  }, [uniqueColors, uniqueSizes]);
-
-  // Simulate brief loading
-  useEffect(() => {
-    setIsLoading(true);
-    const t = setTimeout(() => setIsLoading(false), 500);
-    return () => clearTimeout(t);
-  }, [slug]);
-
-  // Related products: same category, excluding current, max 4
-  const relatedProducts = useMemo((): Product[] => {
-    if (!product) return [];
-    const sameCat = MOCK_PRODUCTS.filter(
-      p => p.id !== product.id && p.category?.id === product.category?.id,
-    );
-    const others = MOCK_PRODUCTS.filter(
-      p => p.id !== product.id && p.category?.id !== product.category?.id,
-    );
-    return [...sameCat, ...others].slice(0, 4);
-  }, [product]);
-
-  const handleBack = useCallback(() => {
-    if (fromCatalog) {
-      navigate('/', { state: { restoreCatalog: true } });
-    } else {
-      navigate('/');
-    }
-  }, [fromCatalog, navigate]);
-
-  const handleRelatedClick = useCallback(
-    (p: Product) => {
-      navigate(`/product/${p.slug}`, { state: { fromCatalog: fromCatalog } });
-    },
-    [navigate, fromCatalog],
-  );
-
-  const decrement = useCallback(() => setQty(q => Math.max(1, q - 1)), []);
-  const increment = useCallback(() => setQty(q => q + 1), []);
+    setQty(1);
+    setSelectedColor(uniqueColors[0]?.name ?? '');
+    setSelectedSize(uniqueSizes[0] ?? '');
+  }, [product?.id, uniqueColors, uniqueSizes]);
 
   const selectedVariant = useMemo(() => {
     if (!product?.variants?.length) return undefined;
 
-    return product.variants.find(variant => {
+    return product.variants.find((variant) => {
       const colorMatches = selectedColor ? variant.color === selectedColor : true;
       const sizeMatches = selectedSize ? variant.size === selectedSize : true;
       return colorMatches && sizeMatches;
     })
-    ?? product.variants.find(variant => (selectedColor ? variant.color === selectedColor : false))
-    ?? product.variants.find(variant => (selectedSize ? variant.size === selectedSize : false))
-    ?? product.variants[0];
+      ?? product.variants.find((variant) => (selectedColor ? variant.color === selectedColor : false))
+      ?? product.variants.find((variant) => (selectedSize ? variant.size === selectedSize : false))
+      ?? product.variants[0];
   }, [product, selectedColor, selectedSize]);
 
   const displaySku = selectedVariant?.sku ?? product?.sku;
   const displayPrice = selectedVariant?.price ?? product?.price ?? 0;
+
+  const handleBack = useCallback(() => {
+    if (fromCatalog) {
+      navigate('/', { state: { restoreCatalog: true } });
+      return;
+    }
+
+    navigate('/');
+  }, [fromCatalog, navigate]);
+
+  const handleRelatedClick = useCallback((nextProduct: Product) => {
+    navigate(`/product/${nextProduct.slug}`, { state: { fromCatalog } });
+  }, [fromCatalog, navigate]);
+
+  const decrement = useCallback(() => setQty((current) => Math.max(1, current - 1)), []);
+  const increment = useCallback(() => setQty((current) => current + 1), []);
 
   const handleAddToCart = useCallback(() => {
     if (!product) return;
@@ -357,8 +378,6 @@ function ProductDetailContent() {
     });
   }, [addItem, product, qty, selectedColor, selectedSize, selectedVariant]);
 
-  // ── Render ──────────────────────────────────────────────────────────────────
-
   if (isLoading) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#fff', padding: '24px 20px' }}>
@@ -373,6 +392,25 @@ function ProductDetailContent() {
               <LoadingSkeleton rows={6} />
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: '#fff', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid #F3F4F6' }}>
+          <button type="button" onClick={handleBack} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#374151' }}>
+            <ArrowLeft size={16} /> Back
+          </button>
+        </div>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <EmptyState
+            title="Unable to load product"
+            description={errorMessage}
+            action={<Button onClick={() => void loadProduct()}>Retry</Button>}
+          />
         </div>
       </div>
     );
@@ -395,8 +433,6 @@ function ProductDetailContent() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#fff', fontFamily: 'Inter, sans-serif' }}>
-
-      {/* ── Sticky nav bar ──────────────────────────────────────────────── */}
       <div
         style={{
           position: 'sticky',
@@ -430,14 +466,13 @@ function ProductDetailContent() {
             padding: '6px 0',
             transition: `color ${DURATION.fast}ms ease`,
           }}
-          onMouseEnter={e => { e.currentTarget.style.color = colors.foreground; }}
-          onMouseLeave={e => { e.currentTarget.style.color = colors.muted; }}
+          onMouseEnter={(event) => { event.currentTarget.style.color = colors.foreground; }}
+          onMouseLeave={(event) => { event.currentTarget.style.color = colors.muted; }}
         >
           <ArrowLeft size={16} strokeWidth={2} />
           {fromCatalog ? 'Back to Collection' : 'Back'}
         </button>
 
-        {/* Breadcrumb (desktop) */}
         <p className="hidden sm:block" style={{ fontSize: '12px', color: colors.muted, flex: 1, textAlign: 'center' }}>
           {product.category?.name ?? 'Products'} / <span style={{ color: colors.foreground }}>{product.name}</span>
         </p>
@@ -445,48 +480,37 @@ function ProductDetailContent() {
         <div style={{ width: '120px' }} />
       </div>
 
-      {/* ── Page content ────────────────────────────────────────────────── */}
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px 80px' }}>
-
-        {/* ── Hero: gallery + info ─────────────────────────────────────── */}
         <div className="lg:grid lg:grid-cols-5 lg:gap-12">
-
-          {/* Gallery */}
           <div className="lg:col-span-3" style={{ marginBottom: '32px' }}>
             <Gallery product={product} />
           </div>
 
-          {/* Info */}
           <div className="lg:col-span-2">
-
-            {/* Category + SKU */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
               {product.category && (
                 <span style={{ fontSize: '11px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9CA3AF' }}>
                   {product.category.name}
                 </span>
               )}
-              {product.sku && (
+              {displaySku && (
                 <span style={{ fontSize: '11px', color: '#D1D5DB' }}>·</span>
               )}
-              {product.sku && (
+              {displaySku && (
                 <span style={{ fontSize: '11px', color: '#9CA3AF', fontFamily: 'monospace' }}>
                   {displaySku}
                 </span>
               )}
             </div>
 
-            {/* Product name */}
             <h1 style={{ margin: '0 0 12px', fontSize: 'clamp(22px, 4vw, 32px)', fontWeight: 700, color: '#111827', lineHeight: 1.2 }}>
               {product.name}
             </h1>
 
-            {/* Price */}
             <p style={{ margin: '0 0 16px', fontSize: '22px', fontWeight: 600, color: '#111827' }}>
               {formatCurrency(displayPrice)}
             </p>
 
-            {/* Short description */}
             {product.description && (
               <p style={{ margin: '0 0 28px', fontSize: '14px', lineHeight: 1.6, color: '#6B7280' }}>
                 {product.description}
@@ -495,19 +519,9 @@ function ProductDetailContent() {
 
             <div style={{ height: '1px', backgroundColor: '#F3F4F6', marginBottom: '24px' }} />
 
-            {/* Variants */}
-            <ColorSelector
-              colors={uniqueColors}
-              selected={selectedColor}
-              onChange={setSelectedColor}
-            />
-            <SizeSelector
-              sizes={uniqueSizes}
-              selected={selectedSize}
-              onChange={setSelectedSize}
-            />
+            <ColorSelector colors={uniqueColors} selected={selectedColor} onChange={setSelectedColor} />
+            <SizeSelector sizes={uniqueSizes} selected={selectedSize} onChange={setSelectedSize} />
 
-            {/* Quantity */}
             <div style={{ marginBottom: '24px' }}>
               <p style={{ margin: '0 0 10px', fontSize: '12px', fontWeight: 600, color: '#374151', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                 Quantity
@@ -536,7 +550,6 @@ function ProductDetailContent() {
               </div>
             </div>
 
-            {/* Add to Cart */}
             <button
               type="button"
               onClick={handleAddToCart}
@@ -557,23 +570,22 @@ function ProductDetailContent() {
                 cursor: 'pointer',
                 transition: `background-color ${DURATION.fast}ms ease`,
               }}
-              onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1F2937'; }}
-              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#111827'; }}
+              onMouseEnter={(event) => { event.currentTarget.style.backgroundColor = '#1F2937'; }}
+              onMouseLeave={(event) => { event.currentTarget.style.backgroundColor = '#111827'; }}
             >
               <ShoppingCart size={16} strokeWidth={2} />
               Add to Cart
             </button>
 
-            {/* Stock notice */}
             <p style={{ margin: '12px 0 0', textAlign: 'center', fontSize: '12px', color: '#9CA3AF' }}>
-              Free shipping on orders above Rp 300.000
+              {product.stockStatus === 'OUT_OF_STOCK'
+                ? 'Currently out of stock'
+                : 'Free shipping on orders above Rp 300.000'}
             </p>
           </div>
         </div>
 
-        {/* ── Accordion ───────────────────────────────────────────────── */}
         <div style={{ marginTop: '56px', borderTop: '1px solid #F3F4F6', maxWidth: '720px' }}>
-
           <AccordionSection title="Description">
             <p>{product.longDescription ?? product.description ?? 'No description available.'}</p>
           </AccordionSection>
@@ -591,7 +603,6 @@ function ProductDetailContent() {
           </AccordionSection>
         </div>
 
-        {/* ── Related Products ─────────────────────────────────────────── */}
         {relatedProducts.length > 0 && (
           <div style={{ marginTop: '72px' }}>
             <h2
@@ -605,16 +616,9 @@ function ProductDetailContent() {
             >
               You May Also Like
             </h2>
-            <div
-              className="grid grid-cols-2 sm:grid-cols-4"
-              style={{ display: 'grid', gap: '20px 16px' }}
-            >
-              {relatedProducts.map(p => (
-                <ProductCard
-                  key={p.id}
-                  product={p}
-                  onClick={handleRelatedClick}
-                />
+            <div className="grid grid-cols-2 sm:grid-cols-4" style={{ display: 'grid', gap: '20px 16px' }}>
+              {relatedProducts.map((entry) => (
+                <ProductCard key={entry.id} product={entry} onClick={handleRelatedClick} />
               ))}
             </div>
           </div>

@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, Search, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { EmptyState, Button } from '../../components/shared';
+import { EmptyState, Button, ProductCardSkeleton } from '../../components/shared';
 import { Overlay } from '../../components/shared';
-import { useKeyPress, useMediaQuery, useScrollLock } from '../../hooks';
-import { DURATION, EASING } from '../../utils/motion';
-import { MOCK_PRODUCTS } from '../../mocks/products';
+import { useDebounce, useKeyPress, useMediaQuery, useScrollLock } from '../../hooks';
+import { productService } from '../../services/product';
 import type { Product } from '../../types';
 import { useSearchStore } from '../../stores';
 import { SearchInput } from './SearchInput';
@@ -13,19 +12,7 @@ import { RecentSearches } from './RecentSearches';
 import { TrendingSearches } from './TrendingSearches';
 import { PopularProducts } from './PopularProducts';
 import { SearchResults } from './SearchResults';
-
-const POPULAR_PRODUCTS = MOCK_PRODUCTS.slice(0, 4);
-
-function matchesSearch(product: Product, query: string): boolean {
-  const normalized = query.trim().toLowerCase();
-  if (!normalized) return true;
-
-  return (
-    product.name.toLowerCase().includes(normalized) ||
-    product.sku?.toLowerCase().includes(normalized) ||
-    product.category?.name.toLowerCase().includes(normalized)
-  ) ?? false;
-}
+import { DURATION, EASING } from '../../utils/motion';
 
 export function SearchOverlay() {
   const navigate = useNavigate();
@@ -42,6 +29,15 @@ export function SearchOverlay() {
 
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [popularProducts, setPopularProducts] = useState<Product[]>([]);
+  const [results, setResults] = useState<Product[]>([]);
+  const [isLoadingPopular, setIsLoadingPopular] = useState(false);
+  const [isLoadingResults, setIsLoadingResults] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [retryToken, setRetryToken] = useState(0);
+
+  const debouncedQuery = useDebounce(query, 300);
+  const trimmedQuery = debouncedQuery.trim();
 
   useScrollLock(isSearchOpen);
   useKeyPress('Escape', closeSearch, isSearchOpen && !isMobile);
@@ -60,22 +56,90 @@ export function SearchOverlay() {
     return () => window.clearTimeout(timer);
   }, [isSearchOpen]);
 
-  const trimmedQuery = query.trim();
+  useEffect(() => {
+    if (!isSearchOpen || trimmedQuery) {
+      return undefined;
+    }
 
-  const results = useMemo(
-    () => MOCK_PRODUCTS.filter((product) => matchesSearch(product, trimmedQuery)),
-    [trimmedQuery],
-  );
+    let isActive = true;
+    setIsLoadingPopular(true);
+    setErrorMessage(null);
+
+    void productService.getFeaturedProducts({ limit: 4 }).then((products) => {
+      if (isActive) {
+        setPopularProducts(products);
+      }
+    }).catch(() => {
+      if (isActive) {
+        setErrorMessage('Unable to load popular products right now.');
+      }
+    }).finally(() => {
+      if (isActive) {
+        setIsLoadingPopular(false);
+      }
+    });
+
+    return () => {
+      isActive = false;
+    };
+  }, [isSearchOpen, retryToken, trimmedQuery]);
+
+  useEffect(() => {
+    if (!isSearchOpen) {
+      return undefined;
+    }
+
+    if (!trimmedQuery) {
+      setResults([]);
+      return undefined;
+    }
+
+    let isActive = true;
+    setIsLoadingResults(true);
+    setErrorMessage(null);
+
+    void productService.searchProducts(trimmedQuery, { limit: 12 }).then((products) => {
+      if (isActive) {
+        setResults(products);
+      }
+    }).catch(() => {
+      if (isActive) {
+        setErrorMessage('Unable to load search results. Please try again.');
+      }
+    }).finally(() => {
+      if (isActive) {
+        setIsLoadingResults(false);
+      }
+    });
+
+    return () => {
+      isActive = false;
+    };
+  }, [isSearchOpen, retryToken, trimmedQuery]);
 
   const handleSelectProduct = (product: Product) => {
-    if (trimmedQuery) submitRecentSearch(trimmedQuery);
+    if (trimmedQuery) {
+      submitRecentSearch(trimmedQuery);
+    }
+
     closeSearch();
     navigate(`/product/${product.slug}`, { state: { fromCatalog: false } });
   };
 
   const handleSelectSearch = (value: string) => {
+    setQuery(value);
     submitRecentSearch(value);
   };
+
+  const handleRetry = () => {
+    setRetryToken((current) => current + 1);
+  };
+
+  const loadingGrid = useMemo(() => (
+    <div className="grid grid-cols-2 sm:grid-cols-4" style={{ display: 'grid', gap: '20px 16px' }}>
+      {Array.from({ length: 4 }).map((_, index) => <ProductCardSkeleton key={index} />)}
+    </div>
+  ), []);
 
   if (!mounted) return null;
 
@@ -144,7 +208,16 @@ export function SearchOverlay() {
 
           <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '18px' : '24px' }}>
             {trimmedQuery ? (
-              results.length > 0 ? (
+              isLoadingResults ? (
+                loadingGrid
+              ) : errorMessage ? (
+                <EmptyState
+                  icon={<Search size={34} />}
+                  title="Search is unavailable"
+                  description={errorMessage}
+                  action={<Button type="button" variant="secondary" onClick={handleRetry}>Retry</Button>}
+                />
+              ) : results.length > 0 ? (
                 <div style={{ display: 'grid', gap: '20px', animation: 'searchFade 180ms ease' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
                     <p style={{ margin: 0, fontSize: '14px', color: '#6B7280' }}>
@@ -168,14 +241,23 @@ export function SearchOverlay() {
                   }
                 />
               )
+            ) : isLoadingPopular ? (
+              loadingGrid
+            ) : errorMessage ? (
+              <EmptyState
+                icon={<Search size={34} />}
+                title="Unable to load popular products"
+                description={errorMessage}
+                action={<Button type="button" variant="secondary" onClick={handleRetry}>Retry</Button>}
+              />
             ) : (
               <div style={{ display: 'grid', gap: '28px' }}>
                 <RecentSearches items={recentSearches} onSelect={handleSelectSearch} />
                 <TrendingSearches onSelect={handleSelectSearch} />
-                <PopularProducts products={POPULAR_PRODUCTS} onSelect={handleSelectProduct} />
+                <PopularProducts products={popularProducts} onSelect={handleSelectProduct} />
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#6B7280', fontSize: '13px' }}>
                   <ArrowRight size={14} />
-                  Search by name, SKU, or category.
+                  Search by name or category.
                 </div>
               </div>
             )}

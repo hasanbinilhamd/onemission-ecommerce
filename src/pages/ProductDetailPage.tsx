@@ -345,6 +345,22 @@ function ProductDetailContent() {
 
   const displaySku = selectedVariant?.sku ?? product?.sku;
   const displayPrice = selectedVariant?.price ?? product?.price ?? 0;
+  const availableStock = Math.max(selectedVariant?.stock ?? product?.currentStock ?? 0, 0);
+  const inventoryStatus = selectedVariant?.available === false || availableStock <= 0
+    ? 'OUT_OF_STOCK'
+    : product?.stockStatus ?? 'IN_STOCK';
+  const isOutOfStock = inventoryStatus === 'OUT_OF_STOCK';
+
+  useEffect(() => {
+    if (availableStock > 0 && qty > availableStock) {
+      setQty(availableStock);
+      return;
+    }
+
+    if (availableStock <= 0 && qty !== 1) {
+      setQty(1);
+    }
+  }, [availableStock, qty]);
 
   const handleBack = useCallback(() => {
     if (fromCatalog) {
@@ -360,17 +376,23 @@ function ProductDetailContent() {
   }, [fromCatalog, navigate]);
 
   const decrement = useCallback(() => setQty((current) => Math.max(1, current - 1)), []);
-  const increment = useCallback(() => setQty((current) => current + 1), []);
+  const increment = useCallback(() => {
+    if (availableStock <= 0) {
+      return;
+    }
+
+    setQty((current) => Math.min(availableStock, current + 1));
+  }, [availableStock]);
 
   const handleAddToCart = useCallback(() => {
-    if (!product) return;
+    if (!product || isOutOfStock) return;
 
     addItem({
       productId: product.id,
       variantId: selectedVariant?.id,
-      quantity: qty,
+      quantity: Math.min(qty, Math.max(availableStock, 1)),
     });
-  }, [addItem, product, qty, selectedColor, selectedSize, selectedVariant]);
+  }, [addItem, availableStock, isOutOfStock, product, qty, selectedVariant]);
 
   if (isLoading) {
     return (
@@ -537,7 +559,8 @@ function ProductDetailContent() {
                   type="button"
                   onClick={increment}
                   aria-label="Increase quantity"
-                  style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', color: '#374151', transition: 'color 150ms ease' }}
+                  disabled={availableStock > 0 && qty >= availableStock}
+                  style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: availableStock > 0 && qty >= availableStock ? 'default' : 'pointer', color: availableStock > 0 && qty >= availableStock ? '#D1D5DB' : '#374151', transition: 'color 150ms ease' }}
                 >
                   <Plus size={14} strokeWidth={2} />
                 </button>
@@ -547,6 +570,7 @@ function ProductDetailContent() {
             <button
               type="button"
               onClick={handleAddToCart}
+              disabled={isOutOfStock}
               style={{
                 width: '100%',
                 display: 'flex',
@@ -554,27 +578,33 @@ function ProductDetailContent() {
                 justifyContent: 'center',
                 gap: '10px',
                 padding: '15px 24px',
-                backgroundColor: '#111827',
-                color: '#fff',
+                backgroundColor: isOutOfStock ? '#E5E7EB' : '#111827',
+                color: isOutOfStock ? '#6B7280' : '#fff',
                 border: 'none',
                 borderRadius: '8px',
                 fontSize: '14px',
                 fontWeight: 600,
                 letterSpacing: '0.04em',
-                cursor: 'pointer',
+                cursor: isOutOfStock ? 'not-allowed' : 'pointer',
                 transition: `background-color ${DURATION.fast}ms ease`,
               }}
-              onMouseEnter={(event) => { event.currentTarget.style.backgroundColor = '#1F2937'; }}
-              onMouseLeave={(event) => { event.currentTarget.style.backgroundColor = '#111827'; }}
+              onMouseEnter={(event) => {
+                if (!isOutOfStock) {
+                  event.currentTarget.style.backgroundColor = '#1F2937';
+                }
+              }}
+              onMouseLeave={(event) => {
+                event.currentTarget.style.backgroundColor = isOutOfStock ? '#E5E7EB' : '#111827';
+              }}
             >
               <ShoppingCart size={16} strokeWidth={2} />
-              Add to Cart
+              {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
             </button>
 
             <p style={{ margin: '12px 0 0', textAlign: 'center', fontSize: '12px', color: '#9CA3AF' }}>
-              {product.stockStatus === 'OUT_OF_STOCK'
+              {isOutOfStock
                 ? 'Currently out of stock'
-                : 'Free shipping on orders above Rp 300.000'}
+                : `Available stock: ${availableStock}`}
             </p>
           </div>
         </div>

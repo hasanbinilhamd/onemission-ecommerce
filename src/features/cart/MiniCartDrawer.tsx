@@ -13,6 +13,9 @@ export function MiniCartDrawer() {
     cart,
     cartItems,
     isCartReady,
+    isCartRefreshing,
+    hasInvalidItems,
+    refreshCartItems,
     isMiniCartOpen,
     closeMiniCart,
     setMiniCartVisible,
@@ -28,12 +31,13 @@ export function MiniCartDrawer() {
   useEffect(() => {
     if (isMiniCartOpen) {
       setMiniCartVisible(true);
+      void refreshCartItems();
       return;
     }
 
     const timer = window.setTimeout(() => setMiniCartVisible(false), DURATION.normal);
     return () => window.clearTimeout(timer);
-  }, [isMiniCartOpen, setMiniCartVisible]);
+  }, [isMiniCartOpen, refreshCartItems, setMiniCartVisible]);
 
   return (
     <Drawer
@@ -59,9 +63,9 @@ export function MiniCartDrawer() {
                 }
               />
             </div>
-          ) : !isCartReady || (cart.items.length > 0 && cartItems.length === 0) ? (
+          ) : !isCartReady || isCartRefreshing || (cart.items.length > 0 && cartItems.length === 0) ? (
             <div style={{ padding: '16px 20px', fontSize: '14px', color: '#6B7280' }}>
-              Loading cart items...
+              Refreshing cart availability...
             </div>
           ) : (
             cartItems.map((item) => (
@@ -87,6 +91,11 @@ export function MiniCartDrawer() {
               <p style={summaryLabelStyle}>Subtotal</p>
               <p style={{ ...summaryValueStyle, fontSize: '16px' }}>{formatCurrency(subtotal)}</p>
             </div>
+            {hasInvalidItems && (
+              <p style={{ margin: '0 0 14px', fontSize: '13px', lineHeight: 1.6, color: '#B91C1C' }}>
+                Some products are no longer available. Please review your cart.
+              </p>
+            )}
             <div style={{ display: 'grid', gap: '10px' }}>
               <Button
                 type="button"
@@ -94,8 +103,12 @@ export function MiniCartDrawer() {
                   closeMiniCart();
                   navigate('/cart');
                 }}
+                disabled={hasInvalidItems || isCartRefreshing}
               >
                 Checkout
+              </Button>
+              <Button type="button" variant="secondary" onClick={() => void refreshCartItems()}>
+                Refresh Cart
               </Button>
               <Button type="button" variant="secondary" onClick={closeMiniCart}>
                 Continue Shopping

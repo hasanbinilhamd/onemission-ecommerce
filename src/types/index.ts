@@ -85,6 +85,10 @@ export interface ResolvedCartItem extends CartItem {
   sku?: string;
   weight?: number;
   available: boolean;
+  availableStock: number;
+  inventoryStatus: 'IN_STOCK' | 'OUT_OF_STOCK';
+  isInvalid: boolean;
+  validationMessage?: string;
 }
 
 export interface Cart {

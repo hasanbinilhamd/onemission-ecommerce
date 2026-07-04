@@ -91,12 +91,12 @@ export class ProductService {
     return response.products;
   }
 
-  async getProductDetail(slug: string): Promise<ProductDetail | null> {
-    if (this.detailCache.has(slug)) {
+  async getProductDetail(slug: string, { force = false }: { force?: boolean } = {}): Promise<ProductDetail | null> {
+    if (!force && this.detailCache.has(slug)) {
       return this.detailCache.get(slug) ?? null;
     }
 
-    if (this.detailPromiseCache.has(slug)) {
+    if (!force && this.detailPromiseCache.has(slug)) {
       return this.detailPromiseCache.get(slug)!;
     }
 
@@ -184,6 +184,23 @@ export class ProductService {
       }
 
       detailRequests.push(this.getProductDetail(cached.slug));
+    }
+
+    await Promise.all(detailRequests);
+  }
+
+  async refreshProductDetailsByIds(productIds: string[]): Promise<void> {
+    await this.ensureProductsLoaded(productIds);
+
+    const detailRequests: Promise<unknown>[] = [];
+
+    for (const productId of productIds) {
+      const cached = this.productByIdCache.get(productId);
+      if (!cached?.slug) {
+        continue;
+      }
+
+      detailRequests.push(this.getProductDetail(cached.slug, { force: true }));
     }
 
     await Promise.all(detailRequests);

@@ -22,6 +22,9 @@ interface CartContextValue {
   cart: Cart;
   cartItems: ResolvedCartItem[];
   isCartReady: boolean;
+  isCartRefreshing: boolean;
+  hasInvalidItems: boolean;
+  refreshCartItems: () => Promise<ResolvedCartItem[]>;
   isMiniCartOpen: boolean;
   isMiniCartVisible: boolean;
   openMiniCart: () => void;
@@ -106,9 +109,15 @@ function resolveCartLineItem(item: CartItem): ResolvedCartItem | null {
   const activeVariant = selectedVariant ?? fallbackVariant;
   const price = activeVariant?.price ?? product.price;
   const imageUrl = activeVariant?.imageUrl ?? product.imageUrl;
-  const stock = activeVariant?.stock ?? product.currentStock ?? 0;
-  const available = activeVariant?.available ?? stock > 0;
+  const availableStock = Math.max(activeVariant?.stock ?? product.currentStock ?? 0, 0);
+  const available = activeVariant?.available ?? availableStock > 0;
   const weight = activeVariant?.weight ?? product.weight ?? 0;
+  const inventoryStatus = availableStock > 0 ? 'IN_STOCK' : 'OUT_OF_STOCK';
+  const validationMessage = availableStock <= 0
+    ? 'Out of Stock'
+    : item.quantity > availableStock
+      ? `Only ${availableStock} items available.`
+      : undefined;
 
   return {
     productId: item.productId,
@@ -124,6 +133,10 @@ function resolveCartLineItem(item: CartItem): ResolvedCartItem | null {
     sku: activeVariant?.sku ?? product.sku,
     weight,
     available,
+    availableStock,
+    inventoryStatus,
+    isInvalid: Boolean(validationMessage),
+    validationMessage,
   };
 }
 
@@ -131,6 +144,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<Cart>(initialCart);
   const [cartItems, setCartItems] = useState<ResolvedCartItem[]>([]);
   const [isCartReady, setIsCartReady] = useState(false);
+  const [isCartRefreshing, setIsCartRefreshing] = useState(false);
   const [isMiniCartOpen, setIsMiniCartOpen] = useState(false);
   const [isMiniCartVisible, setIsMiniCartVisible] = useState(false);
 
@@ -154,6 +168,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
       })),
     }));
   }, [cart, isCartReady]);
+
+  const refreshCartItems = useCallback(async (): Promise<ResolvedCartItem[]> => {
+    if (cart.items.length === 0) {
+      setCartItems([]);
+      return [];
+    }
+
+    setIsCartRefreshing(true);
+
+    try {
+      await productService.refreshProductDetailsByIds(cart.items.map((item) => item.productId));
+      const resolvedItems = cart.items
+        .map(resolveCartLineItem)
+        .filter((item): item is ResolvedCartItem => Boolean(item));
+      setCartItems(resolvedItems);
+      return resolvedItems;
+    } finally {
+      setIsCartRefreshing(false);
+    }
+  }, [cart.items]);
 
   useEffect(() => {
     if (!isCartReady) {
@@ -263,10 +297,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [cartItems],
   );
 
+  const hasInvalidItems = useMemo(
+    () => cartItems.some((item) => item.isInvalid),
+    [cartItems],
+  );
+
   const value = useMemo<CartContextValue>(() => ({
     cart,
     cartItems,
     isCartReady,
+    isCartRefreshing,
+    hasInvalidItems,
+    refreshCartItems,
     isMiniCartOpen,
     isMiniCartVisible,
     openMiniCart,
@@ -282,6 +324,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     cart,
     cartItems,
     isCartReady,
+    isCartRefreshing,
+    hasInvalidItems,
+    refreshCartItems,
     isMiniCartOpen,
     isMiniCartVisible,
     openMiniCart,

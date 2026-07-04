@@ -1,4 +1,4 @@
-import { useId, type ReactNode, type SelectHTMLAttributes } from 'react';
+import { forwardRef, useId, type ReactNode, type SelectHTMLAttributes } from 'react';
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
@@ -7,7 +7,7 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   children: ReactNode;
 }
 
-export function Select({
+export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select({
   label,
   error,
   hint,
@@ -17,7 +17,7 @@ export function Select({
   'aria-describedby': ariaDescribedBy,
   'aria-invalid': ariaInvalid,
   ...props
-}: SelectProps) {
+}, ref) {
   const generatedId = useId();
   const labelSlug = label?.toLowerCase().replace(/\s+/g, '-') ?? 'select';
   const selectId = id ?? `${labelSlug}-${generatedId}`;
@@ -33,6 +33,7 @@ export function Select({
         </label>
       )}
       <select
+        ref={ref}
         id={selectId}
         aria-invalid={error ? true : ariaInvalid}
         aria-describedby={describedBy}
@@ -53,4 +54,4 @@ export function Select({
       )}
     </div>
   );
-}
+});

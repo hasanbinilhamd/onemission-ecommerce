@@ -82,6 +82,11 @@ export const CartLineItem = memo(function CartLineItem({
             {item.size && <p style={lineMetaTextStyle}>Size: {item.size}</p>}
             {showSku && item.sku && <p style={lineMetaTextStyle}>SKU: {item.sku}</p>}
             <p style={lineMetaTextStyle}>Unit Price: {formatCurrency(item.price)}</p>
+            {item.validationMessage && (
+              <p style={{ ...lineMetaTextStyle, color: '#B91C1C', fontWeight: 600 }}>
+                {item.validationMessage}
+              </p>
+            )}
           </div>
 
           <button
@@ -134,6 +139,7 @@ export const CartLineItem = memo(function CartLineItem({
               type="button"
               aria-label={`Increase quantity for ${item.name}`}
               onClick={() => onIncrement(item.productId, item.variantId)}
+              disabled={item.availableStock <= 0 || item.quantity >= item.availableStock}
               style={{
                 width: compact ? '36px' : '40px',
                 height: compact ? '36px' : '40px',
@@ -142,8 +148,8 @@ export const CartLineItem = memo(function CartLineItem({
                 justifyContent: 'center',
                 border: 'none',
                 background: 'none',
-                color: '#374151',
-                cursor: 'pointer',
+                color: item.availableStock <= 0 || item.quantity >= item.availableStock ? '#D1D5DB' : '#374151',
+                cursor: item.availableStock <= 0 || item.quantity >= item.availableStock ? 'default' : 'pointer',
               }}
             >
               <Plus size={14} />

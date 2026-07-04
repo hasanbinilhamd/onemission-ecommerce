@@ -1,4 +1,4 @@
-import { useId, type InputHTMLAttributes } from 'react';
+import { forwardRef, useId, type InputHTMLAttributes } from 'react';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -6,7 +6,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   hint?: string;
 }
 
-export function Input({
+export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({
   label,
   error,
   hint,
@@ -15,7 +15,7 @@ export function Input({
   'aria-describedby': ariaDescribedBy,
   'aria-invalid': ariaInvalid,
   ...props
-}: InputProps) {
+}, ref) {
   const generatedId = useId();
   const labelSlug = label?.toLowerCase().replace(/\s+/g, '-') ?? 'input';
   const inputId = id ?? `${labelSlug}-${generatedId}`;
@@ -31,6 +31,7 @@ export function Input({
         </label>
       )}
       <input
+        ref={ref}
         id={inputId}
         aria-invalid={error ? true : ariaInvalid}
         aria-describedby={describedBy}
@@ -49,4 +50,4 @@ export function Input({
       )}
     </div>
   );
-}
+});

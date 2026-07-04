@@ -1,4 +1,5 @@
 import { ShoppingCart } from 'lucide-react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, EmptyState } from '../components/shared';
 import { CartLineItem, summaryLabelStyle, summaryValueStyle } from '../features/cart/CartLineItem';
@@ -12,6 +13,9 @@ function CartPageContent() {
     cart,
     cartItems,
     isCartReady,
+    isCartRefreshing,
+    hasInvalidItems,
+    refreshCartItems,
     incrementItem,
     decrementItem,
     removeItem,
@@ -19,6 +23,12 @@ function CartPageContent() {
   } = useCartStore();
 
   const isEmpty = cart.items.length === 0;
+
+  useEffect(() => {
+    if (!isEmpty) {
+      void refreshCartItems();
+    }
+  }, [isEmpty, refreshCartItems]);
 
   if (isEmpty) {
     return (
@@ -54,8 +64,8 @@ function CartPageContent() {
         <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-10" style={{ display: 'grid', gap: '32px' }}>
           <section>
             <div style={{ borderTop: '1px solid #F3F4F6' }}>
-              {!isCartReady || (cart.items.length > 0 && cartItems.length === 0) ? (
-                <p style={{ margin: '20px 0', fontSize: '14px', color: '#6B7280' }}>Loading cart items...</p>
+              {!isCartReady || isCartRefreshing || (cart.items.length > 0 && cartItems.length === 0) ? (
+                <p style={{ margin: '20px 0', fontSize: '14px', color: '#6B7280' }}>Refreshing cart availability...</p>
               ) : (
                 cartItems.map((item) => (
                   <CartLineItem
@@ -100,9 +110,18 @@ function CartPageContent() {
                 <p style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#111827' }}>{formatCurrency(subtotal)}</p>
               </div>
 
+              {hasInvalidItems && (
+                <p style={{ margin: '0 0 16px', fontSize: '13px', lineHeight: 1.6, color: '#B91C1C' }}>
+                  Some products are no longer available. Please update your cart before continuing.
+                </p>
+              )}
+
               <div style={{ display: 'grid', gap: '10px' }}>
-                <Button type="button" onClick={() => navigate('/checkout')}>
+                <Button type="button" onClick={() => navigate('/checkout')} disabled={hasInvalidItems || isCartRefreshing}>
                   Proceed to Checkout
+                </Button>
+                <Button type="button" variant="secondary" onClick={() => void refreshCartItems()}>
+                  Refresh Cart
                 </Button>
                 <Button type="button" variant="secondary" onClick={() => navigate('/')}>
                   Continue Shopping

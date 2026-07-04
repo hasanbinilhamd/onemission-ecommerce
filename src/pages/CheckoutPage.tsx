@@ -206,7 +206,13 @@ function getCompletionBadge() {
 
 function CheckoutPageContent() {
   const navigate = useNavigate();
-  const { cart, cartItems } = useCartStore();
+  const {
+    cart,
+    cartItems,
+    hasInvalidItems,
+    isCartRefreshing,
+    refreshCartItems,
+  } = useCartStore();
   const {
     checkout,
     updateContactField,
@@ -236,6 +242,10 @@ function CheckoutPageContent() {
   const cityRequestKeyRef = useRef('');
   const districtRequestKeyRef = useRef('');
   const ratesRequestKeyRef = useRef('');
+  const citySelectRef = useRef<HTMLSelectElement | null>(null);
+  const districtSelectRef = useRef<HTMLSelectElement | null>(null);
+  const postalCodeInputRef = useRef<HTMLInputElement | null>(null);
+  const streetAddressInputRef = useRef<HTMLInputElement | null>(null);
 
   const isCartEmpty = cart.items.length === 0;
   const contactInformation = checkout.contactInformation;
@@ -264,6 +274,8 @@ function CheckoutPageContent() {
     && Boolean(shippingState.selectedRate)
     && cartItems.length === cart.items.length
     && cartItems.length > 0
+    && !hasInvalidItems
+    && !isCartRefreshing
     && !isSubmittingPayment;
   const canRequestShippingRates = shippingUnlocked && Boolean(
     shippingAddress.provinceId
@@ -488,6 +500,12 @@ function CheckoutPageContent() {
     ));
   }, [shippingState.selectedRate]);
 
+  useEffect(() => {
+    if (!isCartEmpty) {
+      void refreshCartItems();
+    }
+  }, [isCartEmpty, refreshCartItems]);
+
   const handleContactChange =
     (field: CheckoutContactField) =>
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -535,6 +553,12 @@ function CheckoutPageContent() {
         postalCode: validateShippingField('postalCode', nextValue),
       }));
     }
+
+    if (nextValue.trim().length >= 5) {
+      requestAnimationFrame(() => {
+        streetAddressInputRef.current?.focus();
+      });
+    }
   };
 
   const handleStreetAddressChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -562,10 +586,18 @@ function CheckoutPageContent() {
   const handleShippingBlur =
     (field: ShippingValidationField) =>
     () => {
+      const fieldValueMap: Record<ShippingValidationField, string> = {
+        province: shippingAddress.provinceId,
+        city: shippingAddress.cityId,
+        district: shippingAddress.districtId,
+        postalCode: shippingAddress.postalCode,
+        streetAddress: shippingAddress.streetAddress,
+      };
+
       setShippingTouched((previous) => ({ ...previous, [field]: true }));
       setShippingErrors((previous) => ({
         ...previous,
-        [field]: validateShippingField(field, shippingAddress[field]),
+        [field]: validateShippingField(field, fieldValueMap[field]),
       }));
     };
 
@@ -599,6 +631,10 @@ function CheckoutPageContent() {
       district: undefined,
       postalCode: undefined,
     }));
+
+    requestAnimationFrame(() => {
+      citySelectRef.current?.focus();
+    });
   };
 
   const handleCityChange = (event: ChangeEvent<HTMLSelectElement>) => {
@@ -628,6 +664,10 @@ function CheckoutPageContent() {
       district: undefined,
       postalCode: undefined,
     }));
+
+    requestAnimationFrame(() => {
+      districtSelectRef.current?.focus();
+    });
   };
 
   const handleDistrictChange = (event: ChangeEvent<HTMLSelectElement>) => {
@@ -652,6 +692,10 @@ function CheckoutPageContent() {
       ...previous,
       district: validateShippingField('district', nextDistrictId),
     }));
+
+    requestAnimationFrame(() => {
+      postalCodeInputRef.current?.focus();
+    });
   };
 
   const handleSaveContact = () => {
@@ -741,24 +785,36 @@ function CheckoutPageContent() {
       return;
     }
 
-    const selectedProvince = shippingState.provinces.find((province) => province.id === shippingAddress.provinceId) ?? null;
-    const selectedCity = shippingState.cities.find((city) => city.id === shippingAddress.cityId) ?? null;
-    const selectedDistrict = shippingState.districts.find((district) => district.id === shippingAddress.districtId) ?? null;
-
-    if (!selectedProvince || !selectedCity || !selectedDistrict) {
-      setStatusMessage('Please complete your shipping address before continuing to payment.');
-      return;
-    }
-
-    if (cartItems.some((item) => !item.variantId)) {
-      setStatusMessage('Please reselect your product variant before continuing to payment.');
-      return;
-    }
-
     setIsSubmittingPayment(true);
-    setStatusMessage('Preparing your secure payment session...');
+    setStatusMessage('Validating your cart before payment...');
 
     try {
+      const refreshedCartItems = await refreshCartItems();
+
+      if (refreshedCartItems.length !== cart.items.length || refreshedCartItems.some((item) => item.isInvalid)) {
+        setStatusMessage('Some products are no longer available. Please update your cart before continuing.');
+        setIsSubmittingPayment(false);
+        return;
+      }
+
+      const selectedProvince = shippingState.provinces.find((province) => province.id === shippingAddress.provinceId) ?? null;
+      const selectedCity = shippingState.cities.find((city) => city.id === shippingAddress.cityId) ?? null;
+      const selectedDistrict = shippingState.districts.find((district) => district.id === shippingAddress.districtId) ?? null;
+
+      if (!selectedProvince || !selectedCity || !selectedDistrict) {
+        setStatusMessage('Please complete your shipping address before continuing to payment.');
+        setIsSubmittingPayment(false);
+        return;
+      }
+
+      if (refreshedCartItems.some((item) => !item.variantId)) {
+        setStatusMessage('Please reselect your product variant before continuing to payment.');
+        setIsSubmittingPayment(false);
+        return;
+      }
+
+      setStatusMessage('Preparing your secure payment session...');
+
       const customerId = await findOrCreateCustomer({
         firstName: contactInformation.firstName,
         lastName: contactInformation.lastName,
@@ -775,7 +831,7 @@ function CheckoutPageContent() {
         discount: 0,
         tax: 0,
         courier: shippingState.selectedRate.courierCode,
-        items: cartItems.map((item) => ({
+        items: refreshedCartItems.map((item) => ({
           productId: item.productId,
           variantId: item.variantId!,
           qty: item.quantity,
@@ -848,7 +904,13 @@ function CheckoutPageContent() {
         },
       });
     } catch (error) {
-      setStatusMessage(error instanceof Error ? error.message : 'Unable to continue to payment. Please try again.');
+      const message = error instanceof Error ? error.message : 'Unable to continue to payment. Please try again.';
+      if (message.toLowerCase().includes('requested quantity exceeds available inventory')) {
+        await refreshCartItems();
+        setStatusMessage('The stock of one or more products has changed. Please review your cart.');
+      } else {
+        setStatusMessage(message);
+      }
       setIsSubmittingPayment(false);
       return;
     }
@@ -1035,6 +1097,7 @@ function CheckoutPageContent() {
                       <CheckoutFieldSkeleton />
                     ) : (
                       <Select
+                        ref={citySelectRef}
                         label="City"
                         name="city"
                         required
@@ -1057,6 +1120,7 @@ function CheckoutPageContent() {
                       <CheckoutFieldSkeleton />
                     ) : (
                       <Select
+                        ref={districtSelectRef}
                         label="District"
                         name="district"
                         required
@@ -1076,6 +1140,7 @@ function CheckoutPageContent() {
                     )}
 
                     <Input
+                      ref={postalCodeInputRef}
                       label="Postal Code"
                       name="postalCode"
                       value={shippingAddress.postalCode}
@@ -1086,6 +1151,7 @@ function CheckoutPageContent() {
                       error={shippingTouched.postalCode ? shippingErrors.postalCode : undefined}
                     />
                     <Input
+                      ref={streetAddressInputRef}
                       label="Street Address"
                       name="streetAddress"
                       autoComplete="street-address"
@@ -1178,6 +1244,12 @@ function CheckoutPageContent() {
             </CheckoutSection>
 
             <div style={{ display: 'grid', gap: '12px' }}>
+              {hasInvalidItems && (
+                <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.6, color: '#B91C1C' }}>
+                  Some products are no longer available. Please update your cart before continuing.
+                </p>
+              )}
+
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                 <Button type="button" onClick={() => void handleContinueToPayment()} disabled={!canContinueToPayment}>
                   {isSubmittingPayment ? 'Preparing Payment...' : 'Continue to Payment'}

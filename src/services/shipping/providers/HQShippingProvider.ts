@@ -9,7 +9,7 @@ import type {
   ShippingRateRequest,
 } from '../types';
 
-const DEFAULT_ORIGIN_DISTRICT_ID = '1391';
+const DEFAULT_ORIGIN_DISTRICT_ID = '471';
 
 interface HQShippingProvinceResponseDto {
   id: string;

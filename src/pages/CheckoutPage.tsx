@@ -346,7 +346,7 @@ function CheckoutPageContent() {
     }
 
     const shippingCostRequest = {
-      originDistrict: '1391',
+      originDistrict: '471',
       destinationDistrict: shippingAddress.districtId,
       courier: 'all',
       weight: estimatedShippingWeightGrams,
@@ -782,7 +782,7 @@ function CheckoutPageContent() {
           weight: Math.max(item.weight ?? 0, 0),
         })),
         shipping: {
-          originDistrict: '1391',
+          originDistrict: '471',
           destinationDistrict: selectedDistrict.id,
           weight: estimatedShippingWeightGrams,
           cost: shippingState.selectedRate.cost,

@@ -194,7 +194,6 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
         ...previous.shippingAddress,
         districtId: district?.id ?? '',
         district: district?.name ?? '',
-        postalCode: district?.postalCode ?? '',
       },
       shipping: {
         ...previous.shipping,

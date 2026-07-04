@@ -515,6 +515,28 @@ function CheckoutPageContent() {
       }));
     };
 
+  const handlePostalCodeChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const nextValue = event.target.value;
+
+    updateShippingField('postalCode', nextValue);
+    setSectionCompletion((previous) => ({ ...previous, shipping: false }));
+    resetDeliveryCompletion();
+    setStatusMessage('');
+
+    if (!isRequired(nextValue)) {
+      ratesRequestKeyRef.current = '';
+      setShippingRates([]);
+      setSelectedShippingRate(null);
+    }
+
+    if (shippingTouched.postalCode) {
+      setShippingErrors((previous) => ({
+        ...previous,
+        postalCode: validateShippingField('postalCode', nextValue),
+      }));
+    }
+  };
+
   const handleStreetAddressChange = (event: ChangeEvent<HTMLInputElement>) => {
     const nextValue = event.target.value;
 
@@ -622,16 +644,13 @@ function CheckoutPageContent() {
     setSectionCompletion((previous) => ({ ...previous, shipping: false }));
     resetDeliveryCompletion();
     setStatusMessage('');
-    const nextPostalCode = selectedDistrict?.postalCode ?? '';
     setShippingTouched((previous) => ({
       ...previous,
       district: true,
-      postalCode: true,
     }));
     setShippingErrors((previous) => ({
       ...previous,
       district: validateShippingField('district', nextDistrictId),
-      postalCode: validateShippingField('postalCode', nextPostalCode),
     }));
   };
 
@@ -1060,9 +1079,9 @@ function CheckoutPageContent() {
                       label="Postal Code"
                       name="postalCode"
                       value={shippingAddress.postalCode}
-                      readOnly
                       required
-                      hint="Automatically filled after selecting a district when available."
+                      hint="Enter the postal code manually."
+                      onChange={handlePostalCodeChange}
                       onBlur={handleShippingBlur('postalCode')}
                       error={shippingTouched.postalCode ? shippingErrors.postalCode : undefined}
                     />

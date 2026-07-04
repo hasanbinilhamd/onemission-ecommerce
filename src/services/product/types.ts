@@ -141,7 +141,6 @@ export interface CommerceCategoryListApiResponse {
 
 export interface ProductProvider {
   getProducts(query?: ProductListQuery): Promise<ProductCollectionResult>;
-  getFeaturedProducts(query?: ProductListQuery): Promise<ProductCollectionResult>;
   getNewArrivals(query?: ProductListQuery): Promise<ProductCollectionResult>;
   searchProducts(query: string, options?: Omit<ProductListQuery, 'search'>): Promise<ProductCollectionResult>;
   getProductDetail(slug: string): Promise<ProductDetail | null>;

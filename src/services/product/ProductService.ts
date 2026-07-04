@@ -55,18 +55,6 @@ export class ProductService {
     return request;
   }
 
-  async getFeaturedProducts(query: ProductListQuery = {}): Promise<ProductSummary[]> {
-    const cacheKey = buildQueryCacheKey('featured', query);
-    if (this.collectionCache.has(cacheKey)) {
-      return this.collectionCache.get(cacheKey)!.products;
-    }
-
-    const response = await this.provider.getFeaturedProducts(query);
-    this.cacheProducts(response.products);
-    this.collectionCache.set(cacheKey, response);
-    return response.products;
-  }
-
   async getNewArrivalProducts(query: ProductListQuery = {}): Promise<ProductSummary[]> {
     const cacheKey = buildQueryCacheKey('new-arrivals', query);
     if (this.collectionCache.has(cacheKey)) {

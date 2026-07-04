@@ -6,10 +6,6 @@ export async function getProducts(query: ProductListQuery = {}): Promise<Product
   return productService.getProducts(query);
 }
 
-export async function getFeaturedProducts(query: ProductListQuery = {}): Promise<Product[]> {
-  return productService.getFeaturedProducts(query);
-}
-
 export async function getNewArrivalProducts(query: ProductListQuery = {}): Promise<Product[]> {
   return productService.getNewArrivalProducts(query);
 }

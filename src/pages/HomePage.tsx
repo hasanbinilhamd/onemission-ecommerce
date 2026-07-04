@@ -1,11 +1,6 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { Button, EmptyState, ProductCardSkeleton } from '../components/shared';
-import { ProductCard } from '../features/catalog/ProductCard';
 import { HERO_THEMES, createHeroGradient } from '../features/hero/theme';
-import { productService } from '../services/product';
-import type { Product } from '../types';
 
 type ImageItem = {
   src: string;
@@ -231,15 +226,11 @@ interface HomePageProps {
 }
 
 export function HomePage({ onDiscover }: HomePageProps) {
-  const navigate = useNavigate();
   const [activeIndex, setActiveIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.innerWidth < 640 : false,
   );
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
-  const [isFeaturedLoading, setIsFeaturedLoading] = useState(true);
-  const [featuredError, setFeaturedError] = useState<string | null>(null);
 
   useEffect(() => {
     IMAGES.forEach((img) => {
@@ -254,24 +245,6 @@ export function HomePage({ onDiscover }: HomePageProps) {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  const loadFeaturedProducts = useCallback(async () => {
-    setIsFeaturedLoading(true);
-    setFeaturedError(null);
-
-    try {
-      const products = await productService.getFeaturedProducts({ limit: 4 });
-      setFeaturedProducts(products);
-    } catch {
-      setFeaturedError('Unable to load featured products right now. Please try again.');
-    } finally {
-      setIsFeaturedLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadFeaturedProducts();
-  }, [loadFeaturedProducts]);
-
   const rotateHero = (dir: Direction) => {
     if (isAnimating) return;
     setIsAnimating(true);
@@ -280,10 +253,6 @@ export function HomePage({ onDiscover }: HomePageProps) {
     );
     window.setTimeout(() => setIsAnimating(false), DURATION);
   };
-
-  const handleFeaturedSelect = useCallback((product: Product) => {
-    navigate(`/product/${product.slug}`, { state: { fromCatalog: false } });
-  }, [navigate]);
 
   return (
     <div
@@ -457,47 +426,6 @@ export function HomePage({ onDiscover }: HomePageProps) {
           <ArrowRight className="w-5 h-5 sm:w-8 sm:h-8" strokeWidth={2.25} />
         </a>
       </div>
-
-      <section style={{ backgroundColor: '#ffffff', padding: '72px 24px 96px' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
-            <div>
-              <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9CA3AF' }}>
-                Featured
-              </p>
-              <h2 style={{ margin: 0, fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 700, color: '#111827', letterSpacing: '-0.02em' }}>
-                Shop Featured Products
-              </h2>
-            </div>
-            <Button onClick={() => onDiscover?.()} variant="secondary">
-              Open Collection
-            </Button>
-          </div>
-
-          {isFeaturedLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-4" style={{ display: 'grid', gap: '20px 16px' }}>
-              {Array.from({ length: 4 }).map((_, index) => <ProductCardSkeleton key={index} />)}
-            </div>
-          ) : featuredError ? (
-            <EmptyState
-              title="Unable to load featured products"
-              description={featuredError}
-              action={<Button onClick={() => void loadFeaturedProducts()}>Retry</Button>}
-            />
-          ) : featuredProducts.length === 0 ? (
-            <EmptyState
-              title="No featured products available"
-              description="Please check back soon for the latest highlights."
-            />
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-4" style={{ display: 'grid', gap: '20px 16px' }}>
-              {featuredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} onClick={handleFeaturedSelect} />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
     </div>
   );
 }

@@ -45,12 +45,6 @@ export class HQCommerceProductProvider implements ProductProvider {
     return mapProductCollectionResult(products, response.pagination, response.filters);
   }
 
-  async getFeaturedProducts(query: ProductListQuery = {}): Promise<ProductCollectionResult> {
-    const response = await this.fetchJson<CommerceProductListApiResponse>('products/featured', query);
-    const products = response.data.map(mapCommerceProductCard);
-    return mapProductCollectionResult(products, response.pagination, response.filters);
-  }
-
   async getNewArrivals(query: ProductListQuery = {}): Promise<ProductCollectionResult> {
     const response = await this.fetchJson<CommerceProductListApiResponse>('products/new-arrivals', query);
     const products = response.data.map(mapCommerceProductCard);

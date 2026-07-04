@@ -65,13 +65,13 @@ export function SearchOverlay() {
     setIsLoadingPopular(true);
     setErrorMessage(null);
 
-    void productService.getFeaturedProducts({ limit: 4 }).then((products) => {
+    void productService.getProducts({ limit: 4, sort: 'newest' }).then((response) => {
       if (isActive) {
-        setPopularProducts(products);
+        setPopularProducts(response.products);
       }
     }).catch(() => {
       if (isActive) {
-        setErrorMessage('Unable to load popular products right now.');
+        setErrorMessage('Unable to load products right now.');
       }
     }).finally(() => {
       if (isActive) {
@@ -246,7 +246,7 @@ export function SearchOverlay() {
             ) : errorMessage ? (
               <EmptyState
                 icon={<Search size={34} />}
-                title="Unable to load popular products"
+                title="Unable to load products"
                 description={errorMessage}
                 action={<Button type="button" variant="secondary" onClick={handleRetry}>Retry</Button>}
               />

@@ -34,6 +34,7 @@ interface CartContextValue {
   incrementItem: (productId: string, variantId?: string) => void;
   decrementItem: (productId: string, variantId?: string) => void;
   removeItem: (productId: string, variantId?: string) => void;
+  clearCart: () => void;
   totalItems: number;
   subtotal: number;
 }
@@ -287,6 +288,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const clearCart = useCallback(() => {
+    setCart((previous) => ({
+      ...previous,
+      items: [],
+      total: 0,
+      updatedAt: new Date().toISOString(),
+    }));
+    setCartItems([]);
+    setIsMiniCartOpen(false);
+    setIsMiniCartVisible(false);
+  }, []);
+
   const totalItems = useMemo(
     () => cart.items.reduce((sum, item) => sum + item.quantity, 0),
     [cart.items],
@@ -318,6 +331,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     incrementItem,
     decrementItem,
     removeItem,
+    clearCart,
     totalItems,
     subtotal,
   }), [
@@ -336,6 +350,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     incrementItem,
     decrementItem,
     removeItem,
+    clearCart,
     totalItems,
     subtotal,
   ]);

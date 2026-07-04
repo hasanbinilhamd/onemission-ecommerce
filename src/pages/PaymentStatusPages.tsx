@@ -1,8 +1,16 @@
 import { CheckCircle2, Clock3, XCircle } from 'lucide-react';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '../components/shared';
+import { useCartStore } from '../stores';
 import { formatCurrency } from '../utils/formatting';
+
+const CLEARED_CHECKOUT_SESSION_STORAGE_KEY = 'onemission-cleared-checkout-session-id';
+
+function isSuccessfulPaymentStatus(value: string | null): boolean {
+  const normalized = String(value || '').trim().toUpperCase();
+  return normalized === 'PAID' || normalized === 'SETTLEMENT';
+}
 
 interface PaymentStatusPageProps {
   title: string;
@@ -72,12 +80,36 @@ function PaymentStatusPage({ title, description, tone }: PaymentStatusPageProps)
 export function PaymentSuccessPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { clearCart, isCartReady } = useCartStore();
 
   const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const orderReference = query.get('order_id') || '-';
   const transactionStatus = query.get('transaction_status') || 'settlement';
   const paymentMethod = query.get('payment_method') || 'Midtrans';
   const paidAmount = Number.parseFloat(query.get('paid_amount') || '0');
+  const checkoutSessionId = query.get('checkout_session_id') || '';
+
+  useEffect(() => {
+    if (!isCartReady || !isSuccessfulPaymentStatus(transactionStatus)) {
+      return;
+    }
+
+    if (typeof window === 'undefined') {
+      clearCart();
+      return;
+    }
+
+    const lastClearedCheckoutSessionId = window.sessionStorage.getItem(CLEARED_CHECKOUT_SESSION_STORAGE_KEY);
+    if (checkoutSessionId && lastClearedCheckoutSessionId === checkoutSessionId) {
+      return;
+    }
+
+    clearCart();
+
+    if (checkoutSessionId) {
+      window.sessionStorage.setItem(CLEARED_CHECKOUT_SESSION_STORAGE_KEY, checkoutSessionId);
+    }
+  }, [checkoutSessionId, clearCart, isCartReady, transactionStatus]);
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', padding: '120px 24px 60px' }}>

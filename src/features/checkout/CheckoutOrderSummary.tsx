@@ -7,7 +7,7 @@ interface CheckoutOrderSummaryProps {
 }
 
 export function CheckoutOrderSummary({ className = '' }: CheckoutOrderSummaryProps) {
-  const { cart, subtotal, totalItems } = useCartStore();
+  const { cart, cartItems, subtotal, totalItems } = useCartStore();
   const { checkout } = useCheckoutStore();
   const shippingCost = checkout.shipping.selectedRate?.cost ?? 0;
   const total = subtotal + shippingCost;
@@ -33,7 +33,7 @@ export function CheckoutOrderSummary({ className = '' }: CheckoutOrderSummaryPro
           </div>
 
           <div style={{ display: 'grid', gap: '14px' }}>
-            {cart.items.map((item) => (
+            {cartItems.map((item) => (
               <div
                 key={`${item.productId}-${item.variantId ?? 'default'}`}
                 style={{
@@ -90,6 +90,12 @@ export function CheckoutOrderSummary({ className = '' }: CheckoutOrderSummaryPro
                 </div>
               </div>
             ))}
+
+            {cart.items.length > 0 && cartItems.length === 0 && (
+              <p style={{ margin: 0, fontSize: '13px', color: '#9CA3AF' }}>
+                Loading product details...
+              </p>
+            )}
           </div>
         </div>
 

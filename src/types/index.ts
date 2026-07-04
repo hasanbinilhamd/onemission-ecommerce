@@ -72,12 +72,19 @@ export interface CartItem {
   productId: string;
   variantId?: string;
   quantity: number;
-  price: number;
+}
+
+export interface ResolvedCartItem extends CartItem {
   name: string;
+  price: number;
   imageUrl?: string;
   color?: string;
   size?: string;
   slug?: string;
+  categoryName?: string;
+  sku?: string;
+  weight?: number;
+  available: boolean;
 }
 
 export interface Cart {
@@ -136,8 +143,11 @@ export interface ShippingRate {
 export interface ShippingRateRequest {
   country: string;
   province: string;
+  provinceId?: string;
   city: string;
+  cityId?: string;
   district: string;
+  districtId?: string;
   postalCode: string;
   weightGrams?: number;
 }

@@ -369,12 +369,6 @@ function ProductDetailContent() {
       productId: product.id,
       variantId: selectedVariant?.id,
       quantity: qty,
-      price: selectedVariant?.price ?? product.price,
-      name: product.name,
-      imageUrl: product.imageUrl,
-      color: selectedVariant?.color ?? (selectedColor || undefined),
-      size: selectedVariant?.size ?? (selectedSize || undefined),
-      slug: product.slug,
     });
   }, [addItem, product, qty, selectedColor, selectedSize, selectedVariant]);
 

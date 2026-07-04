@@ -10,6 +10,8 @@ function CartPageContent() {
   const navigate = useNavigate();
   const {
     cart,
+    cartItems,
+    isCartReady,
     incrementItem,
     decrementItem,
     removeItem,
@@ -52,17 +54,21 @@ function CartPageContent() {
         <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-10" style={{ display: 'grid', gap: '32px' }}>
           <section>
             <div style={{ borderTop: '1px solid #F3F4F6' }}>
-              {cart.items.map((item) => (
-                <CartLineItem
-                  key={`${item.productId}-${item.variantId ?? 'default'}`}
-                  item={item}
-                  onIncrement={incrementItem}
-                  onDecrement={decrementItem}
-                  onRemove={removeItem}
-                  showCategory
-                  showSku
-                />
-              ))}
+              {!isCartReady || (cart.items.length > 0 && cartItems.length === 0) ? (
+                <p style={{ margin: '20px 0', fontSize: '14px', color: '#6B7280' }}>Loading cart items...</p>
+              ) : (
+                cartItems.map((item) => (
+                  <CartLineItem
+                    key={`${item.productId}-${item.variantId ?? 'default'}`}
+                    item={item}
+                    onIncrement={incrementItem}
+                    onDecrement={decrementItem}
+                    onRemove={removeItem}
+                    showCategory
+                    showSku
+                  />
+                ))
+              )}
             </div>
           </section>
 

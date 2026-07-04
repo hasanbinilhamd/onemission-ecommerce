@@ -1,9 +1,8 @@
-import { memo, useEffect, useMemo, useState } from 'react';
+import { memo, useMemo } from 'react';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { IMAGE_PLACEHOLDER } from '../../app/constants';
-import { productService } from '../../services/product';
 import { formatCurrency } from '../../utils/formatting';
-import type { CartItem, Product } from '../../types';
+import type { ResolvedCartItem } from '../../types';
 
 const lineMetaTextStyle: React.CSSProperties = {
   margin: 0,
@@ -26,7 +25,7 @@ export const summaryValueStyle: React.CSSProperties = {
 };
 
 interface CartLineItemProps {
-  item: CartItem;
+  item: ResolvedCartItem;
   onIncrement: (productId: string, variantId?: string) => void;
   onDecrement: (productId: string, variantId?: string) => void;
   onRemove: (productId: string, variantId?: string) => void;
@@ -44,42 +43,7 @@ export const CartLineItem = memo(function CartLineItem({
   showSku = false,
   compact = false,
 }: CartLineItemProps) {
-  const [product, setProduct] = useState<Product | null>(() => {
-    return productService.getCachedProductById(item.productId)
-      ?? (item.slug ? productService.getCachedProductBySlug(item.slug) : null);
-  });
-
-  useEffect(() => {
-    let isActive = true;
-
-    const cached = productService.getCachedProductById(item.productId)
-      ?? (item.slug ? productService.getCachedProductBySlug(item.slug) : null);
-    if (cached) {
-      setProduct(cached);
-      return undefined;
-    }
-
-    if (!item.slug) {
-      return undefined;
-    }
-
-    void productService.getProductDetail(item.slug).then((response) => {
-      if (isActive) {
-        setProduct(response);
-      }
-    }).catch(() => {
-      if (isActive) {
-        setProduct(null);
-      }
-    });
-
-    return () => {
-      isActive = false;
-    };
-  }, [item.productId, item.slug]);
-
   const lineTotal = useMemo(() => item.price * item.quantity, [item.price, item.quantity]);
-  const displaySku = product?.variants?.find((variant) => variant.id === item.variantId)?.sku ?? product?.sku;
 
   return (
     <div
@@ -113,10 +77,10 @@ export const CartLineItem = memo(function CartLineItem({
             <p style={{ margin: '0 0 6px', fontSize: compact ? '14px' : '16px', fontWeight: 600, color: '#111827', lineHeight: 1.4 }}>
               {item.name}
             </p>
-            {showCategory && product?.category?.name && <p style={lineMetaTextStyle}>Category: {product.category.name}</p>}
+            {showCategory && item.categoryName && <p style={lineMetaTextStyle}>Category: {item.categoryName}</p>}
             {item.color && <p style={lineMetaTextStyle}>Color: {item.color}</p>}
             {item.size && <p style={lineMetaTextStyle}>Size: {item.size}</p>}
-            {showSku && displaySku && <p style={lineMetaTextStyle}>SKU: {displaySku}</p>}
+            {showSku && item.sku && <p style={lineMetaTextStyle}>SKU: {item.sku}</p>}
             <p style={lineMetaTextStyle}>Unit Price: {formatCurrency(item.price)}</p>
           </div>
 

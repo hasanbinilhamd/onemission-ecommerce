@@ -11,6 +11,8 @@ export function MiniCartDrawer() {
   const navigate = useNavigate();
   const {
     cart,
+    cartItems,
+    isCartReady,
     isMiniCartOpen,
     closeMiniCart,
     setMiniCartVisible,
@@ -57,8 +59,12 @@ export function MiniCartDrawer() {
                 }
               />
             </div>
+          ) : !isCartReady || (cart.items.length > 0 && cartItems.length === 0) ? (
+            <div style={{ padding: '16px 20px', fontSize: '14px', color: '#6B7280' }}>
+              Loading cart items...
+            </div>
           ) : (
-            cart.items.map((item) => (
+            cartItems.map((item) => (
               <CartLineItem
                 key={`${item.productId}-${item.variantId ?? 'default'}`}
                 item={item}

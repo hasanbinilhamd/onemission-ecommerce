@@ -142,6 +142,53 @@ export class ProductService {
     return request;
   }
 
+  async ensureProductsLoaded(productIds: string[]): Promise<void> {
+    const pendingIds = new Set(productIds.filter((id) => !this.productByIdCache.has(id)));
+    if (pendingIds.size === 0) {
+      return;
+    }
+
+    let page = 1;
+    let hasNextPage = true;
+
+    while (hasNextPage && pendingIds.size > 0) {
+      const response = await this.getProducts({ page, limit: 48, sort: 'newest' });
+      response.products.forEach((product) => {
+        if (pendingIds.has(product.id)) {
+          pendingIds.delete(product.id);
+        }
+      });
+
+      hasNextPage = response.pagination.hasNextPage;
+      page += 1;
+    }
+  }
+
+  async ensureProductDetailsLoadedByIds(productIds: string[]): Promise<void> {
+    await this.ensureProductsLoaded(productIds);
+
+    const detailRequests: Promise<unknown>[] = [];
+
+    for (const productId of productIds) {
+      const cached = this.productByIdCache.get(productId);
+      if (!cached?.slug) {
+        continue;
+      }
+
+      const hasVariantDetails = Array.isArray(cached.variants) && cached.variants.length > 0;
+      const hasImages = Array.isArray(cached.images) && cached.images.length > 0;
+      const hasLongDescription = typeof cached.longDescription === 'string' && cached.longDescription.length > 0;
+
+      if (hasVariantDetails && hasImages && hasLongDescription) {
+        continue;
+      }
+
+      detailRequests.push(this.getProductDetail(cached.slug));
+    }
+
+    await Promise.all(detailRequests);
+  }
+
   getCachedProductById(id: string): Product | null {
     return this.productByIdCache.get(id) ?? null;
   }

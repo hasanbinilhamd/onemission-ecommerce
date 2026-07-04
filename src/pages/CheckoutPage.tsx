@@ -28,9 +28,17 @@ import {
   type ShippingRate,
 } from '../stores';
 import {
+  createCheckoutSession,
+  createPaymentAttempt,
+  findOrCreateCustomer,
+  generateSnapToken,
+  getDefaultSalesChannelId,
+} from '../services/api/checkoutService';
+import {
   getShippingServiceErrorMessage,
   shippingService,
 } from '../services/shipping';
+import { openMidtransSnap } from '../services/payment/midtransSnap';
 import { formatCurrency } from '../utils/formatting';
 import { isEmail, isRequired } from '../utils/validation';
 
@@ -190,7 +198,7 @@ function getCompletionBadge() {
 
 function CheckoutPageContent() {
   const navigate = useNavigate();
-  const { cart } = useCartStore();
+  const { cart, cartItems } = useCartStore();
   const {
     checkout,
     updateContactField,
@@ -214,6 +222,7 @@ function CheckoutPageContent() {
   const [contactErrors, setContactErrors] = useState<ContactValidationErrors>({});
   const [shippingErrors, setShippingErrors] = useState<ShippingValidationErrors>({});
   const [statusMessage, setStatusMessage] = useState('');
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
 
   const provinceLoadedRef = useRef(false);
   const cityRequestKeyRef = useRef('');
@@ -225,8 +234,8 @@ function CheckoutPageContent() {
   const shippingAddress = checkout.shippingAddress;
   const shippingState = checkout.shipping;
   const estimatedShippingWeightGrams = useMemo(
-    () => Math.max(1000, cart.items.reduce((sum, item) => sum + (item.quantity * 500), 0)),
-    [cart.items],
+    () => Math.max(1000, cartItems.reduce((sum, item) => sum + (item.quantity * Math.max(item.weight ?? 0, 500)), 0)),
+    [cartItems],
   );
 
   const nextContactErrors = useMemo(
@@ -242,7 +251,12 @@ function CheckoutPageContent() {
   const isShippingValid = !hasErrors(nextShippingErrors);
   const shippingUnlocked = isContactValid;
   const deliveryUnlocked = isShippingValid;
-  const canContinueToPayment = isContactValid && isShippingValid && Boolean(shippingState.selectedRate);
+  const canContinueToPayment = isContactValid
+    && isShippingValid
+    && Boolean(shippingState.selectedRate)
+    && cartItems.length === cart.items.length
+    && cartItems.length > 0
+    && !isSubmittingPayment;
   const canRequestShippingRates = shippingUnlocked && Boolean(
     shippingAddress.province
     && shippingAddress.city
@@ -316,12 +330,26 @@ function CheckoutPageContent() {
     setShippingLoading('rates', true);
     setShippingError('rates', null);
 
+    const selectedProvince = shippingState.provinces.find((province) => province.name === shippingAddress.province) ?? null;
+    const selectedCity = shippingState.cities.find((city) => city.name === shippingAddress.city) ?? null;
+    const selectedDistrict = shippingState.districts.find((district) => district.name === shippingAddress.district) ?? null;
+
+    if (!selectedProvince || !selectedCity || !selectedDistrict) {
+      setShippingRates([]);
+      setShippingError('rates', 'Please complete your address before loading shipping rates.');
+      setShippingLoading('rates', false);
+      return;
+    }
+
     try {
       const rates = await shippingService.getShippingRates({
         country: shippingAddress.country,
         province: shippingAddress.province,
+        provinceId: selectedProvince.id,
         city: shippingAddress.city,
+        cityId: selectedCity.id,
         district: shippingAddress.district,
+        districtId: selectedDistrict.id,
         postalCode: shippingAddress.postalCode,
         weightGrams: estimatedShippingWeightGrams,
       });
@@ -345,6 +373,9 @@ function CheckoutPageContent() {
     shippingAddress.district,
     shippingAddress.postalCode,
     shippingAddress.province,
+    shippingState.cities,
+    shippingState.districts,
+    shippingState.provinces,
   ]);
 
   useEffect(() => {
@@ -654,12 +685,124 @@ function CheckoutPageContent() {
     void loadShippingRates();
   };
 
-  const handleContinueToPayment = () => {
-    if (!canContinueToPayment) {
+  const handleContinueToPayment = async () => {
+    if (!canContinueToPayment || !shippingState.selectedRate) {
       return;
     }
 
-    setStatusMessage('The payment step will be available in the next sprint.');
+    const selectedProvince = shippingState.provinces.find((province) => province.name === shippingAddress.province) ?? null;
+    const selectedCity = shippingState.cities.find((city) => city.name === shippingAddress.city) ?? null;
+    const selectedDistrict = shippingState.districts.find((district) => district.name === shippingAddress.district) ?? null;
+
+    if (!selectedProvince || !selectedCity || !selectedDistrict) {
+      setStatusMessage('Please complete your shipping address before continuing to payment.');
+      return;
+    }
+
+    if (cartItems.some((item) => !item.variantId)) {
+      setStatusMessage('Please reselect your product variant before continuing to payment.');
+      return;
+    }
+
+    setIsSubmittingPayment(true);
+    setStatusMessage('Preparing your secure payment session...');
+
+    try {
+      const customerId = await findOrCreateCustomer({
+        firstName: contactInformation.firstName,
+        lastName: contactInformation.lastName,
+        email: contactInformation.email,
+        phone: contactInformation.phoneNumber,
+      });
+
+      const salesChannelId = await getDefaultSalesChannelId();
+
+      const checkoutSession = await createCheckoutSession({
+        customerId,
+        salesChannelId,
+        currency: 'IDR',
+        discount: 0,
+        tax: 0,
+        courier: shippingState.selectedRate.courierCode,
+        items: cartItems.map((item) => ({
+          productId: item.productId,
+          variantId: item.variantId!,
+          qty: item.quantity,
+          weight: Math.max(item.weight ?? 0, 0),
+        })),
+        shipping: {
+          originDistrict: '1391',
+          destinationDistrict: selectedDistrict.id,
+          weight: estimatedShippingWeightGrams,
+          cost: shippingState.selectedRate.cost,
+          service: shippingState.selectedRate.serviceName,
+          description: `${shippingState.selectedRate.courierName} ${shippingState.selectedRate.serviceName}`,
+          estimatedDelivery: shippingState.selectedRate.estimatedDelivery,
+        },
+        address: {
+          recipientName: `${contactInformation.firstName} ${contactInformation.lastName}`.trim(),
+          phone: contactInformation.phoneNumber,
+          provinceId: selectedProvince.id,
+          cityId: selectedCity.id,
+          districtId: selectedDistrict.id,
+          postalCode: shippingAddress.postalCode,
+          streetAddress: shippingAddress.streetAddress,
+        },
+      });
+
+      window.sessionStorage.setItem('onemission-checkout-session-id', checkoutSession.id);
+
+      const paymentAttempt = await createPaymentAttempt(checkoutSession.id);
+      window.sessionStorage.setItem('onemission-payment-attempt-id', paymentAttempt.id);
+
+      const snapAttempt = await generateSnapToken(paymentAttempt.id);
+      if (!snapAttempt.snapToken) {
+        throw new Error('Midtrans Snap token was not returned.');
+      }
+
+      setStatusMessage('Opening payment window...');
+
+      await openMidtransSnap({
+        token: snapAttempt.snapToken,
+        onSuccess: (result) => {
+          const params = new URLSearchParams();
+          params.set('order_id', String(result.order_id || snapAttempt.providerReference || ''));
+          params.set('transaction_status', String(result.transaction_status || 'settlement'));
+          params.set('status_code', String(result.status_code || '200'));
+          params.set('payment_attempt_id', paymentAttempt.id);
+          params.set('checkout_session_id', checkoutSession.id);
+          navigate(`/payment/success?${params.toString()}`);
+        },
+        onPending: (result) => {
+          const params = new URLSearchParams();
+          params.set('order_id', String(result.order_id || snapAttempt.providerReference || ''));
+          params.set('transaction_status', String(result.transaction_status || 'pending'));
+          params.set('status_code', String(result.status_code || '201'));
+          params.set('payment_attempt_id', paymentAttempt.id);
+          params.set('checkout_session_id', checkoutSession.id);
+          navigate(`/payment/pending?${params.toString()}`);
+        },
+        onError: (result) => {
+          const params = new URLSearchParams();
+          params.set('order_id', String(result.order_id || snapAttempt.providerReference || ''));
+          params.set('transaction_status', String(result.transaction_status || 'failed'));
+          params.set('status_code', String(result.status_code || '500'));
+          params.set('payment_attempt_id', paymentAttempt.id);
+          params.set('checkout_session_id', checkoutSession.id);
+          navigate(`/payment/failed?${params.toString()}`);
+        },
+        onClose: () => {
+          setIsSubmittingPayment(false);
+          setStatusMessage('Payment window closed. You can continue later from the same checkout details.');
+        },
+      });
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : 'Unable to continue to payment. Please try again.');
+      setIsSubmittingPayment(false);
+      return;
+    }
+
+    setIsSubmittingPayment(false);
   };
 
   if (isCartEmpty) {
@@ -985,8 +1128,8 @@ function CheckoutPageContent() {
 
             <div style={{ display: 'grid', gap: '12px' }}>
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                <Button type="button" onClick={handleContinueToPayment} disabled={!canContinueToPayment}>
-                  Continue to Payment
+                <Button type="button" onClick={() => void handleContinueToPayment()} disabled={!canContinueToPayment}>
+                  {isSubmittingPayment ? 'Preparing Payment...' : 'Continue to Payment'}
                 </Button>
                 <Button type="button" variant="secondary" onClick={() => navigate('/cart')}>
                   Return to Cart

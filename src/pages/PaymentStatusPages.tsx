@@ -2,6 +2,7 @@ import { CheckCircle2, Clock3, XCircle } from 'lucide-react';
 import { useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '../components/shared';
+import { formatCurrency } from '../utils/formatting';
 
 interface PaymentStatusPageProps {
   title: string;
@@ -16,7 +17,6 @@ function PaymentStatusPage({ title, description, tone }: PaymentStatusPageProps)
   const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const orderId = query.get('order_id') || '-';
   const status = query.get('transaction_status') || '-';
-  const statusCode = query.get('status_code') || '-';
 
   const icon = tone === 'success'
     ? <CheckCircle2 size={42} />
@@ -56,19 +56,12 @@ function PaymentStatusPage({ title, description, tone }: PaymentStatusPageProps)
               <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Transaction Status</p>
               <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#111827', textAlign: 'right', textTransform: 'capitalize' }}>{status}</p>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
-              <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Status Code</p>
-              <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#111827', textAlign: 'right' }}>{statusCode}</p>
-            </div>
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
           <Button type="button" onClick={() => navigate('/')}>
-            Back to Home
-          </Button>
-          <Button type="button" variant="secondary" onClick={() => navigate('/cart')}>
-            View Cart
+            Continue Shopping
           </Button>
         </div>
       </div>
@@ -77,12 +70,71 @@ function PaymentStatusPage({ title, description, tone }: PaymentStatusPageProps)
 }
 
 export function PaymentSuccessPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const orderReference = query.get('order_id') || '-';
+  const transactionStatus = query.get('transaction_status') || 'settlement';
+  const paymentMethod = query.get('payment_method') || 'Midtrans';
+  const paidAmount = Number.parseFloat(query.get('paid_amount') || '0');
+
   return (
-    <PaymentStatusPage
-      title="Payment Successful"
-      description="Your payment has been received successfully. We are now processing your order confirmation from ONEMISSION HQ."
-      tone="success"
-    />
+    <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', padding: '120px 24px 60px' }}>
+      <div style={{ maxWidth: '720px', margin: '0 auto', textAlign: 'center' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '80px', height: '80px', borderRadius: '9999px', backgroundColor: '#15803D14', color: '#15803D', marginBottom: '24px' }}>
+          <CheckCircle2 size={42} />
+        </div>
+        <p style={{ margin: '0 0 8px', fontSize: '12px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9CA3AF', fontWeight: 600 }}>
+          Payment Successful
+        </p>
+        <h1 style={{ margin: '0 0 12px', fontSize: 'clamp(28px, 5vw, 40px)', color: '#111827', lineHeight: 1.1 }}>
+          Payment Successful
+        </h1>
+        <p style={{ margin: '0 auto 6px', maxWidth: '520px', fontSize: '15px', lineHeight: 1.7, color: '#6B7280' }}>
+          Your payment has been received successfully.
+        </p>
+        <p style={{ margin: '0 auto 28px', maxWidth: '520px', fontSize: '15px', lineHeight: 1.7, color: '#6B7280' }}>
+          We are preparing your order.
+        </p>
+
+        <div style={{ border: '1px solid #E5E7EB', borderRadius: '20px', padding: '24px', textAlign: 'left', marginBottom: '24px' }}>
+          <div style={{ display: 'grid', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
+              <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Order Reference</p>
+              <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#111827', textAlign: 'right' }}>{orderReference}</p>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
+              <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Payment Method</p>
+              <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#111827', textAlign: 'right', textTransform: 'capitalize' }}>{paymentMethod}</p>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
+              <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Transaction Status</p>
+              <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#111827', textAlign: 'right', textTransform: 'capitalize' }}>{transactionStatus}</p>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
+              <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Paid Amount</p>
+              <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#111827', textAlign: 'right' }}>{formatCurrency(Number.isFinite(paidAmount) ? paidAmount : 0)}</p>
+            </div>
+            <div style={{ display: 'grid', gap: '4px', marginTop: '8px' }}>
+              <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Estimated next step</p>
+              <p style={{ margin: 0, fontSize: '14px', color: '#111827' }}>
+                We&apos;ll notify you once your order is processed.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Button type="button" onClick={() => navigate('/')}>
+            Continue Shopping
+          </Button>
+          <Button type="button" variant="secondary" disabled>
+            View My Orders (Coming Soon)
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 

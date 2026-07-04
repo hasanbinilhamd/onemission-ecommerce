@@ -237,6 +237,7 @@ function CheckoutPageContent() {
   const [shippingErrors, setShippingErrors] = useState<ShippingValidationErrors>({});
   const [statusMessage, setStatusMessage] = useState('');
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+  const [isSnapFocusMode, setIsSnapFocusMode] = useState(false);
 
   const provinceLoadedRef = useRef(false);
   const cityRequestKeyRef = useRef('');
@@ -269,6 +270,10 @@ function CheckoutPageContent() {
   const isShippingValid = !hasErrors(nextShippingErrors);
   const shippingUnlocked = isContactValid;
   const deliveryUnlocked = isShippingValid;
+  const visibleShippingRates = useMemo(
+    () => [...shippingState.rates].sort((left, right) => left.cost - right.cost).slice(0, 5),
+    [shippingState.rates],
+  );
   const canContinueToPayment = isContactValid
     && isShippingValid
     && Boolean(shippingState.selectedRate)
@@ -505,6 +510,19 @@ function CheckoutPageContent() {
       void refreshCartItems();
     }
   }, [isCartEmpty, refreshCartItems]);
+
+  useEffect(() => {
+    if (!isSnapFocusMode) {
+      return undefined;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isSnapFocusMode]);
 
   const handleContactChange =
     (field: CheckoutContactField) =>
@@ -867,20 +885,27 @@ function CheckoutPageContent() {
         throw new Error('Midtrans Snap token was not returned.');
       }
 
+      const paidAmountFallback = shippingState.selectedRate.cost + refreshedCartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
       setStatusMessage('Opening payment window...');
+      setIsSnapFocusMode(true);
 
       await openMidtransSnap({
         token: snapAttempt.snapToken,
         onSuccess: (result) => {
+          setIsSnapFocusMode(false);
           const params = new URLSearchParams();
           params.set('order_id', String(result.order_id || snapAttempt.providerReference || ''));
           params.set('transaction_status', String(result.transaction_status || 'settlement'));
           params.set('status_code', String(result.status_code || '200'));
           params.set('payment_attempt_id', paymentAttempt.id);
           params.set('checkout_session_id', checkoutSession.id);
+          params.set('payment_method', String(result.payment_type || result.payment_method || 'Midtrans'));
+          params.set('paid_amount', String(result.gross_amount || paidAmountFallback));
           navigate(`/payment/success?${params.toString()}`);
         },
         onPending: (result) => {
+          setIsSnapFocusMode(false);
           const params = new URLSearchParams();
           params.set('order_id', String(result.order_id || snapAttempt.providerReference || ''));
           params.set('transaction_status', String(result.transaction_status || 'pending'));
@@ -890,6 +915,7 @@ function CheckoutPageContent() {
           navigate(`/payment/pending?${params.toString()}`);
         },
         onError: (result) => {
+          setIsSnapFocusMode(false);
           const params = new URLSearchParams();
           params.set('order_id', String(result.order_id || snapAttempt.providerReference || ''));
           params.set('transaction_status', String(result.transaction_status || 'failed'));
@@ -899,11 +925,13 @@ function CheckoutPageContent() {
           navigate(`/payment/failed?${params.toString()}`);
         },
         onClose: () => {
+          setIsSnapFocusMode(false);
           setIsSubmittingPayment(false);
           setStatusMessage('Payment window closed. You can continue later from the same checkout details.');
         },
       });
     } catch (error) {
+      setIsSnapFocusMode(false);
       const message = error instanceof Error ? error.message : 'Unable to continue to payment. Please try again.';
       if (message.toLowerCase().includes('requested quantity exceeds available inventory')) {
         await refreshCartItems();
@@ -938,7 +966,15 @@ function CheckoutPageContent() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', padding: '104px 24px 60px' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', position: 'relative' }}>
+      <div
+        style={{
+          padding: '104px 24px 60px',
+          filter: isSnapFocusMode ? 'blur(6px)' : 'none',
+          pointerEvents: isSnapFocusMode ? 'none' : 'auto',
+          transition: 'filter 180ms ease',
+        }}
+      >
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <div style={{ marginBottom: '28px', maxWidth: '720px' }}>
           <p style={{ margin: '0 0 8px', fontSize: '12px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9CA3AF', fontWeight: 600 }}>
@@ -1227,7 +1263,7 @@ function CheckoutPageContent() {
                 <CheckoutErrorState message="No shipping available for this address." />
               ) : (
                 <div style={{ display: 'grid', gap: '14px' }} role="radiogroup" aria-label="Delivery Method options">
-                  {shippingState.rates.map((option) => (
+                  {visibleShippingRates.map((option) => (
                     <CheckoutSelectionCard
                       key={option.id}
                       badgeText={option.logoText}
@@ -1254,8 +1290,8 @@ function CheckoutPageContent() {
                 <Button type="button" onClick={() => void handleContinueToPayment()} disabled={!canContinueToPayment}>
                   {isSubmittingPayment ? 'Preparing Payment...' : 'Continue to Payment'}
                 </Button>
-                <Button type="button" variant="secondary" onClick={() => navigate('/cart')}>
-                  Return to Cart
+                <Button type="button" variant="secondary" onClick={() => navigate('/')}>
+                  Continue Shopping
                 </Button>
               </div>
 
@@ -1278,6 +1314,47 @@ function CheckoutPageContent() {
           <CheckoutOrderSummary className="lg:sticky lg:top-24" />
         </div>
       </div>
+      </div>
+
+      {isSnapFocusMode && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 120,
+            backgroundColor: 'rgba(17, 24, 39, 0.32)',
+            backdropFilter: 'blur(1px)',
+            WebkitBackdropFilter: 'blur(1px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+          }}
+        >
+          <div
+            style={{
+              maxWidth: '420px',
+              width: '100%',
+              borderRadius: '20px',
+              backgroundColor: 'rgba(255,255,255,0.96)',
+              border: '1px solid #E5E7EB',
+              padding: '24px',
+              textAlign: 'center',
+              boxShadow: '0 24px 48px rgba(17,24,39,0.16)',
+            }}
+          >
+            <p style={{ margin: '0 0 8px', fontSize: '12px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9CA3AF', fontWeight: 600 }}>
+              Payment Window Open
+            </p>
+            <h2 style={{ margin: '0 0 10px', fontSize: '22px', color: '#111827' }}>
+              Complete your payment securely
+            </h2>
+            <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.7, color: '#6B7280' }}>
+              Please complete the Midtrans payment flow. Interaction with the checkout page is temporarily disabled until the payment window is closed.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

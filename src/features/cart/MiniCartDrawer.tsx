@@ -101,14 +101,11 @@ export function MiniCartDrawer() {
                 type="button"
                 onClick={() => {
                   closeMiniCart();
-                  navigate('/cart');
+                  navigate('/checkout');
                 }}
                 disabled={hasInvalidItems || isCartRefreshing}
               >
                 Checkout
-              </Button>
-              <Button type="button" variant="secondary" onClick={() => void refreshCartItems()}>
-                Refresh Cart
               </Button>
               <Button type="button" variant="secondary" onClick={closeMiniCart}>
                 Continue Shopping

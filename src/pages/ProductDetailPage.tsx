@@ -601,11 +601,6 @@ function ProductDetailContent() {
               {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
             </button>
 
-            <p style={{ margin: '12px 0 0', textAlign: 'center', fontSize: '12px', color: '#9CA3AF' }}>
-              {isOutOfStock
-                ? 'Currently out of stock'
-                : `Available stock: ${availableStock}`}
-            </p>
           </div>
         </div>
 

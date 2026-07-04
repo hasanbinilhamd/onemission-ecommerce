@@ -120,9 +120,6 @@ function CartPageContent() {
                 <Button type="button" onClick={() => navigate('/checkout')} disabled={hasInvalidItems || isCartRefreshing}>
                   Proceed to Checkout
                 </Button>
-                <Button type="button" variant="secondary" onClick={() => void refreshCartItems()}>
-                  Refresh Cart
-                </Button>
                 <Button type="button" variant="secondary" onClick={() => navigate('/')}>
                   Continue Shopping
                 </Button>

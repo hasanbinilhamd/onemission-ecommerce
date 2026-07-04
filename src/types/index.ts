@@ -105,8 +105,11 @@ export interface CheckoutContactInformation {
 
 export interface CheckoutShippingAddress {
   country: string;
+  provinceId: string;
   province: string;
+  cityId: string;
   city: string;
+  districtId: string;
   district: string;
   postalCode: string;
   streetAddress: string;

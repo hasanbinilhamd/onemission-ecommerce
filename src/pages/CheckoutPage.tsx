@@ -124,8 +124,16 @@ function validateContactInformation(
 function validateShippingAddress(
   shippingAddress: CheckoutShippingAddress,
 ): ShippingValidationErrors {
+  const fieldValueMap: Record<ShippingValidationField, string> = {
+    province: shippingAddress.provinceId,
+    city: shippingAddress.cityId,
+    district: shippingAddress.districtId,
+    postalCode: shippingAddress.postalCode,
+    streetAddress: shippingAddress.streetAddress,
+  };
+
   return SHIPPING_FIELDS.reduce<ShippingValidationErrors>((errors, field) => {
-    const error = validateShippingField(field, shippingAddress[field]);
+    const error = validateShippingField(field, fieldValueMap[field]);
 
     if (error) {
       errors[field] = error;
@@ -258,9 +266,9 @@ function CheckoutPageContent() {
     && cartItems.length > 0
     && !isSubmittingPayment;
   const canRequestShippingRates = shippingUnlocked && Boolean(
-    shippingAddress.province
-    && shippingAddress.city
-    && shippingAddress.district
+    shippingAddress.provinceId
+    && shippingAddress.cityId
+    && shippingAddress.districtId
     && shippingAddress.postalCode
     && isRequired(shippingAddress.streetAddress),
   );
@@ -290,12 +298,12 @@ function CheckoutPageContent() {
     }
   }, [setShippingError, setShippingLoading, setShippingProvinces]);
 
-  const loadCities = useCallback(async (province: string) => {
+  const loadCities = useCallback(async (provinceId: string) => {
     setShippingLoading('cities', true);
     setShippingError('cities', null);
 
     try {
-      const cities = await shippingService.getCities(province);
+      const cities = await shippingService.getCities(provinceId);
       setShippingCities(cities);
     } catch (error) {
       setShippingCities([]);
@@ -308,12 +316,12 @@ function CheckoutPageContent() {
     }
   }, [setShippingCities, setShippingError, setShippingLoading]);
 
-  const loadDistricts = useCallback(async (city: string) => {
+  const loadDistricts = useCallback(async (cityId: string) => {
     setShippingLoading('districts', true);
     setShippingError('districts', null);
 
     try {
-      const districts = await shippingService.getDistricts(city);
+      const districts = await shippingService.getDistricts(cityId);
       setShippingDistricts(districts);
     } catch (error) {
       setShippingDistricts([]);
@@ -330,26 +338,32 @@ function CheckoutPageContent() {
     setShippingLoading('rates', true);
     setShippingError('rates', null);
 
-    const selectedProvince = shippingState.provinces.find((province) => province.name === shippingAddress.province) ?? null;
-    const selectedCity = shippingState.cities.find((city) => city.name === shippingAddress.city) ?? null;
-    const selectedDistrict = shippingState.districts.find((district) => district.name === shippingAddress.district) ?? null;
-
-    if (!selectedProvince || !selectedCity || !selectedDistrict) {
+    if (!shippingAddress.provinceId || !shippingAddress.cityId || !shippingAddress.districtId) {
       setShippingRates([]);
       setShippingError('rates', 'Please complete your address before loading shipping rates.');
       setShippingLoading('rates', false);
       return;
     }
 
+    const shippingCostRequest = {
+      originDistrict: '1391',
+      destinationDistrict: shippingAddress.districtId,
+      courier: 'all',
+      weight: estimatedShippingWeightGrams,
+      service: 'all',
+    };
+
+    console.log('[CheckoutPage] Shipping Cost Request:', shippingCostRequest);
+
     try {
       const rates = await shippingService.getShippingRates({
         country: shippingAddress.country,
         province: shippingAddress.province,
-        provinceId: selectedProvince.id,
+        provinceId: shippingAddress.provinceId,
         city: shippingAddress.city,
-        cityId: selectedCity.id,
+        cityId: shippingAddress.cityId,
         district: shippingAddress.district,
-        districtId: selectedDistrict.id,
+        districtId: shippingAddress.districtId,
         postalCode: shippingAddress.postalCode,
         weightGrams: estimatedShippingWeightGrams,
       });
@@ -369,13 +383,13 @@ function CheckoutPageContent() {
     setShippingLoading,
     setShippingRates,
     shippingAddress.city,
+    shippingAddress.cityId,
     shippingAddress.country,
     shippingAddress.district,
+    shippingAddress.districtId,
     shippingAddress.postalCode,
     shippingAddress.province,
-    shippingState.cities,
-    shippingState.districts,
-    shippingState.provinces,
+    shippingAddress.provinceId,
   ]);
 
   useEffect(() => {
@@ -388,32 +402,32 @@ function CheckoutPageContent() {
   }, [loadProvinces, shippingUnlocked]);
 
   useEffect(() => {
-    if (!shippingUnlocked || !shippingAddress.province) {
+    if (!shippingUnlocked || !shippingAddress.provinceId) {
       cityRequestKeyRef.current = '';
       return;
     }
 
-    if (cityRequestKeyRef.current === shippingAddress.province) {
+    if (cityRequestKeyRef.current === shippingAddress.provinceId) {
       return;
     }
 
-    cityRequestKeyRef.current = shippingAddress.province;
-    void loadCities(shippingAddress.province);
-  }, [loadCities, shippingAddress.province, shippingUnlocked]);
+    cityRequestKeyRef.current = shippingAddress.provinceId;
+    void loadCities(shippingAddress.provinceId);
+  }, [loadCities, shippingAddress.provinceId, shippingUnlocked]);
 
   useEffect(() => {
-    if (!shippingUnlocked || !shippingAddress.city) {
+    if (!shippingUnlocked || !shippingAddress.cityId) {
       districtRequestKeyRef.current = '';
       return;
     }
 
-    if (districtRequestKeyRef.current === shippingAddress.city) {
+    if (districtRequestKeyRef.current === shippingAddress.cityId) {
       return;
     }
 
-    districtRequestKeyRef.current = shippingAddress.city;
-    void loadDistricts(shippingAddress.city);
-  }, [loadDistricts, shippingAddress.city, shippingUnlocked]);
+    districtRequestKeyRef.current = shippingAddress.cityId;
+    void loadDistricts(shippingAddress.cityId);
+  }, [loadDistricts, shippingAddress.cityId, shippingUnlocked]);
 
   useEffect(() => {
     if (!canRequestShippingRates) {
@@ -433,9 +447,9 @@ function CheckoutPageContent() {
     }
 
     const requestKey = [
-      shippingAddress.province,
-      shippingAddress.city,
-      shippingAddress.district,
+      shippingAddress.provinceId,
+      shippingAddress.cityId,
+      shippingAddress.districtId,
       shippingAddress.postalCode,
       estimatedShippingWeightGrams,
     ].join('|');
@@ -453,10 +467,10 @@ function CheckoutPageContent() {
     setSelectedShippingRate,
     setShippingError,
     setShippingRates,
-    shippingAddress.city,
-    shippingAddress.district,
+    shippingAddress.cityId,
+    shippingAddress.districtId,
     shippingAddress.postalCode,
-    shippingAddress.province,
+    shippingAddress.provinceId,
     shippingState.errors.rates,
     shippingState.rates.length,
     shippingState.selectedRate,
@@ -534,12 +548,18 @@ function CheckoutPageContent() {
     };
 
   const handleProvinceChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const nextProvince = event.target.value;
+    const nextProvinceId = event.target.value;
+    const selectedProvince = shippingState.provinces.find((province) => province.id === nextProvinceId) ?? null;
+
+    console.log('[CheckoutPage] Selected Province:', selectedProvince ? {
+      id: selectedProvince.id,
+      name: selectedProvince.name,
+    } : null);
 
     cityRequestKeyRef.current = '';
     districtRequestKeyRef.current = '';
     ratesRequestKeyRef.current = '';
-    selectShippingProvince(nextProvince);
+    selectShippingProvince(selectedProvince);
     setSectionCompletion((previous) => ({ ...previous, shipping: false }));
     resetDeliveryCompletion();
     setStatusMessage('');
@@ -552,7 +572,7 @@ function CheckoutPageContent() {
     }));
     setShippingErrors((previous) => ({
       ...previous,
-      province: validateShippingField('province', nextProvince),
+      province: validateShippingField('province', nextProvinceId),
       city: undefined,
       district: undefined,
       postalCode: undefined,
@@ -560,11 +580,17 @@ function CheckoutPageContent() {
   };
 
   const handleCityChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const nextCity = event.target.value;
+    const nextCityId = event.target.value;
+    const selectedCity = shippingState.cities.find((city) => city.id === nextCityId) ?? null;
+
+    console.log('[CheckoutPage] Selected City:', selectedCity ? {
+      id: selectedCity.id,
+      name: selectedCity.name,
+    } : null);
 
     districtRequestKeyRef.current = '';
     ratesRequestKeyRef.current = '';
-    selectShippingCity(nextCity);
+    selectShippingCity(selectedCity);
     setSectionCompletion((previous) => ({ ...previous, shipping: false }));
     resetDeliveryCompletion();
     setStatusMessage('');
@@ -576,21 +602,27 @@ function CheckoutPageContent() {
     }));
     setShippingErrors((previous) => ({
       ...previous,
-      city: validateShippingField('city', nextCity),
+      city: validateShippingField('city', nextCityId),
       district: undefined,
       postalCode: undefined,
     }));
   };
 
   const handleDistrictChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const nextDistrict = event.target.value;
+    const nextDistrictId = event.target.value;
+    const selectedDistrict = shippingState.districts.find((district) => district.id === nextDistrictId) ?? null;
+
+    console.log('[CheckoutPage] Selected District:', selectedDistrict ? {
+      id: selectedDistrict.id,
+      name: selectedDistrict.name,
+    } : null);
 
     ratesRequestKeyRef.current = '';
-    selectShippingDistrict(nextDistrict);
+    selectShippingDistrict(selectedDistrict);
     setSectionCompletion((previous) => ({ ...previous, shipping: false }));
     resetDeliveryCompletion();
     setStatusMessage('');
-    const nextPostalCode = shippingState.districts.find((district) => district.name === nextDistrict)?.postalCode ?? '';
+    const nextPostalCode = selectedDistrict?.postalCode ?? '';
     setShippingTouched((previous) => ({
       ...previous,
       district: true,
@@ -598,7 +630,7 @@ function CheckoutPageContent() {
     }));
     setShippingErrors((previous) => ({
       ...previous,
-      district: validateShippingField('district', nextDistrict),
+      district: validateShippingField('district', nextDistrictId),
       postalCode: validateShippingField('postalCode', nextPostalCode),
     }));
   };
@@ -653,21 +685,21 @@ function CheckoutPageContent() {
   };
 
   const handleRetryCities = () => {
-    if (!shippingAddress.province) {
+    if (!shippingAddress.provinceId) {
       return;
     }
 
-    cityRequestKeyRef.current = shippingAddress.province;
-    void loadCities(shippingAddress.province);
+    cityRequestKeyRef.current = shippingAddress.provinceId;
+    void loadCities(shippingAddress.provinceId);
   };
 
   const handleRetryDistricts = () => {
-    if (!shippingAddress.city) {
+    if (!shippingAddress.cityId) {
       return;
     }
 
-    districtRequestKeyRef.current = shippingAddress.city;
-    void loadDistricts(shippingAddress.city);
+    districtRequestKeyRef.current = shippingAddress.cityId;
+    void loadDistricts(shippingAddress.cityId);
   };
 
   const handleRetryRates = () => {
@@ -676,9 +708,9 @@ function CheckoutPageContent() {
     }
 
     ratesRequestKeyRef.current = [
-      shippingAddress.province,
-      shippingAddress.city,
-      shippingAddress.district,
+      shippingAddress.provinceId,
+      shippingAddress.cityId,
+      shippingAddress.districtId,
       shippingAddress.postalCode,
       estimatedShippingWeightGrams,
     ].join('|');
@@ -690,9 +722,9 @@ function CheckoutPageContent() {
       return;
     }
 
-    const selectedProvince = shippingState.provinces.find((province) => province.name === shippingAddress.province) ?? null;
-    const selectedCity = shippingState.cities.find((city) => city.name === shippingAddress.city) ?? null;
-    const selectedDistrict = shippingState.districts.find((district) => district.name === shippingAddress.district) ?? null;
+    const selectedProvince = shippingState.provinces.find((province) => province.id === shippingAddress.provinceId) ?? null;
+    const selectedCity = shippingState.cities.find((city) => city.id === shippingAddress.cityId) ?? null;
+    const selectedDistrict = shippingState.districts.find((district) => district.id === shippingAddress.districtId) ?? null;
 
     if (!selectedProvince || !selectedCity || !selectedDistrict) {
       setStatusMessage('Please complete your shipping address before continuing to payment.');
@@ -966,14 +998,14 @@ function CheckoutPageContent() {
                         label="Province"
                         name="province"
                         required
-                        value={shippingAddress.province}
+                        value={shippingAddress.provinceId}
                         onChange={handleProvinceChange}
                         onBlur={handleShippingBlur('province')}
                         error={shippingTouched.province ? shippingErrors.province : undefined}
                       >
                         <option value="">Select province</option>
                         {shippingState.provinces.map((province) => (
-                          <option key={province.id} value={province.name}>
+                          <option key={province.id} value={province.id}>
                             {province.name}
                           </option>
                         ))}
@@ -987,15 +1019,15 @@ function CheckoutPageContent() {
                         label="City"
                         name="city"
                         required
-                        value={shippingAddress.city}
+                        value={shippingAddress.cityId}
                         onChange={handleCityChange}
                         onBlur={handleShippingBlur('city')}
-                        disabled={!shippingAddress.province || Boolean(shippingState.errors.cities)}
+                        disabled={!shippingAddress.provinceId || Boolean(shippingState.errors.cities)}
                         error={shippingTouched.city ? shippingErrors.city : undefined}
                       >
                         <option value="">Select city</option>
                         {shippingState.cities.map((city) => (
-                          <option key={city.id} value={city.name}>
+                          <option key={city.id} value={city.id}>
                             {city.name}
                           </option>
                         ))}
@@ -1009,15 +1041,15 @@ function CheckoutPageContent() {
                         label="District"
                         name="district"
                         required
-                        value={shippingAddress.district}
+                        value={shippingAddress.districtId}
                         onChange={handleDistrictChange}
                         onBlur={handleShippingBlur('district')}
-                        disabled={!shippingAddress.city || Boolean(shippingState.errors.districts)}
+                        disabled={!shippingAddress.cityId || Boolean(shippingState.errors.districts)}
                         error={shippingTouched.district ? shippingErrors.district : undefined}
                       >
                         <option value="">Select district</option>
                         {shippingState.districts.map((district) => (
-                          <option key={district.id} value={district.name}>
+                          <option key={district.id} value={district.id}>
                             {district.name}
                           </option>
                         ))}

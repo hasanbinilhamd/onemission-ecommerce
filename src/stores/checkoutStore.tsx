@@ -33,9 +33,9 @@ interface CheckoutContextValue {
   updateContactField: (field: CheckoutContactField, value: string) => void;
   updateContactInformation: (values: Partial<CheckoutContactInformation>) => void;
   updateShippingField: (field: CheckoutShippingField, value: string) => void;
-  selectShippingProvince: (province: string) => void;
-  selectShippingCity: (city: string) => void;
-  selectShippingDistrict: (district: string) => void;
+  selectShippingProvince: (province: ShippingProvince | null) => void;
+  selectShippingCity: (city: ShippingCity | null) => void;
+  selectShippingDistrict: (district: ShippingDistrict | null) => void;
   setShippingProvinces: (provinces: ShippingProvince[]) => void;
   setShippingCities: (cities: ShippingCity[]) => void;
   setShippingDistricts: (districts: ShippingDistrict[]) => void;
@@ -75,8 +75,11 @@ const initialCheckoutState: CheckoutState = {
   },
   shippingAddress: {
     country: 'Indonesia',
+    provinceId: '',
     province: '',
+    cityId: '',
     city: '',
+    districtId: '',
     district: '',
     postalCode: '',
     streetAddress: '',
@@ -119,13 +122,16 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const selectShippingProvince = useCallback((province: string) => {
+  const selectShippingProvince = useCallback((province: ShippingProvince | null) => {
     setCheckout((previous) => ({
       ...previous,
       shippingAddress: {
         ...previous.shippingAddress,
-        province,
+        provinceId: province?.id ?? '',
+        province: province?.name ?? '',
+        cityId: '',
         city: '',
+        districtId: '',
         district: '',
         postalCode: '',
       },
@@ -151,12 +157,14 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const selectShippingCity = useCallback((city: string) => {
+  const selectShippingCity = useCallback((city: ShippingCity | null) => {
     setCheckout((previous) => ({
       ...previous,
       shippingAddress: {
         ...previous.shippingAddress,
-        city,
+        cityId: city?.id ?? '',
+        city: city?.name ?? '',
+        districtId: '',
         district: '',
         postalCode: '',
       },
@@ -179,32 +187,29 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const selectShippingDistrict = useCallback((district: string) => {
-    setCheckout((previous) => {
-      const matchedDistrict = previous.shipping.districts.find((item) => item.name === district) ?? null;
-
-      return {
-        ...previous,
-        shippingAddress: {
-          ...previous.shippingAddress,
-          district,
-          postalCode: matchedDistrict?.postalCode ?? '',
+  const selectShippingDistrict = useCallback((district: ShippingDistrict | null) => {
+    setCheckout((previous) => ({
+      ...previous,
+      shippingAddress: {
+        ...previous.shippingAddress,
+        districtId: district?.id ?? '',
+        district: district?.name ?? '',
+        postalCode: district?.postalCode ?? '',
+      },
+      shipping: {
+        ...previous.shipping,
+        rates: [],
+        selectedRate: null,
+        loading: {
+          ...previous.shipping.loading,
+          rates: false,
         },
-        shipping: {
-          ...previous.shipping,
-          rates: [],
-          selectedRate: null,
-          loading: {
-            ...previous.shipping.loading,
-            rates: false,
-          },
-          errors: {
-            ...previous.shipping.errors,
-            rates: null,
-          },
+        errors: {
+          ...previous.shipping.errors,
+          rates: null,
         },
-      };
-    });
+      },
+    }));
   }, []);
 
   const setShippingProvinces = useCallback((provinces: ShippingProvince[]) => {

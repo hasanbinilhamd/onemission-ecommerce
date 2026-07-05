@@ -1,6 +1,6 @@
 import { APP_LOCALE, APP_CURRENCY } from '../app/constants';
 
-export function formatCurrency(amount: number, currency = APP_CURRENCY): string {
+export function formatCurrency(amount: number, currency: string = APP_CURRENCY): string {
   return new Intl.NumberFormat(APP_LOCALE, {
     style: 'currency',
     currency,

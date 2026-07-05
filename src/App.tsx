@@ -6,6 +6,10 @@ import { ProductDetailPage } from './pages/ProductDetailPage';
 import { CartPage } from './pages/CartPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { PaymentFailedPage, PaymentPendingPage, PaymentSuccessPage } from './pages/PaymentStatusPages';
+import { AccountPage } from './pages/AccountPage';
+import { MyOrdersPage } from './pages/MyOrdersPage';
+import { OrderDetailPage } from './pages/OrderDetailPage';
+import { TrackOrderPage } from './pages/TrackOrderPage';
 import { CatalogDrawer } from './features/catalog';
 import { FloatingNavigation, MiniCartDrawer } from './features/cart';
 import { SearchOverlay } from './features/search';
@@ -91,6 +95,10 @@ function App() {
           <Route path="/payment/success" element={<PaymentSuccessPage />} />
           <Route path="/payment/pending" element={<PaymentPendingPage />} />
           <Route path="/payment/failed" element={<PaymentFailedPage />} />
+          <Route path="/account" element={<AccountPage />} />
+          <Route path="/account/orders" element={<MyOrdersPage />} />
+          <Route path="/account/orders/:orderId" element={<OrderDetailPage />} />
+          <Route path="/track-order" element={<TrackOrderPage />} />
 
           {/* Fallback → home */}
           <Route path="*" element={<MainLayout><HomePage onDiscover={handleDiscover} /></MainLayout>} />

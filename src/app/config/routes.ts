@@ -8,6 +8,9 @@ export const ROUTES = {
   CART: '/cart',
   CHECKOUT: '/checkout',
   ACCOUNT: '/account',
+  ACCOUNT_ORDERS: '/account/orders',
+  ACCOUNT_ORDER_DETAIL: '/account/orders/:orderId',
+  TRACK_ORDER: '/track-order',
 } as const;
 
 export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES];
@@ -15,4 +18,9 @@ export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES];
 /** Build a product detail URL from a slug. */
 export function productPath(slug: string): string {
   return `/product/${slug}`;
+}
+
+/** Build an authenticated order detail URL from an order id. */
+export function accountOrderDetailPath(orderId: string): string {
+  return `/account/orders/${orderId}`;
 }

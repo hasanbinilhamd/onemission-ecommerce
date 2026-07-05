@@ -1,5 +1,3 @@
-// ─── Customer feature ─────────────────────────────────────────────────────────
-// Scope: authentication, account page, order history, profile management.
-// Implement when Sprint 5 (Customer Account) begins.
-
-export {};
+export { OrderDetailView } from './OrderDetailView';
+export { OrderStatusBadge, OrderPaymentStatusBadge } from './OrderStatusBadge';
+export { useAuthenticatedCustomer } from './useAuthenticatedCustomer';

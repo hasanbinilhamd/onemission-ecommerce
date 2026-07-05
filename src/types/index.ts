@@ -185,6 +185,138 @@ export interface Order {
   updatedAt: string;
 }
 
+export type CommerceOrderPaymentStatus = 'CREATED' | 'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED' | 'UNKNOWN' | string;
+export type CommerceOrderFulfillmentStatus = 'READY_FOR_FULFILLMENT' | 'PROCESSING' | 'PACKED' | 'SHIPPED' | 'COMPLETED' | string;
+
+export interface CommerceOrderListItem {
+  id: string;
+  orderNumber: string;
+  orderDate: string;
+  customerName: string;
+  totalAmount: number;
+  paymentStatus: CommerceOrderPaymentStatus;
+  fulfillmentStatus: CommerceOrderFulfillmentStatus;
+  fulfillmentStatusLabel: CommerceOrderFulfillmentStatus;
+  courier: string;
+  totalItems: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CommerceOrderListPagination {
+  page: number;
+  limit: number;
+  totalItems: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export interface CommerceOrderListResponse {
+  data: CommerceOrderListItem[];
+  pagination: CommerceOrderListPagination;
+}
+
+export interface CommerceOrderShippingAddress {
+  recipientName: string;
+  recipientPhone: string;
+  address: string;
+  originDistrict: string;
+  destinationDistrict: string;
+  courier: string;
+  courierService: string;
+  shippingDescription: string;
+  estimatedDelivery: string;
+  provinceId: string;
+  provinceName: string;
+  cityId: string;
+  cityName: string;
+  districtId: string;
+  districtName: string;
+  postalCode: string;
+  streetAddress: string;
+  shippingCost: number;
+}
+
+export interface CommerceOrderPaymentSummary {
+  id: string;
+  attemptNumber: string;
+  provider: string;
+  providerReference: string;
+  providerTransactionId?: string;
+  paymentMethod: string;
+  issuer: string;
+  acquirer: string;
+  transactionTime?: string;
+  settlementTime?: string;
+  grossAmount: number;
+  currency: string;
+  status: CommerceOrderPaymentStatus;
+}
+
+export interface CommerceOrderShipment {
+  courier: string;
+  service: string;
+  trackingNumber: string;
+  shippingDate: string | null;
+}
+
+export interface CommerceOrderProduct {
+  id: string;
+  productId: string;
+  variantId: string;
+  sku: string;
+  productName: string;
+  variantName: string;
+  productImage: string;
+  price: number;
+  weight: number;
+  quantity: number;
+  subtotal: number;
+  currency: string;
+}
+
+export interface CommerceOrderTimelineEntry {
+  id: string;
+  eventName: string;
+  updatedBy: string;
+  notes: string;
+  timestamp: string;
+  createdAt: string;
+}
+
+export interface CommerceOrderDetail {
+  id: string;
+  orderNumber: string;
+  checkoutSessionId: string;
+  paymentAttemptId: string;
+  paymentReference: string;
+  customerId: string;
+  customerCode: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  salesChannelId: string;
+  salesChannelCode: string;
+  salesChannelName: string;
+  shipping: CommerceOrderShippingAddress;
+  payment: CommerceOrderPaymentSummary | null;
+  status: string;
+  fulfillmentStatus: CommerceOrderFulfillmentStatus;
+  fulfillmentStatusLabel: CommerceOrderFulfillmentStatus;
+  shipment: CommerceOrderShipment;
+  currency: string;
+  subtotal: number;
+  discount: number;
+  shippingCost: number;
+  tax: number;
+  grandTotal: number;
+  items: CommerceOrderProduct[];
+  timeline: CommerceOrderTimelineEntry[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Review {
   id: string;
   productId: string;

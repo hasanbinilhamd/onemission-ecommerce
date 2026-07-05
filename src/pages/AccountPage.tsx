@@ -1,5 +1,6 @@
 import { ArrowRight, PackageSearch, UserRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../app/config/routes';
 import { Button, EmptyState, LoadingSkeleton } from '../components/shared';
 import { useAuthenticatedCustomer } from '../features/customer';
 import { NavigationThemeProvider } from '../features/navigation';
@@ -56,7 +57,7 @@ function AccountPageContent() {
                   <p className="mb-5 rounded-2xl bg-neutral-50 px-4 py-3 text-sm text-neutral-600">
                     Signed in as <span className="font-semibold text-neutral-950">{user.email}</span>
                   </p>
-                  <Button type="button" className="w-full justify-between" onClick={() => navigate('/account/orders')}>
+                  <Button type="button" className="w-full justify-between" onClick={() => navigate(ROUTES.ORDERS)}>
                     View My Orders
                     <ArrowRight size={16} />
                   </Button>
@@ -89,7 +90,7 @@ function AccountPageContent() {
                 Guest tracking is available without login and shows the same order detail information, including payment summary, shipping details, products, and timeline.
               </p>
 
-              <Button type="button" variant="secondary" className="w-full justify-between" onClick={() => navigate('/track-order')}>
+              <Button type="button" variant="secondary" className="w-full justify-between" onClick={() => navigate(ROUTES.TRACK_ORDER)}>
                 Open Track Order
                 <ArrowRight size={16} />
               </Button>

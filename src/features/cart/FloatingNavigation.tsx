@@ -1,4 +1,5 @@
 import { ShoppingCart } from 'lucide-react';
+import { AccountMenu } from '../customer/AccountMenu';
 import { useCartStore } from '../../stores';
 import { useNavigationTheme } from '../navigation';
 import { SearchTrigger } from '../search';
@@ -66,6 +67,7 @@ export function FloatingNavigation() {
           </span>
         )}
       </button>
+      <AccountMenu />
     </div>
   );
 }

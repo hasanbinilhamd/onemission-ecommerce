@@ -69,7 +69,7 @@ function MyOrdersPageContent() {
         <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p style={{ margin: '0 0 8px', fontSize: '12px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9CA3AF', fontWeight: 600 }}>
-              Account
+              Orders
             </p>
             <h1 style={{ margin: '0 0 12px', fontSize: 'clamp(28px, 5vw, 40px)', lineHeight: 1.1, color: '#111827' }}>
               My Orders
@@ -79,9 +79,9 @@ function MyOrdersPageContent() {
             </p>
           </div>
 
-          <Button type="button" variant="ghost" size="sm" className="w-fit gap-2" onClick={() => navigate(ROUTES.ACCOUNT)}>
+          <Button type="button" variant="ghost" size="sm" className="w-fit gap-2" onClick={() => navigate(ROUTES.HOME)}>
             <ArrowLeft size={16} />
-            Back to Account
+            Back to Home
           </Button>
         </div>
 
@@ -99,11 +99,11 @@ function MyOrdersPageContent() {
                 : 'Supabase authentication is not configured in this environment, so My Orders is unavailable right now.'}
               action={
                 <div className="flex flex-wrap justify-center gap-3">
-                  <Button type="button" onClick={() => navigate(ROUTES.TRACK_ORDER)}>
-                    Track Order as Guest
+                  <Button type="button" onClick={() => navigate(ROUTES.LOGIN)}>
+                    Login
                   </Button>
-                  <Button type="button" variant="secondary" onClick={() => navigate(ROUTES.ACCOUNT)}>
-                    Back to Account
+                  <Button type="button" variant="secondary" onClick={() => navigate(ROUTES.TRACK_ORDER)}>
+                    Track Order
                   </Button>
                 </div>
               }

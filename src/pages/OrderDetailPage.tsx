@@ -86,11 +86,11 @@ function OrderDetailPageContent() {
                 : 'Supabase authentication is not configured in this environment, so this page is unavailable right now.'}
               action={
                 <div className="flex flex-wrap justify-center gap-3">
-                  <Button type="button" onClick={() => navigate(ROUTES.TRACK_ORDER)}>
-                    Track Order as Guest
+                  <Button type="button" onClick={() => navigate(ROUTES.LOGIN)}>
+                    Login
                   </Button>
-                  <Button type="button" variant="secondary" onClick={() => navigate(ROUTES.ACCOUNT_ORDERS)}>
-                    Back to My Orders
+                  <Button type="button" variant="secondary" onClick={() => navigate(ROUTES.TRACK_ORDER)}>
+                    Track Order
                   </Button>
                 </div>
               }
@@ -113,7 +113,7 @@ function OrderDetailPageContent() {
               description={errorMessage || 'We could not load the requested order.'}
               action={
                 <div className="flex flex-wrap justify-center gap-3">
-                  <Button type="button" onClick={() => navigate(ROUTES.ACCOUNT_ORDERS)}>
+                  <Button type="button" onClick={() => navigate(ROUTES.ORDERS)}>
                     Back to My Orders
                   </Button>
                   <Button type="button" variant="secondary" onClick={() => navigate(ROUTES.TRACK_ORDER)}>
@@ -127,7 +127,7 @@ function OrderDetailPageContent() {
           <OrderDetailView
             order={order}
             backLabel="Back to My Orders"
-            onBack={() => navigate(ROUTES.ACCOUNT_ORDERS)}
+            onBack={() => navigate(ROUTES.ORDERS)}
           />
         )}
       </div>

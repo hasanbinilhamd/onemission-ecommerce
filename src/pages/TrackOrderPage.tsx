@@ -111,8 +111,8 @@ function TrackOrderPageContent() {
                 <Button type="submit" disabled={isLoading} className="sm:flex-1">
                   {isLoading ? 'Searching...' : 'Search'}
                 </Button>
-                <Button type="button" variant="secondary" onClick={() => navigate(ROUTES.ACCOUNT)} className="sm:flex-1">
-                  Account
+                <Button type="button" variant="secondary" onClick={() => navigate(ROUTES.LOGIN)} className="sm:flex-1">
+                  Login
                 </Button>
               </div>
             </form>

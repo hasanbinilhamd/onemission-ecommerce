@@ -7,10 +7,14 @@ export const ROUTES = {
   PRODUCT: '/product/:slug',
   CART: '/cart',
   CHECKOUT: '/checkout',
+  LOGIN: '/login',
   ACCOUNT: '/account',
-  ACCOUNT_ORDERS: '/account/orders',
+  ORDERS: '/orders',
   ORDER_DETAIL: '/orders/:orderNumber',
   TRACK_ORDER: '/track-order',
+  ACCOUNT_ADDRESS: '/account/address',
+  ACCOUNT_PROFILE: '/account/profile',
+  WISHLIST: '/wishlist',
 } as const;
 
 export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES];

@@ -34,3 +34,15 @@ export async function getAuthenticatedUser(): Promise<User | null> {
 
   return data.user ?? null;
 }
+
+export async function signOutAuthenticatedUser(): Promise<void> {
+  const client = getSupabaseClient();
+  if (!client) {
+    return;
+  }
+
+  const { error } = await client.auth.signOut();
+  if (error) {
+    throw error;
+  }
+}

@@ -2,6 +2,7 @@ import { ArrowLeft, PackageSearch, ShoppingBag } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, EmptyState, LoadingSkeleton } from '../components/shared';
+import { orderDetailPath, ROUTES } from '../app/config/routes';
 import { OrderPaymentStatusBadge, OrderStatusBadge, useAuthenticatedCustomer } from '../features/customer';
 import { NavigationThemeProvider } from '../features/navigation';
 import { getOrdersByCustomerEmail } from '../services/api/orderService';
@@ -78,7 +79,7 @@ function MyOrdersPageContent() {
             </p>
           </div>
 
-          <Button type="button" variant="ghost" size="sm" className="w-fit gap-2" onClick={() => navigate('/account')}>
+          <Button type="button" variant="ghost" size="sm" className="w-fit gap-2" onClick={() => navigate(ROUTES.ACCOUNT)}>
             <ArrowLeft size={16} />
             Back to Account
           </Button>
@@ -98,10 +99,10 @@ function MyOrdersPageContent() {
                 : 'Supabase authentication is not configured in this environment, so My Orders is unavailable right now.'}
               action={
                 <div className="flex flex-wrap justify-center gap-3">
-                  <Button type="button" onClick={() => navigate('/track-order')}>
+                  <Button type="button" onClick={() => navigate(ROUTES.TRACK_ORDER)}>
                     Track Order as Guest
                   </Button>
-                  <Button type="button" variant="secondary" onClick={() => navigate('/account')}>
+                  <Button type="button" variant="secondary" onClick={() => navigate(ROUTES.ACCOUNT)}>
                     Back to Account
                   </Button>
                 </div>
@@ -127,7 +128,7 @@ function MyOrdersPageContent() {
                   <Button type="button" onClick={() => window.location.reload()}>
                     Retry
                   </Button>
-                  <Button type="button" variant="secondary" onClick={() => navigate('/track-order')}>
+                  <Button type="button" variant="secondary" onClick={() => navigate(ROUTES.TRACK_ORDER)}>
                     Track Order as Guest
                   </Button>
                 </div>
@@ -138,9 +139,9 @@ function MyOrdersPageContent() {
           <div className="rounded-3xl border border-neutral-200 bg-white p-6 sm:p-8">
             <EmptyState
               icon={<PackageSearch size={36} />}
-              title="No orders found"
+              title="You don't have any orders yet."
               description="Orders connected to your signed-in email will appear here automatically after payment is completed."
-              action={<Button type="button" onClick={() => navigate('/track-order')}>Track Order as Guest</Button>}
+              action={<Button type="button" onClick={() => navigate(ROUTES.HOME)}>Start Shopping</Button>}
             />
           </div>
         ) : (
@@ -171,7 +172,7 @@ function MyOrdersPageContent() {
                         <td className="px-6 py-5"><OrderPaymentStatusBadge status={order.paymentStatus} /></td>
                         <td className="px-6 py-5"><OrderStatusBadge status={order.fulfillmentStatusLabel || order.fulfillmentStatus} /></td>
                         <td className="px-6 py-5 text-right">
-                          <Button type="button" variant="ghost" size="sm" onClick={() => navigate(`/account/orders/${order.id}`)}>
+                          <Button type="button" variant="ghost" size="sm" onClick={() => navigate(orderDetailPath(order.orderNumber))}>
                             View Details
                           </Button>
                         </td>
@@ -208,7 +209,7 @@ function MyOrdersPageContent() {
                       </div>
                     </div>
                   </div>
-                  <Button type="button" className="mt-5 w-full" onClick={() => navigate(`/account/orders/${order.id}`)}>
+                  <Button type="button" className="mt-5 w-full" onClick={() => navigate(orderDetailPath(order.orderNumber))}>
                     View Details
                   </Button>
                 </article>

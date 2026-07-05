@@ -1,10 +1,11 @@
 import { PackageSearch } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { ROUTES } from '../app/config/routes';
 import { Button, EmptyState, LoadingSkeleton } from '../components/shared';
 import { OrderDetailView, useAuthenticatedCustomer } from '../features/customer';
 import { NavigationThemeProvider } from '../features/navigation';
-import { getOrderById } from '../services/api/orderService';
+import { getOrderByNumber } from '../services/api/orderService';
 import type { CommerceOrderDetail } from '../types';
 
 function normalizeEmail(email: string) {
@@ -13,7 +14,7 @@ function normalizeEmail(email: string) {
 
 function OrderDetailPageContent() {
   const navigate = useNavigate();
-  const { orderId = '' } = useParams<{ orderId: string }>();
+  const { orderNumber = '' } = useParams<{ orderNumber: string }>();
   const { user, isLoading: isAuthLoading, errorMessage: authErrorMessage, isConfigured } = useAuthenticatedCustomer();
   const [order, setOrder] = useState<CommerceOrderDetail | null>(null);
   const [isLoadingOrder, setIsLoadingOrder] = useState(false);
@@ -22,7 +23,7 @@ function OrderDetailPageContent() {
   const authenticatedEmail = useMemo(() => normalizeEmail(user?.email || ''), [user?.email]);
 
   useEffect(() => {
-    if (isAuthLoading || !orderId || !authenticatedEmail) {
+    if (isAuthLoading || !orderNumber || !authenticatedEmail) {
       return;
     }
 
@@ -33,7 +34,7 @@ function OrderDetailPageContent() {
       setErrorMessage(null);
 
       try {
-        const nextOrder = await getOrderById(orderId);
+        const nextOrder = await getOrderByNumber(orderNumber);
         if (!isMounted) {
           return;
         }
@@ -64,7 +65,7 @@ function OrderDetailPageContent() {
     return () => {
       isMounted = false;
     };
-  }, [authenticatedEmail, isAuthLoading, orderId]);
+  }, [authenticatedEmail, isAuthLoading, orderNumber]);
 
   const showLoadingState = isAuthLoading || isLoadingOrder;
 
@@ -85,10 +86,10 @@ function OrderDetailPageContent() {
                 : 'Supabase authentication is not configured in this environment, so this page is unavailable right now.'}
               action={
                 <div className="flex flex-wrap justify-center gap-3">
-                  <Button type="button" onClick={() => navigate('/track-order')}>
+                  <Button type="button" onClick={() => navigate(ROUTES.TRACK_ORDER)}>
                     Track Order as Guest
                   </Button>
-                  <Button type="button" variant="secondary" onClick={() => navigate('/account/orders')}>
+                  <Button type="button" variant="secondary" onClick={() => navigate(ROUTES.ACCOUNT_ORDERS)}>
                     Back to My Orders
                   </Button>
                 </div>
@@ -112,10 +113,10 @@ function OrderDetailPageContent() {
               description={errorMessage || 'We could not load the requested order.'}
               action={
                 <div className="flex flex-wrap justify-center gap-3">
-                  <Button type="button" onClick={() => navigate('/account/orders')}>
+                  <Button type="button" onClick={() => navigate(ROUTES.ACCOUNT_ORDERS)}>
                     Back to My Orders
                   </Button>
-                  <Button type="button" variant="secondary" onClick={() => navigate('/track-order')}>
+                  <Button type="button" variant="secondary" onClick={() => navigate(ROUTES.TRACK_ORDER)}>
                     Track Order as Guest
                   </Button>
                 </div>
@@ -126,7 +127,7 @@ function OrderDetailPageContent() {
           <OrderDetailView
             order={order}
             backLabel="Back to My Orders"
-            onBack={() => navigate('/account/orders')}
+            onBack={() => navigate(ROUTES.ACCOUNT_ORDERS)}
           />
         )}
       </div>

@@ -1,6 +1,7 @@
 import { PackageSearch } from 'lucide-react';
 import { useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../app/config/routes';
 import { Button, EmptyState, Input, LoadingSkeleton } from '../components/shared';
 import { OrderDetailView } from '../features/customer';
 import { NavigationThemeProvider } from '../features/navigation';
@@ -54,19 +55,23 @@ function TrackOrderPageContent() {
     setErrorMessage(null);
     setOrder(null);
 
-    const result = await findGuestOrder({
-      email,
-      orderNumber,
-    });
+    try {
+      const result = await findGuestOrder({
+        email,
+        orderNumber,
+      });
 
-    if (!result) {
+      if (!result) {
+        setErrorMessage("We couldn't find an order matching your email and order number.");
+        return;
+      }
+
+      setOrder(result);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Unable to track your order right now.');
+    } finally {
       setIsLoading(false);
-      setErrorMessage('We could not find an order matching that email and order number. Please review your details and try again.');
-      return;
     }
-
-    setOrder(result);
-    setIsLoading(false);
   };
 
   return (
@@ -106,7 +111,7 @@ function TrackOrderPageContent() {
                 <Button type="submit" disabled={isLoading} className="sm:flex-1">
                   {isLoading ? 'Searching...' : 'Search'}
                 </Button>
-                <Button type="button" variant="secondary" onClick={() => navigate('/account')} className="sm:flex-1">
+                <Button type="button" variant="secondary" onClick={() => navigate(ROUTES.ACCOUNT)} className="sm:flex-1">
                   Account
                 </Button>
               </div>

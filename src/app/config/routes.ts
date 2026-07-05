@@ -9,7 +9,7 @@ export const ROUTES = {
   CHECKOUT: '/checkout',
   ACCOUNT: '/account',
   ACCOUNT_ORDERS: '/account/orders',
-  ACCOUNT_ORDER_DETAIL: '/account/orders/:orderId',
+  ORDER_DETAIL: '/orders/:orderNumber',
   TRACK_ORDER: '/track-order',
 } as const;
 
@@ -20,7 +20,7 @@ export function productPath(slug: string): string {
   return `/product/${slug}`;
 }
 
-/** Build an authenticated order detail URL from an order id. */
-export function accountOrderDetailPath(orderId: string): string {
-  return `/account/orders/${orderId}`;
+/** Build an order detail URL from a public order number. */
+export function orderDetailPath(orderNumber: string): string {
+  return `/orders/${encodeURIComponent(orderNumber)}`;
 }

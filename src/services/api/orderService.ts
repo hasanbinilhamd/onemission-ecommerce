@@ -5,22 +5,25 @@ import type {
   CommerceOrderListResponse,
 } from '../../types';
 
-interface OrderListQuery {
+interface CustomerOrderListQuery {
+  email: string;
   page?: number;
   limit?: number;
-  search?: string;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-  paymentStatus?: string;
-  fulfillmentStatus?: string;
-  startDate?: string;
-  endDate?: string;
-  courier?: string;
 }
 
 interface GuestOrderTrackingInput {
   email: string;
   orderNumber: string;
+}
+
+export class OrderApiError extends Error {
+  statusCode: number;
+
+  constructor(message: string, statusCode: number) {
+    super(message);
+    this.name = 'OrderApiError';
+    this.statusCode = statusCode;
+  }
 }
 
 function getApiBaseUrl() {
@@ -54,23 +57,6 @@ function normalizeOrderNumber(orderNumber: string) {
   return orderNumber.trim().toUpperCase();
 }
 
-function toListItem(order: CommerceOrderDetail): CommerceOrderListItem {
-  return {
-    id: order.id,
-    orderNumber: order.orderNumber,
-    orderDate: order.createdAt,
-    customerName: order.customerName,
-    totalAmount: order.grandTotal,
-    paymentStatus: order.payment?.status || 'UNKNOWN',
-    fulfillmentStatus: order.fulfillmentStatus,
-    fulfillmentStatusLabel: order.fulfillmentStatusLabel,
-    courier: order.shipment?.courier || order.shipping?.courier || '',
-    totalItems: order.items.length,
-    createdAt: order.createdAt,
-    updatedAt: order.updatedAt,
-  };
-}
-
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${getApiBaseUrl()}${path}`, {
     ...init,
@@ -83,31 +69,35 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   const payload = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(payload?.error || 'Order request failed.');
+    throw new OrderApiError(payload?.error || 'Order request failed.', response.status);
   }
 
   return payload as T;
 }
 
-export async function listOrders(query: OrderListQuery = {}): Promise<CommerceOrderListResponse> {
+export async function listCustomerOrders(query: CustomerOrderListQuery): Promise<CommerceOrderListResponse> {
+  const normalizedEmail = normalizeEmail(query.email);
+  if (!normalizedEmail) {
+    return {
+      data: [],
+      pagination: {
+        page: 1,
+        limit: query.limit ?? 10,
+        totalItems: 0,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      },
+    };
+  }
+
   const params = buildQueryParams({
+    email: normalizedEmail,
     page: query.page ?? 1,
     limit: query.limit ?? 10,
-    search: query.search,
-    sortBy: query.sortBy ?? 'createdAt',
-    sortOrder: query.sortOrder ?? 'desc',
-    paymentStatus: query.paymentStatus,
-    fulfillmentStatus: query.fulfillmentStatus,
-    startDate: query.startDate,
-    endDate: query.endDate,
-    courier: query.courier,
   });
 
-  return fetchJson<CommerceOrderListResponse>(`/orders?${params.toString()}`);
-}
-
-export async function getOrderById(id: string): Promise<CommerceOrderDetail> {
-  return fetchJson<CommerceOrderDetail>(`/orders/${encodeURIComponent(id)}`);
+  return fetchJson<CommerceOrderListResponse>(`/orders/customer?${params.toString()}`);
 }
 
 export async function getOrdersByCustomerEmail(email: string): Promise<CommerceOrderListItem[]> {
@@ -116,46 +106,31 @@ export async function getOrdersByCustomerEmail(email: string): Promise<CommerceO
     return [];
   }
 
-  const firstPage = await listOrders({
+  const firstPage = await listCustomerOrders({
+    email: normalizedEmail,
     page: 1,
     limit: 100,
-    search: normalizedEmail,
-    sortBy: 'createdAt',
-    sortOrder: 'desc',
   });
 
   const pageRequests: Promise<CommerceOrderListResponse>[] = [];
   for (let page = 2; page <= firstPage.pagination.totalPages; page += 1) {
-    pageRequests.push(listOrders({
+    pageRequests.push(listCustomerOrders({
+      email: normalizedEmail,
       page,
       limit: 100,
-      search: normalizedEmail,
-      sortBy: 'createdAt',
-      sortOrder: 'desc',
     }));
   }
 
   const remainingPages = await Promise.all(pageRequests);
-  const summaries = [firstPage, ...remainingPages].flatMap((response) => response.data);
 
-  if (summaries.length === 0) {
-    return [];
-  }
-
-  const uniqueSummaries = Array.from(new Map(summaries.map((item) => [item.id, item])).values());
-  const detailResults = await Promise.allSettled(uniqueSummaries.map((order) => getOrderById(order.id)));
-
-  return detailResults
-    .flatMap((result) => {
-      if (result.status !== 'fulfilled') {
-        return [];
-      }
-
-      return normalizeEmail(result.value.customerEmail) === normalizedEmail
-        ? [toListItem(result.value)]
-        : [];
-    })
+  return [firstPage, ...remainingPages]
+    .flatMap((response) => response.data)
     .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
+}
+
+export async function getOrderByNumber(orderNumber: string): Promise<CommerceOrderDetail> {
+  const normalizedOrderNumber = normalizeOrderNumber(orderNumber);
+  return fetchJson<CommerceOrderDetail>(`/orders/by-number/${encodeURIComponent(normalizedOrderNumber)}`);
 }
 
 export async function findGuestOrder({ email, orderNumber }: GuestOrderTrackingInput): Promise<CommerceOrderDetail | null> {
@@ -166,33 +141,18 @@ export async function findGuestOrder({ email, orderNumber }: GuestOrderTrackingI
     return null;
   }
 
+  const params = buildQueryParams({
+    email: normalizedEmail,
+    orderNumber: normalizedOrderNumber,
+  });
+
   try {
-    const response = await listOrders({
-      page: 1,
-      limit: 20,
-      search: normalizedOrderNumber,
-      sortBy: 'createdAt',
-      sortOrder: 'desc',
-    });
-
-    const matchedSummary = response.data.find(
-      (entry) => normalizeOrderNumber(entry.orderNumber) === normalizedOrderNumber,
-    );
-
-    if (!matchedSummary) {
+    return await fetchJson<CommerceOrderDetail>(`/orders/track?${params.toString()}`);
+  } catch (error) {
+    if (error instanceof OrderApiError && error.statusCode === 404) {
       return null;
     }
 
-    const detail = await getOrderById(matchedSummary.id);
-    if (
-      normalizeEmail(detail.customerEmail) !== normalizedEmail
-      || normalizeOrderNumber(detail.orderNumber) !== normalizedOrderNumber
-    ) {
-      return null;
-    }
-
-    return detail;
-  } catch {
-    return null;
+    throw error;
   }
 }

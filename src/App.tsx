@@ -97,7 +97,7 @@ function App() {
           <Route path="/payment/failed" element={<PaymentFailedPage />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/account/orders" element={<MyOrdersPage />} />
-          <Route path="/account/orders/:orderId" element={<OrderDetailPage />} />
+          <Route path="/orders/:orderNumber" element={<OrderDetailPage />} />
           <Route path="/track-order" element={<TrackOrderPage />} />
 
           {/* Fallback → home */}

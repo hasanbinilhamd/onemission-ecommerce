@@ -33,6 +33,7 @@ interface CheckoutContextValue {
   updateContactField: (field: CheckoutContactField, value: string) => void;
   updateContactInformation: (values: Partial<CheckoutContactInformation>) => void;
   updateShippingField: (field: CheckoutShippingField, value: string) => void;
+  updateShippingAddress: (values: Partial<CheckoutShippingAddress>) => void;
   selectShippingProvince: (province: ShippingProvince | null) => void;
   selectShippingCity: (city: ShippingCity | null) => void;
   selectShippingDistrict: (district: ShippingDistrict | null) => void;
@@ -118,6 +119,16 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
       shippingAddress: {
         ...previous.shippingAddress,
         [field]: value,
+      },
+    }));
+  }, []);
+
+  const updateShippingAddress = useCallback((values: Partial<CheckoutShippingAddress>) => {
+    setCheckout((previous) => ({
+      ...previous,
+      shippingAddress: {
+        ...previous.shippingAddress,
+        ...values,
       },
     }));
   }, []);
@@ -296,6 +307,7 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
     updateContactField,
     updateContactInformation,
     updateShippingField,
+    updateShippingAddress,
     selectShippingProvince,
     selectShippingCity,
     selectShippingDistrict,
@@ -312,6 +324,7 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
     updateContactField,
     updateContactInformation,
     updateShippingField,
+    updateShippingAddress,
     selectShippingProvince,
     selectShippingCity,
     selectShippingDistrict,

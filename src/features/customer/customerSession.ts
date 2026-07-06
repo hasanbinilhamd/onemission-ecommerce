@@ -9,6 +9,15 @@ export interface AuthenticatedCustomerProfile {
   avatarUrl: string;
   authProvider: string;
   emailVerified: boolean;
+  country: string;
+  provinceId: string;
+  province: string;
+  cityId: string;
+  city: string;
+  districtId: string;
+  district: string;
+  postalCode: string;
+  streetAddress: string;
   initials: string;
 }
 
@@ -40,6 +49,15 @@ export function getAuthenticatedCustomerProfile(customer: CustomerAuthCustomer |
     avatarUrl: customer.avatarUrl,
     authProvider: customer.authProvider,
     emailVerified: customer.emailVerified,
+    country: customer.country || 'Indonesia',
+    provinceId: customer.provinceId || '',
+    province: customer.province || '',
+    cityId: customer.cityId || '',
+    city: customer.city || '',
+    districtId: customer.districtId || '',
+    district: customer.district || '',
+    postalCode: customer.postalCode || '',
+    streetAddress: customer.streetAddress || '',
     initials: buildInitials(customer.customerName, customer.email),
   };
 }

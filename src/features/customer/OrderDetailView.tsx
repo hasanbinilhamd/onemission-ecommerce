@@ -84,7 +84,7 @@ export function OrderDetailView({ order, backLabel = 'Back', onBack }: OrderDeta
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-3">
           {onBack && (
             <Button type="button" variant="ghost" size="sm" className="w-fit gap-2" onClick={onBack}>
@@ -93,13 +93,13 @@ export function OrderDetailView({ order, backLabel = 'Back', onBack }: OrderDeta
             </Button>
           )}
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-neutral-400">
-              Order Detail
-            </p>
             <h1 className="m-0 text-3xl font-semibold text-neutral-950 sm:text-4xl">
-              {order.orderNumber}
+              Order Details
             </h1>
-            <p className="mt-2 text-sm text-neutral-500">
+            <p className="mt-2 text-sm font-medium text-neutral-700">
+              {order.orderNumber}
+            </p>
+            <p className="mt-1 text-sm text-neutral-500">
               Created on {formatDate(order.createdAt)}
             </p>
           </div>

@@ -12,6 +12,15 @@ export interface CustomerAuthCustomer {
   lastLoginAt: string | null;
   createdAt: string;
   updatedAt: string;
+  country?: string;
+  provinceId?: string;
+  province?: string;
+  cityId?: string;
+  city?: string;
+  districtId?: string;
+  district?: string;
+  postalCode?: string;
+  streetAddress?: string;
 }
 
 export interface CustomerAuthSessionPayload {

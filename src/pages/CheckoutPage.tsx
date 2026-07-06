@@ -18,6 +18,7 @@ import {
   CheckoutSection,
   CheckoutSelectionCard,
 } from '../features/checkout';
+import { useAuthenticatedCustomer } from '../features/customer';
 import { NavigationThemeProvider } from '../features/navigation';
 import {
   useCartStore,
@@ -195,6 +196,54 @@ function buildDeliverySummary(selectedRate: ShippingRate) {
   );
 }
 
+function splitCustomerName(fullName: string) {
+  const normalizedName = fullName.trim();
+  if (!normalizedName) {
+    return { firstName: '', lastName: '' };
+  }
+
+  const parts = normalizedName.split(/\s+/).filter(Boolean);
+  const firstName = parts.shift() || normalizedName;
+  const lastName = parts.join(' ');
+
+  return { firstName, lastName };
+}
+
+function getAutofillContactInformation(fullName: string, email: string, phone: string): Partial<CheckoutContactInformation> {
+  const { firstName, lastName } = splitCustomerName(fullName);
+
+  return {
+    ...(firstName ? { firstName } : {}),
+    ...(lastName ? { lastName } : {}),
+    ...(email ? { email } : {}),
+    ...(phone ? { phoneNumber: phone } : {}),
+  };
+}
+
+function getAutofillShippingAddress(profile: {
+  country?: string;
+  provinceId?: string;
+  province?: string;
+  cityId?: string;
+  city?: string;
+  districtId?: string;
+  district?: string;
+  postalCode?: string;
+  streetAddress?: string;
+}): Partial<CheckoutShippingAddress> {
+  return {
+    ...(profile.country ? { country: profile.country } : {}),
+    ...(profile.provinceId ? { provinceId: profile.provinceId } : {}),
+    ...(profile.province ? { province: profile.province } : {}),
+    ...(profile.cityId ? { cityId: profile.cityId } : {}),
+    ...(profile.city ? { city: profile.city } : {}),
+    ...(profile.districtId ? { districtId: profile.districtId } : {}),
+    ...(profile.district ? { district: profile.district } : {}),
+    ...(profile.postalCode ? { postalCode: profile.postalCode } : {}),
+    ...(profile.streetAddress ? { streetAddress: profile.streetAddress } : {}),
+  };
+}
+
 function getCompletionBadge() {
   return (
     <Badge variant="success" className="gap-1">
@@ -206,6 +255,7 @@ function getCompletionBadge() {
 
 function CheckoutPageContent() {
   const navigate = useNavigate();
+  const { user, profile, isLoading: isAuthLoading } = useAuthenticatedCustomer();
   const {
     cart,
     cartItems,
@@ -216,7 +266,9 @@ function CheckoutPageContent() {
   const {
     checkout,
     updateContactField,
+    updateContactInformation,
     updateShippingField,
+    updateShippingAddress,
     selectShippingProvince,
     selectShippingCity,
     selectShippingDistrict,
@@ -240,6 +292,7 @@ function CheckoutPageContent() {
   const [isSnapFocusMode, setIsSnapFocusMode] = useState(false);
 
   const provinceLoadedRef = useRef(false);
+  const hasAutofilledCustomerRef = useRef(false);
   const cityRequestKeyRef = useRef('');
   const districtRequestKeyRef = useRef('');
   const ratesRequestKeyRef = useRef('');
@@ -407,6 +460,59 @@ function CheckoutPageContent() {
     shippingAddress.postalCode,
     shippingAddress.province,
     shippingAddress.provinceId,
+  ]);
+
+  useEffect(() => {
+    if (hasAutofilledCustomerRef.current || isAuthLoading || !user?.email || !profile) {
+      return;
+    }
+
+    const autofillContact = getAutofillContactInformation(profile.fullName, profile.email, profile.phone);
+    const autofillShipping = getAutofillShippingAddress(profile);
+
+    if (Object.keys(autofillContact).length > 0) {
+      updateContactInformation({
+        ...(checkout.contactInformation.firstName ? {} : { firstName: autofillContact.firstName || '' }),
+        ...(checkout.contactInformation.lastName ? {} : { lastName: autofillContact.lastName || '' }),
+        ...(checkout.contactInformation.email ? {} : { email: autofillContact.email || '' }),
+        ...(checkout.contactInformation.phoneNumber ? {} : { phoneNumber: autofillContact.phoneNumber || '' }),
+      });
+    }
+
+    if (Object.keys(autofillShipping).length > 0) {
+      updateShippingAddress({
+        ...(checkout.shippingAddress.country ? {} : { country: autofillShipping.country || '' }),
+        ...(checkout.shippingAddress.provinceId ? {} : { provinceId: autofillShipping.provinceId || '' }),
+        ...(checkout.shippingAddress.province ? {} : { province: autofillShipping.province || '' }),
+        ...(checkout.shippingAddress.cityId ? {} : { cityId: autofillShipping.cityId || '' }),
+        ...(checkout.shippingAddress.city ? {} : { city: autofillShipping.city || '' }),
+        ...(checkout.shippingAddress.districtId ? {} : { districtId: autofillShipping.districtId || '' }),
+        ...(checkout.shippingAddress.district ? {} : { district: autofillShipping.district || '' }),
+        ...(checkout.shippingAddress.postalCode ? {} : { postalCode: autofillShipping.postalCode || '' }),
+        ...(checkout.shippingAddress.streetAddress ? {} : { streetAddress: autofillShipping.streetAddress || '' }),
+      });
+    }
+
+    hasAutofilledCustomerRef.current = true;
+  }, [
+    checkout.contactInformation.email,
+    checkout.contactInformation.firstName,
+    checkout.contactInformation.lastName,
+    checkout.contactInformation.phoneNumber,
+    checkout.shippingAddress.city,
+    checkout.shippingAddress.cityId,
+    checkout.shippingAddress.country,
+    checkout.shippingAddress.district,
+    checkout.shippingAddress.districtId,
+    checkout.shippingAddress.postalCode,
+    checkout.shippingAddress.province,
+    checkout.shippingAddress.provinceId,
+    checkout.shippingAddress.streetAddress,
+    isAuthLoading,
+    profile,
+    updateContactInformation,
+    updateShippingAddress,
+    user?.email,
   ]);
 
   useEffect(() => {

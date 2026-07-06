@@ -9,6 +9,7 @@ interface CustomerOrderListQuery {
   email: string;
   page?: number;
   limit?: number;
+  accessToken?: string;
 }
 
 interface GuestOrderTrackingInput {
@@ -57,11 +58,12 @@ function normalizeOrderNumber(orderNumber: string) {
   return orderNumber.trim().toUpperCase();
 }
 
-async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
+async function fetchJson<T>(path: string, init?: RequestInit, accessToken = ''): Promise<T> {
   const response = await fetch(`${getApiBaseUrl()}${path}`, {
     ...init,
     headers: {
       Accept: 'application/json',
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...(init?.headers ?? {}),
     },
   });
@@ -97,10 +99,10 @@ export async function listCustomerOrders(query: CustomerOrderListQuery): Promise
     limit: query.limit ?? 10,
   });
 
-  return fetchJson<CommerceOrderListResponse>(`/orders/customer?${params.toString()}`);
+  return fetchJson<CommerceOrderListResponse>(`/orders/customer?${params.toString()}`, undefined, query.accessToken || '');
 }
 
-export async function getOrdersByCustomerEmail(email: string): Promise<CommerceOrderListItem[]> {
+export async function getOrdersByCustomerEmail(email: string, accessToken = ''): Promise<CommerceOrderListItem[]> {
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail) {
     return [];
@@ -110,6 +112,7 @@ export async function getOrdersByCustomerEmail(email: string): Promise<CommerceO
     email: normalizedEmail,
     page: 1,
     limit: 100,
+    accessToken,
   });
 
   const pageRequests: Promise<CommerceOrderListResponse>[] = [];
@@ -118,6 +121,7 @@ export async function getOrdersByCustomerEmail(email: string): Promise<CommerceO
       email: normalizedEmail,
       page,
       limit: 100,
+      accessToken,
     }));
   }
 
@@ -128,9 +132,9 @@ export async function getOrdersByCustomerEmail(email: string): Promise<CommerceO
     .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
 }
 
-export async function getOrderByNumber(orderNumber: string): Promise<CommerceOrderDetail> {
+export async function getOrderByNumber(orderNumber: string, accessToken = ''): Promise<CommerceOrderDetail> {
   const normalizedOrderNumber = normalizeOrderNumber(orderNumber);
-  return fetchJson<CommerceOrderDetail>(`/orders/by-number/${encodeURIComponent(normalizedOrderNumber)}`);
+  return fetchJson<CommerceOrderDetail>(`/orders/by-number/${encodeURIComponent(normalizedOrderNumber)}`, undefined, accessToken);
 }
 
 export async function findGuestOrder({ email, orderNumber }: GuestOrderTrackingInput): Promise<CommerceOrderDetail | null> {

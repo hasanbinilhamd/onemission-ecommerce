@@ -15,7 +15,13 @@ function normalizeEmail(email: string) {
 function OrderDetailPageContent() {
   const navigate = useNavigate();
   const { orderNumber = '' } = useParams<{ orderNumber: string }>();
-  const { user, isLoading: isAuthLoading, errorMessage: authErrorMessage, isConfigured } = useAuthenticatedCustomer();
+  const {
+    user,
+    isLoading: isAuthLoading,
+    errorMessage: authErrorMessage,
+    isConfigured,
+    getValidAccessToken,
+  } = useAuthenticatedCustomer();
   const [order, setOrder] = useState<CommerceOrderDetail | null>(null);
   const [isLoadingOrder, setIsLoadingOrder] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -34,7 +40,8 @@ function OrderDetailPageContent() {
       setErrorMessage(null);
 
       try {
-        const nextOrder = await getOrderByNumber(orderNumber);
+        const accessToken = await getValidAccessToken();
+        const nextOrder = await getOrderByNumber(orderNumber, accessToken || '');
         if (!isMounted) {
           return;
         }
@@ -65,7 +72,7 @@ function OrderDetailPageContent() {
     return () => {
       isMounted = false;
     };
-  }, [authenticatedEmail, isAuthLoading, orderNumber]);
+  }, [authenticatedEmail, getValidAccessToken, isAuthLoading, orderNumber]);
 
   const showLoadingState = isAuthLoading || isLoadingOrder;
 
@@ -88,7 +95,7 @@ function OrderDetailPageContent() {
               title={isConfigured ? 'Sign in to view this order' : 'Authentication is not configured'}
               description={isConfigured
                 ? 'A signed-in customer session is required before we can display this order detail page.'
-                : 'Supabase authentication is not configured in this environment, so this page is unavailable right now.'}
+                : 'Customer authentication is not configured in this environment, so this page is unavailable right now.'}
               action={
                 <div className="flex flex-wrap justify-center gap-3">
                   <Button type="button" onClick={() => navigate(ROUTES.LOGIN)}>

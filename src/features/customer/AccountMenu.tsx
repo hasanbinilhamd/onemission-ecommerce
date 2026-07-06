@@ -1,4 +1,4 @@
-import { CircleUserRound, LogOut, MapPinned, Package2, UserRound, ChevronDown } from 'lucide-react';
+import { CircleUserRound, Heart, LogOut, MapPinned, Package2, UserRound, ChevronDown } from 'lucide-react';
 import {
   useCallback,
   useEffect,
@@ -9,7 +9,6 @@ import {
 } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../app/config/routes';
-import { signOutAuthenticatedUser } from '../../services/supabase/client';
 import { useNavigationTheme } from '../navigation';
 import { useAuthenticatedCustomer } from './useAuthenticatedCustomer';
 
@@ -29,7 +28,7 @@ function getMenuItemClassName(tone: 'default' | 'danger' = 'default') {
 export function AccountMenu() {
   const navigate = useNavigate();
   const { colors } = useNavigationTheme();
-  const { user, profile, isLoading } = useAuthenticatedCustomer();
+  const { user, profile, isLoading, logout } = useAuthenticatedCustomer();
   const [isOpen, setIsOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -60,13 +59,23 @@ export function AccountMenu() {
           onSelect: () => navigate(ROUTES.ACCOUNT_ADDRESS),
         },
         {
+          label: 'Wishlist',
+          icon: Heart,
+          onSelect: () => navigate(ROUTES.WISHLIST),
+        },
+        {
+          label: 'Profile',
+          icon: UserRound,
+          onSelect: () => navigate(ROUTES.ACCOUNT_PROFILE),
+        },
+        {
           label: 'Logout',
           icon: LogOut,
           tone: 'danger',
           onSelect: async () => {
             setIsSigningOut(true);
             try {
-              await signOutAuthenticatedUser();
+              await logout();
               navigate(ROUTES.HOME);
             } finally {
               setIsSigningOut(false);
@@ -88,7 +97,7 @@ export function AccountMenu() {
         onSelect: () => navigate(ROUTES.TRACK_ORDER),
       },
     ];
-  }, [navigate, user?.email]);
+  }, [logout, navigate, user?.email]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -205,11 +214,19 @@ export function AccountMenu() {
         }}
       >
         {profile ? (
-          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-neutral-900 text-[11px] font-semibold uppercase text-white">
-            {profile.initials}
-          </span>
+          <>
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-neutral-900 text-[11px] font-semibold uppercase text-white">
+              {profile.initials}
+            </span>
+            <span className="hidden max-w-[110px] truncate text-sm font-medium sm:inline-block">
+              {profile.fullName || profile.email}
+            </span>
+          </>
         ) : (
-          <CircleUserRound size={typeof window !== 'undefined' && window.innerWidth < 640 ? 18 : 20} strokeWidth={2} />
+          <>
+            <CircleUserRound size={typeof window !== 'undefined' && window.innerWidth < 640 ? 18 : 20} strokeWidth={2} />
+            <span className="hidden text-sm font-medium sm:inline-block">Account</span>
+          </>
         )}
         <ChevronDown size={14} strokeWidth={2} style={{ opacity: 0.8 }} />
       </button>

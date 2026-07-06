@@ -1,10 +1,14 @@
-import type { User } from '@supabase/supabase-js';
+import type { CustomerAuthCustomer } from '../../services/auth/customerAuthService';
 
 export interface AuthenticatedCustomerProfile {
   customerId: string;
+  customerCode: string;
   email: string;
   fullName: string;
   phone: string;
+  avatarUrl: string;
+  authProvider: string;
+  emailVerified: boolean;
   initials: string;
 }
 
@@ -22,21 +26,20 @@ function buildInitials(fullName: string, email: string) {
   return `${parts[0][0] || ''}${parts[1][0] || ''}`.toUpperCase();
 }
 
-export function getAuthenticatedCustomerProfile(user: User | null): AuthenticatedCustomerProfile | null {
-  if (!user?.email) {
+export function getAuthenticatedCustomerProfile(customer: CustomerAuthCustomer | null): AuthenticatedCustomerProfile | null {
+  if (!customer?.email) {
     return null;
   }
 
-  const metadata = user.user_metadata ?? {};
-  const fullName = String(metadata.fullName || metadata.full_name || '').trim();
-  const phone = String(metadata.phone || '').trim();
-  const customerId = String(metadata.customerId || metadata.customer_id || '').trim();
-
   return {
-    customerId,
-    email: user.email,
-    fullName,
-    phone,
-    initials: buildInitials(fullName, user.email),
+    customerId: customer.id,
+    customerCode: customer.customerCode,
+    email: customer.email,
+    fullName: customer.customerName,
+    phone: customer.phone,
+    avatarUrl: customer.avatarUrl,
+    authProvider: customer.authProvider,
+    emailVerified: customer.emailVerified,
+    initials: buildInitials(customer.customerName, customer.email),
   };
 }

@@ -61,7 +61,7 @@ function AccountPageContent() {
                   title={isConfigured ? 'Sign in required' : 'Authentication is not configured'}
                   description={isConfigured
                     ? 'A signed-in customer session is required before we can show your order history.'
-                    : 'Supabase authentication is not configured in this environment, so My Orders is unavailable right now.'}
+                    : 'Customer authentication is not configured in this environment, so My Orders is unavailable right now.'}
                   action={isConfigured ? (
                     <div className="flex flex-wrap justify-center gap-3">
                       <Button type="button" onClick={() => navigate(ROUTES.LOGIN)}>

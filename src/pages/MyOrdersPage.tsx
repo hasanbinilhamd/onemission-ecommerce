@@ -15,7 +15,13 @@ function normalizeEmail(email: string) {
 
 function MyOrdersPageContent() {
   const navigate = useNavigate();
-  const { user, isLoading: isAuthLoading, errorMessage: authErrorMessage, isConfigured } = useAuthenticatedCustomer();
+  const {
+    user,
+    isLoading: isAuthLoading,
+    errorMessage: authErrorMessage,
+    isConfigured,
+    getValidAccessToken,
+  } = useAuthenticatedCustomer();
   const [orders, setOrders] = useState<CommerceOrderListItem[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -34,7 +40,8 @@ function MyOrdersPageContent() {
       setErrorMessage(null);
 
       try {
-        const nextOrders = await getOrdersByCustomerEmail(authenticatedEmail);
+        const accessToken = await getValidAccessToken();
+        const nextOrders = await getOrdersByCustomerEmail(authenticatedEmail, accessToken || '');
         if (!isMounted) {
           return;
         }
@@ -59,7 +66,7 @@ function MyOrdersPageContent() {
     return () => {
       isMounted = false;
     };
-  }, [authenticatedEmail, isAuthLoading]);
+  }, [authenticatedEmail, getValidAccessToken, isAuthLoading]);
 
   const showLoadingState = isAuthLoading || isLoadingOrders;
 
@@ -82,7 +89,7 @@ function MyOrdersPageContent() {
               title={isConfigured ? 'Sign in to view your orders' : 'Authentication is not configured'}
               description={isConfigured
                 ? 'A signed-in customer session is required before we can display your order history.'
-                : 'Supabase authentication is not configured in this environment, so My Orders is unavailable right now.'}
+                : 'Customer authentication is not configured in this environment, so My Orders is unavailable right now.'}
               action={
                 <div className="flex flex-wrap justify-center gap-3">
                   <Button type="button" onClick={() => navigate(ROUTES.LOGIN)}>
@@ -115,7 +122,7 @@ function MyOrdersPageContent() {
                     Retry
                   </Button>
                   <Button type="button" variant="secondary" onClick={() => navigate(ROUTES.TRACK_ORDER)}>
-                    Track Order as Guest
+                    Track Order
                   </Button>
                 </div>
               }

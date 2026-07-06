@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { getSupabaseClient, getAuthenticatedUser, isSupabaseConfigured } from '../../services/supabase/client';
+import { getAuthenticatedCustomerProfile, type AuthenticatedCustomerProfile } from './customerSession';
 
 interface AuthenticatedCustomerState {
   user: User | null;
+  profile: AuthenticatedCustomerProfile | null;
   isLoading: boolean;
   errorMessage: string | null;
   isConfigured: boolean;
@@ -11,6 +13,7 @@ interface AuthenticatedCustomerState {
 
 const initialState: AuthenticatedCustomerState = {
   user: null,
+  profile: null,
   isLoading: true,
   errorMessage: null,
   isConfigured: isSupabaseConfigured(),
@@ -25,6 +28,7 @@ export function useAuthenticatedCustomer(): AuthenticatedCustomerState {
     if (!client) {
       setState({
         user: null,
+        profile: null,
         isLoading: false,
         errorMessage: null,
         isConfigured: false,
@@ -43,6 +47,7 @@ export function useAuthenticatedCustomer(): AuthenticatedCustomerState {
 
         setState({
           user,
+          profile: getAuthenticatedCustomerProfile(user),
           isLoading: false,
           errorMessage: null,
           isConfigured: true,
@@ -54,6 +59,7 @@ export function useAuthenticatedCustomer(): AuthenticatedCustomerState {
 
         setState({
           user: null,
+          profile: null,
           isLoading: false,
           errorMessage: error instanceof Error ? error.message : 'Unable to load your account session.',
           isConfigured: true,
@@ -68,8 +74,11 @@ export function useAuthenticatedCustomer(): AuthenticatedCustomerState {
         return;
       }
 
+      const nextUser = session?.user ?? null;
+
       setState({
-        user: session?.user ?? null,
+        user: nextUser,
+        profile: getAuthenticatedCustomerProfile(nextUser),
         isLoading: false,
         errorMessage: null,
         isConfigured: true,

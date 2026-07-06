@@ -7,10 +7,12 @@ import { CartPage } from './pages/CartPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { PaymentFailedPage, PaymentPendingPage, PaymentSuccessPage } from './pages/PaymentStatusPages';
 import { AccountPage } from './pages/AccountPage';
+import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
 import { MyOrdersPage } from './pages/MyOrdersPage';
 import { OrderDetailPage } from './pages/OrderDetailPage';
 import { TrackOrderPage } from './pages/TrackOrderPage';
-import { AddressBookPage, LoginPage, ProfilePage, WishlistPage } from './pages/PlaceholderPages';
+import { AddressBookPage, ForgotPasswordPage, ProfilePage, WishlistPage } from './pages/PlaceholderPages';
 import { CatalogDrawer } from './features/catalog';
 import { FloatingNavigation, MiniCartDrawer } from './features/cart';
 import { SearchOverlay } from './features/search';
@@ -98,6 +100,8 @@ function App() {
           <Route path="/payment/failed" element={<PaymentFailedPage />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/orders" element={<MyOrdersPage />} />
           <Route path="/orders/:orderNumber" element={<OrderDetailPage />} />
           <Route path="/track-order" element={<TrackOrderPage />} />

@@ -1,4 +1,4 @@
-import { CircleUserRound, LogOut, MapPinned, Package2, Heart, UserRound, ChevronDown } from 'lucide-react';
+import { CircleUserRound, LogOut, MapPinned, Package2, UserRound, ChevronDown } from 'lucide-react';
 import {
   useCallback,
   useEffect,
@@ -29,7 +29,7 @@ function getMenuItemClassName(tone: 'default' | 'danger' = 'default') {
 export function AccountMenu() {
   const navigate = useNavigate();
   const { colors } = useNavigationTheme();
-  const { user, isLoading } = useAuthenticatedCustomer();
+  const { user, profile, isLoading } = useAuthenticatedCustomer();
   const [isOpen, setIsOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -58,16 +58,6 @@ export function AccountMenu() {
           label: 'Address Book',
           icon: MapPinned,
           onSelect: () => navigate(ROUTES.ACCOUNT_ADDRESS),
-        },
-        {
-          label: 'Wishlist',
-          icon: Heart,
-          onSelect: () => navigate(ROUTES.WISHLIST),
-        },
-        {
-          label: 'Profile',
-          icon: UserRound,
-          onSelect: () => navigate(ROUTES.ACCOUNT_PROFILE),
         },
         {
           label: 'Logout',
@@ -214,7 +204,13 @@ export function AccountMenu() {
           gap: '2px',
         }}
       >
-        <CircleUserRound size={typeof window !== 'undefined' && window.innerWidth < 640 ? 18 : 20} strokeWidth={2} />
+        {profile ? (
+          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-neutral-900 text-[11px] font-semibold uppercase text-white">
+            {profile.initials}
+          </span>
+        ) : (
+          <CircleUserRound size={typeof window !== 'undefined' && window.innerWidth < 640 ? 18 : 20} strokeWidth={2} />
+        )}
         <ChevronDown size={14} strokeWidth={2} style={{ opacity: 0.8 }} />
       </button>
 
@@ -230,28 +226,41 @@ export function AccountMenu() {
               Loading account...
             </div>
           ) : (
-            menuItems.map((item, index) => {
-              const Icon = item.icon;
-              const isLogoutItem = item.label === 'Logout';
+            <>
+              {profile ? (
+                <div className="mb-2 rounded-xl bg-neutral-50 px-3 py-2">
+                  <p className="m-0 text-sm font-semibold text-neutral-900">
+                    {profile.fullName || 'Customer Account'}
+                  </p>
+                  <p className="mt-1 text-xs text-neutral-500">
+                    {profile.email}
+                  </p>
+                </div>
+              ) : null}
 
-              return (
-                <button
-                  key={item.label}
-                  ref={(element) => {
-                    itemRefs.current[index] = element;
-                  }}
-                  type="button"
-                  role="menuitem"
-                  tabIndex={-1}
-                  disabled={isSigningOut && isLogoutItem}
-                  onClick={() => void handleSelect(item)}
-                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors focus:outline-none ${getMenuItemClassName(item.tone)}`}
-                >
-                  <Icon size={16} strokeWidth={2} />
-                  <span>{isSigningOut && isLogoutItem ? 'Logging out...' : item.label}</span>
-                </button>
-              );
-            })
+              {menuItems.map((item, index) => {
+                const Icon = item.icon;
+                const isLogoutItem = item.label === 'Logout';
+
+                return (
+                  <button
+                    key={item.label}
+                    ref={(element) => {
+                      itemRefs.current[index] = element;
+                    }}
+                    type="button"
+                    role="menuitem"
+                    tabIndex={-1}
+                    disabled={isSigningOut && isLogoutItem}
+                    onClick={() => void handleSelect(item)}
+                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors focus:outline-none ${getMenuItemClassName(item.tone)}`}
+                  >
+                    <Icon size={16} strokeWidth={2} />
+                    <span>{isSigningOut && isLogoutItem ? 'Logging out...' : item.label}</span>
+                  </button>
+                );
+              })}
+            </>
           )}
         </div>
       )}

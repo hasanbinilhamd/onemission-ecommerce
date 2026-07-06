@@ -3,7 +3,7 @@ import { useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../app/config/routes';
 import { Button, EmptyState, Input, LoadingSkeleton } from '../components/shared';
-import { OrderDetailView } from '../features/customer';
+import { CustomerPageHeader, CustomerPageShell, OrderDetailView } from '../features/customer';
 import { NavigationThemeProvider } from '../features/navigation';
 import { findGuestOrder } from '../services/api/orderService';
 import type { CommerceOrderDetail } from '../types';
@@ -75,20 +75,15 @@ function TrackOrderPageContent() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', padding: '104px 24px 60px' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <div className="mb-8 grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)] lg:items-start">
-          <section className="rounded-3xl border border-neutral-200 bg-white p-6 sm:p-7">
-            <p style={{ margin: '0 0 8px', fontSize: '12px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9CA3AF', fontWeight: 600 }}>
-              Public Tracking
-            </p>
-            <h1 style={{ margin: '0 0 12px', fontSize: 'clamp(28px, 5vw, 40px)', lineHeight: 1.1, color: '#111827' }}>
-              Track Order
-            </h1>
-            <p style={{ margin: '0 0 24px', fontSize: '14px', lineHeight: 1.7, color: '#6B7280' }}>
-              Enter the same email used during checkout together with the order number from your confirmation.
-            </p>
+    <CustomerPageShell maxWidth="1200px">
+      <CustomerPageHeader
+        sectionLabel="Public Tracking"
+        title="Track Order"
+        description="Enter the same email used during checkout together with the order number from your confirmation."
+      />
 
+      <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)] lg:items-start">
+          <section className="rounded-3xl border border-neutral-200 bg-white p-6 sm:p-7">
             <form className="grid gap-4" onSubmit={handleSubmit}>
               <Input
                 label="Email"
@@ -139,14 +134,13 @@ function TrackOrderPageContent() {
                 <EmptyState
                   icon={<PackageSearch size={36} />}
                   title="Search for your order"
-                  description="When we find a match, the order detail, shipping information, products, payment summary, and timeline will appear here."
+                  description="When we find a match, the order detail, shipping information, products, payment information, and timeline will appear here."
                 />
               </div>
             )}
           </section>
-        </div>
       </div>
-    </div>
+    </CustomerPageShell>
   );
 }
 

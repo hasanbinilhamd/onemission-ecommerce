@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ROUTES } from '../app/config/routes';
 import { Button, EmptyState, LoadingSkeleton } from '../components/shared';
-import { OrderDetailView, useAuthenticatedCustomer } from '../features/customer';
+import { CustomerPageHeader, CustomerPageShell, OrderDetailView, useAuthenticatedCustomer } from '../features/customer';
 import { NavigationThemeProvider } from '../features/navigation';
 import { getOrderByNumber } from '../services/api/orderService';
 import type { CommerceOrderDetail } from '../types';
@@ -70,9 +70,14 @@ function OrderDetailPageContent() {
   const showLoadingState = isAuthLoading || isLoadingOrder;
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', padding: '104px 24px 60px' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        {authErrorMessage ? (
+    <CustomerPageShell maxWidth="1200px">
+      <CustomerPageHeader
+        sectionLabel="Orders"
+        title={orderNumber || 'Order Detail'}
+        description="Review your order details, shipping progress, and fulfillment timeline."
+      />
+
+      {authErrorMessage ? (
           <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
             {authErrorMessage}
           </div>
@@ -130,8 +135,7 @@ function OrderDetailPageContent() {
             onBack={() => navigate(ROUTES.ORDERS)}
           />
         )}
-      </div>
-    </div>
+    </CustomerPageShell>
   );
 }
 

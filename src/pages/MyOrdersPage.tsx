@@ -1,9 +1,9 @@
-import { ArrowLeft, PackageSearch, ShoppingBag } from 'lucide-react';
+import { PackageSearch, ShoppingBag } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, EmptyState, LoadingSkeleton } from '../components/shared';
 import { orderDetailPath, ROUTES } from '../app/config/routes';
-import { OrderPaymentStatusBadge, OrderStatusBadge, useAuthenticatedCustomer } from '../features/customer';
+import { CustomerPageHeader, CustomerPageShell, OrderPaymentStatusBadge, OrderStatusBadge, useAuthenticatedCustomer } from '../features/customer';
 import { NavigationThemeProvider } from '../features/navigation';
 import { getOrdersByCustomerEmail } from '../services/api/orderService';
 import type { CommerceOrderListItem } from '../types';
@@ -64,26 +64,12 @@ function MyOrdersPageContent() {
   const showLoadingState = isAuthLoading || isLoadingOrders;
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', padding: '104px 24px 60px' }}>
-      <div style={{ maxWidth: '1120px', margin: '0 auto' }}>
-        <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p style={{ margin: '0 0 8px', fontSize: '12px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9CA3AF', fontWeight: 600 }}>
-              Orders
-            </p>
-            <h1 style={{ margin: '0 0 12px', fontSize: 'clamp(28px, 5vw, 40px)', lineHeight: 1.1, color: '#111827' }}>
-              My Orders
-            </h1>
-            <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.7, color: '#6B7280' }}>
-              Review your most recent orders first and follow each fulfillment update.
-            </p>
-          </div>
-
-          <Button type="button" variant="ghost" size="sm" className="w-fit gap-2" onClick={() => navigate(ROUTES.HOME)}>
-            <ArrowLeft size={16} />
-            Back to Home
-          </Button>
-        </div>
+    <CustomerPageShell>
+      <CustomerPageHeader
+        sectionLabel="Orders"
+        title="My Orders"
+        description="Review your most recent orders first and follow each fulfillment update."
+      />
 
         {authErrorMessage ? (
           <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
@@ -217,8 +203,7 @@ function MyOrdersPageContent() {
             </div>
           </>
         )}
-      </div>
-    </div>
+    </CustomerPageShell>
   );
 }
 

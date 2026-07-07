@@ -109,13 +109,12 @@ export function AccountPage() {
           <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-neutral-900 text-2xl font-semibold uppercase text-white">
             {profile.initials}
           </div>
-          <div>
-            <p className="m-0 text-sm font-semibold uppercase tracking-[0.12em] text-neutral-400">Overview</p>
-            <h2 className="mt-2 text-2xl font-semibold text-neutral-950">{profile.fullName || user.customerName}</h2>
+          <div className="min-w-0 flex-1">
+            <h2 className="m-0 text-2xl font-semibold text-neutral-950">{profile.fullName || user.customerName}</h2>
             <div className="mt-4 grid gap-2 text-sm text-neutral-600 sm:grid-cols-2">
+              <p className="m-0 inline-flex items-center gap-2"><Package2 size={16} /> {user.customerCode || user.id}</p>
               <p className="m-0 inline-flex items-center gap-2"><Mail size={16} /> {user.email}</p>
               <p className="m-0 inline-flex items-center gap-2"><Phone size={16} /> {user.phone || '—'}</p>
-              <p className="m-0 inline-flex items-center gap-2"><Package2 size={16} /> {user.customerCode || user.id}</p>
               <p className="m-0 inline-flex items-center gap-2"><CalendarDays size={16} /> Joined {joinedDate}</p>
             </div>
           </div>
@@ -147,14 +146,9 @@ export function AccountPage() {
       </section>
 
       <section className="rounded-3xl bg-white p-6 shadow-sm sm:p-8">
-          <div className="mb-5 flex items-center justify-between gap-4">
-            <div>
-              <h3 className="m-0 text-xl font-semibold text-neutral-950">Recent Orders</h3>
-              <p className="mt-1 text-sm text-neutral-500">Your 5 most recent orders.</p>
-            </div>
-            <Button type="button" variant="ghost" size="sm" onClick={() => navigate(ROUTES.ACCOUNT_ORDERS)}>
-              View All
-            </Button>
+          <div className="mb-5">
+            <h3 className="m-0 text-xl font-semibold text-neutral-950">Recent Orders</h3>
+            <p className="mt-1 text-sm text-neutral-500">Your 5 most recent orders.</p>
           </div>
 
           {isLoadingOverview ? (

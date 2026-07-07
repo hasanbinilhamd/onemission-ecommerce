@@ -1,5 +1,6 @@
 import type { Customer } from '../../types';
 import { env } from '../../app/config/env';
+import type { CustomerAuthCustomer } from '../auth/customerAuthService';
 
 interface EnsureCustomerRecordInput {
   fullName: string;
@@ -11,6 +12,13 @@ interface CustomerRecordResponse {
   id: string;
 }
 
+interface UpdateCustomerProfileInput {
+  customerName: string;
+  email: string;
+  phone: string;
+  accessToken?: string;
+}
+
 function getApiBaseUrl() {
   const apiBaseUrl = env.apiBaseUrl.trim().replace(/\/$/, '');
   if (!apiBaseUrl) {
@@ -20,13 +28,21 @@ function getApiBaseUrl() {
   return apiBaseUrl;
 }
 
-async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
+function buildHeaders(accessToken = '', headers: HeadersInit = {}) {
+  const resolvedHeaders = new Headers(headers);
+  resolvedHeaders.set('Accept', 'application/json');
+
+  if (accessToken) {
+    resolvedHeaders.set('Authorization', `Bearer ${accessToken}`);
+  }
+
+  return resolvedHeaders;
+}
+
+async function fetchJson<T>(path: string, init?: RequestInit, accessToken = ''): Promise<T> {
   const response = await fetch(`${getApiBaseUrl()}${path}`, {
     ...init,
-    headers: {
-      Accept: 'application/json',
-      ...(init?.headers ?? {}),
-    },
+    headers: buildHeaders(accessToken, init?.headers),
   });
 
   const payload = await response.json().catch(() => ({}));
@@ -36,6 +52,31 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   return payload as T;
+}
+
+function mapCustomerAuthCustomer(payload: Record<string, unknown>): CustomerAuthCustomer {
+  return {
+    id: String(payload.id || ''),
+    customerCode: String(payload.customerCode || ''),
+    customerName: String(payload.customerName || ''),
+    email: String(payload.email || ''),
+    phone: String(payload.phone || ''),
+    avatarUrl: String(payload.avatarUrl || ''),
+    emailVerified: Boolean(payload.emailVerified),
+    authProvider: String(payload.authProvider || 'LOCAL'),
+    lastLoginAt: payload.lastLoginAt ? String(payload.lastLoginAt) : null,
+    createdAt: String(payload.createdAt || ''),
+    updatedAt: String(payload.updatedAt || ''),
+    country: payload.country ? String(payload.country) : '',
+    provinceId: payload.provinceId ? String(payload.provinceId) : '',
+    province: payload.province ? String(payload.province) : '',
+    cityId: payload.cityId ? String(payload.cityId) : '',
+    city: payload.city ? String(payload.city) : '',
+    districtId: payload.districtId ? String(payload.districtId) : '',
+    district: payload.district ? String(payload.district) : '',
+    postalCode: payload.postalCode ? String(payload.postalCode) : '',
+    streetAddress: payload.streetAddress ? String(payload.streetAddress) : '',
+  };
 }
 
 export async function ensureCustomerRecord(input: EnsureCustomerRecordInput): Promise<Customer> {
@@ -62,6 +103,25 @@ export async function ensureCustomerRecord(input: EnsureCustomerRecordInput): Pr
     email,
     phone,
   };
+}
+
+export async function updateCustomerProfile(
+  id: string,
+  data: UpdateCustomerProfileInput,
+): Promise<CustomerAuthCustomer> {
+  const payload = await fetchJson<Record<string, unknown>>(`/customers/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      customerName: data.customerName.trim(),
+      email: data.email.trim().toLowerCase(),
+      phone: data.phone.trim(),
+    }),
+  }, data.accessToken || '');
+
+  return mapCustomerAuthCustomer(payload);
 }
 
 export async function getCustomer(id: string): Promise<Customer | null> {

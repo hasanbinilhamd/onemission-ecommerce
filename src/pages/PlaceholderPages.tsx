@@ -62,13 +62,3 @@ export function WishlistPage() {
     />
   );
 }
-
-export function ProfilePage() {
-  return (
-    <PlaceholderPage
-      sectionLabel="Customer Account"
-      title="Profile"
-      description="Customer profile settings will be managed here once the profile module is released."
-    />
-  );
-}

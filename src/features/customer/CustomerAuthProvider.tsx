@@ -35,6 +35,7 @@ interface CustomerAuthContextValue {
   logoutAll: () => Promise<void>;
   refreshSession: () => Promise<string | null>;
   getValidAccessToken: () => Promise<string | null>;
+  reloadAuthenticatedCustomer: () => Promise<void>;
 }
 
 const CustomerAuthContext = createContext<CustomerAuthContextValue | null>(null);
@@ -307,6 +308,21 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
     }
   }, [clearSession]);
 
+  const reloadAuthenticatedCustomer = useCallback(async () => {
+    const nextAccessToken = await getValidAccessToken();
+    if (!nextAccessToken) {
+      return;
+    }
+
+    const payload = await getCurrentAuthenticatedCustomer(nextAccessToken);
+    setUser(payload.customer);
+    setProfile(getAuthenticatedCustomerProfile(payload.customer));
+    setAccessToken(nextAccessToken);
+    accessTokenRef.current = nextAccessToken;
+    setErrorMessage(null);
+    scheduleRefresh(nextAccessToken);
+  }, [getValidAccessToken, scheduleRefresh]);
+
   const contextValue = useMemo<CustomerAuthContextValue>(() => ({
     user,
     profile,
@@ -323,6 +339,7 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
     logoutAll,
     refreshSession: refreshSessionInternal,
     getValidAccessToken,
+    reloadAuthenticatedCustomer,
   }), [
     accessToken,
     errorMessage,
@@ -338,6 +355,7 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
     refreshSessionInternal,
     refreshToken,
     register,
+    reloadAuthenticatedCustomer,
     user,
   ]);
 

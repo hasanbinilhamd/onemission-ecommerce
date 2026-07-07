@@ -1,4 +1,4 @@
-import { CircleUserRound, Heart, LogOut, MapPinned, Package2, UserRound, ChevronDown } from 'lucide-react';
+import { CircleUserRound, LogOut, Package2, UserRound, ChevronDown } from 'lucide-react';
 import {
   useCallback,
   useEffect,
@@ -49,24 +49,14 @@ export function AccountMenu() {
     if (user?.email) {
       return [
         {
+          label: 'My Profile',
+          icon: UserRound,
+          onSelect: () => navigate(ROUTES.ACCOUNT_PROFILE),
+        },
+        {
           label: 'My Orders',
           icon: Package2,
           onSelect: () => navigate(ROUTES.ORDERS),
-        },
-        {
-          label: 'Address Book',
-          icon: MapPinned,
-          onSelect: () => navigate(ROUTES.ACCOUNT_ADDRESS),
-        },
-        {
-          label: 'Wishlist',
-          icon: Heart,
-          onSelect: () => navigate(ROUTES.WISHLIST),
-        },
-        {
-          label: 'Profile',
-          icon: UserRound,
-          onSelect: () => navigate(ROUTES.ACCOUNT_PROFILE),
         },
         {
           label: 'Logout',

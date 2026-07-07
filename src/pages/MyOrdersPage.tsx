@@ -159,13 +159,13 @@ function MyOrdersPageContent() {
                   <tbody>
                     {orders.map((order) => (
                       <tr key={order.id} className="border-b border-neutral-100 last:border-b-0">
-                        <td className="px-6 py-5 font-mono text-xs text-neutral-600">{order.orderNumber}</td>
+                        <td className="px-6 py-5 font-mono text-xs text-neutral-600">{order.publicOrderNumber}</td>
                         <td className="px-6 py-5 text-neutral-600">{formatDate(order.orderDate)}</td>
                         <td className="px-6 py-5 font-semibold text-neutral-950">{formatCurrency(order.totalAmount)}</td>
                         <td className="px-6 py-5"><OrderPaymentStatusBadge status={order.paymentStatus} /></td>
                         <td className="px-6 py-5"><OrderStatusBadge status={order.fulfillmentStatusLabel || order.fulfillmentStatus} /></td>
                         <td className="px-6 py-5 text-right">
-                          <Button type="button" variant="ghost" size="sm" onClick={() => navigate(orderDetailPath(order.orderNumber))}>
+                          <Button type="button" variant="ghost" size="sm" onClick={() => navigate(orderDetailPath(order.publicOrderNumber))}>
                             View Details
                           </Button>
                         </td>
@@ -182,7 +182,7 @@ function MyOrdersPageContent() {
                   <div className="mb-4 flex items-start justify-between gap-3">
                     <div>
                       <p className="m-0 text-xs font-semibold uppercase tracking-[0.12em] text-neutral-400">Order Number</p>
-                      <p className="mt-1 font-mono text-xs text-neutral-600">{order.orderNumber}</p>
+                      <p className="mt-1 font-mono text-xs text-neutral-600">{order.publicOrderNumber}</p>
                     </div>
                     <OrderStatusBadge status={order.fulfillmentStatusLabel || order.fulfillmentStatus} />
                   </div>
@@ -202,7 +202,7 @@ function MyOrdersPageContent() {
                       </div>
                     </div>
                   </div>
-                  <Button type="button" className="mt-5 w-full" onClick={() => navigate(orderDetailPath(order.orderNumber))}>
+                  <Button type="button" className="mt-5 w-full" onClick={() => navigate(orderDetailPath(order.publicOrderNumber))}>
                     View Details
                   </Button>
                 </article>

@@ -79,7 +79,7 @@ function TrackOrderPageContent() {
       <CustomerPageHeader
         sectionLabel="Public Tracking"
         title="Track Order"
-        description="Enter the same email used during checkout together with the order number from your confirmation."
+        description="Enter the same email used during checkout together with the public order number from your confirmation."
       />
 
       <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)] lg:items-start">
@@ -99,7 +99,7 @@ function TrackOrderPageContent() {
                 value={orderNumber}
                 onChange={(event) => setOrderNumber(event.target.value.toUpperCase())}
                 error={errors.orderNumber}
-                placeholder="ORD-202607-00001"
+                placeholder="OM-H8LPW-XZ99F"
               />
 
               <div className="flex flex-col gap-3 pt-2 sm:flex-row">

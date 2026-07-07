@@ -137,6 +137,10 @@ export async function getOrderByNumber(orderNumber: string, accessToken = ''): P
   return fetchJson<CommerceOrderDetail>(`/orders/by-number/${encodeURIComponent(normalizedOrderNumber)}`, undefined, accessToken);
 }
 
+export async function getOrderByCheckoutSessionId(checkoutSessionId: string): Promise<CommerceOrderDetail> {
+  return fetchJson<CommerceOrderDetail>(`/orders/by-checkout-session/${encodeURIComponent(checkoutSessionId)}`);
+}
+
 export async function findGuestOrder({ email, orderNumber }: GuestOrderTrackingInput): Promise<CommerceOrderDetail | null> {
   const normalizedEmail = normalizeEmail(email);
   const normalizedOrderNumber = normalizeOrderNumber(orderNumber);

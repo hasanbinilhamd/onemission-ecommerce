@@ -210,6 +210,7 @@ export type CommerceOrderFulfillmentStatus = 'READY_FOR_FULFILLMENT' | 'PROCESSI
 export interface CommerceOrderListItem {
   id: string;
   orderNumber: string;
+  publicOrderNumber: string;
   orderDate: string;
   customerName: string;
   totalAmount: number;
@@ -307,6 +308,7 @@ export interface CommerceOrderTimelineEntry {
 export interface CommerceOrderDetail {
   id: string;
   orderNumber: string;
+  publicOrderNumber: string;
   checkoutSessionId: string;
   paymentAttemptId: string;
   paymentReference: string;

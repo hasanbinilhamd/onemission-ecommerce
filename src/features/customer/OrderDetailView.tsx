@@ -97,7 +97,7 @@ export function OrderDetailView({ order, backLabel = 'Back', onBack }: OrderDeta
               Order Details
             </h1>
             <p className="mt-2 text-sm font-medium text-neutral-700">
-              {order.orderNumber}
+              {order.publicOrderNumber}
             </p>
             <p className="mt-1 text-sm text-neutral-500">
               Created on {formatDate(order.createdAt)}

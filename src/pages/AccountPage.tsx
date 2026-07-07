@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarDays, Mail, MapPinned, Package2, Phone, ShoppingBag } from 'lucide-react';
+import { CalendarDays, Mail, MapPinned, Package2, Phone, ShoppingBag } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES, orderDetailPath } from '../app/config/routes';
@@ -105,40 +105,19 @@ export function AccountPage() {
       ) : null}
 
       <section className="rounded-3xl bg-white p-6 shadow-sm sm:p-8">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-            <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-neutral-900 text-2xl font-semibold uppercase text-white">
-              {profile.initials}
-            </div>
-            <div>
-              <p className="m-0 text-sm font-semibold uppercase tracking-[0.12em] text-neutral-400">Overview</p>
-              <h2 className="mt-2 text-2xl font-semibold text-neutral-950">{profile.fullName || user.customerName}</h2>
-              <div className="mt-4 grid gap-2 text-sm text-neutral-600 sm:grid-cols-2">
-                <p className="m-0 inline-flex items-center gap-2"><Mail size={16} /> {user.email}</p>
-                <p className="m-0 inline-flex items-center gap-2"><Phone size={16} /> {user.phone || '—'}</p>
-                <p className="m-0 inline-flex items-center gap-2"><Package2 size={16} /> {user.customerCode || user.id}</p>
-                <p className="m-0 inline-flex items-center gap-2"><CalendarDays size={16} /> Joined {joinedDate}</p>
-              </div>
-            </div>
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+          <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-neutral-900 text-2xl font-semibold uppercase text-white">
+            {profile.initials}
           </div>
-
-          <div className="grid gap-3 sm:grid-cols-2 lg:w-[340px]">
-            <Button type="button" className="justify-between" onClick={() => navigate(ROUTES.ACCOUNT_PROFILE)}>
-              Edit Profile
-              <ArrowRight size={16} />
-            </Button>
-            <Button type="button" variant="secondary" className="justify-between" onClick={() => navigate(ROUTES.ACCOUNT_ADDRESSES)}>
-              Address Book
-              <ArrowRight size={16} />
-            </Button>
-            <Button type="button" variant="secondary" className="justify-between" onClick={() => navigate(ROUTES.ACCOUNT_ORDERS)}>
-              My Orders
-              <ArrowRight size={16} />
-            </Button>
-            <Button type="button" variant="secondary" className="justify-between" onClick={() => navigate(ROUTES.ACCOUNT_WISHLIST)}>
-              Wishlist
-              <ArrowRight size={16} />
-            </Button>
+          <div>
+            <p className="m-0 text-sm font-semibold uppercase tracking-[0.12em] text-neutral-400">Overview</p>
+            <h2 className="mt-2 text-2xl font-semibold text-neutral-950">{profile.fullName || user.customerName}</h2>
+            <div className="mt-4 grid gap-2 text-sm text-neutral-600 sm:grid-cols-2">
+              <p className="m-0 inline-flex items-center gap-2"><Mail size={16} /> {user.email}</p>
+              <p className="m-0 inline-flex items-center gap-2"><Phone size={16} /> {user.phone || '—'}</p>
+              <p className="m-0 inline-flex items-center gap-2"><Package2 size={16} /> {user.customerCode || user.id}</p>
+              <p className="m-0 inline-flex items-center gap-2"><CalendarDays size={16} /> Joined {joinedDate}</p>
+            </div>
           </div>
         </div>
       </section>
@@ -167,8 +146,7 @@ export function AccountPage() {
         })}
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="rounded-3xl bg-white p-6 shadow-sm sm:p-8">
+      <section className="rounded-3xl bg-white p-6 shadow-sm sm:p-8">
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
               <h3 className="m-0 text-xl font-semibold text-neutral-950">Recent Orders</h3>
@@ -183,9 +161,10 @@ export function AccountPage() {
             <LoadingSkeleton rows={5} />
           ) : recentOrders.length === 0 ? (
             <EmptyState
-              icon={<Package2 size={28} />}
-              title="No orders yet"
-              description="When you place your first order, it will appear here for quick access."
+              icon={<span className="text-4xl">📦</span>}
+              title="No Orders Yet"
+              description="Start shopping to see your purchases here."
+              action={<Button type="button" onClick={() => navigate(ROUTES.HOME)}>Shop Now</Button>}
             />
           ) : (
             <div className="grid gap-4">
@@ -221,30 +200,6 @@ export function AccountPage() {
               ))}
             </div>
           )}
-        </div>
-
-        <div className="rounded-3xl bg-white p-6 shadow-sm sm:p-8">
-          <h3 className="m-0 text-xl font-semibold text-neutral-950">Quick Action</h3>
-          <p className="mt-1 text-sm text-neutral-500">Move faster through common account tasks.</p>
-          <div className="mt-5 grid gap-3">
-            <Button type="button" className="w-full justify-between" onClick={() => navigate(ROUTES.ACCOUNT_PROFILE)}>
-              Edit Profile
-              <ArrowRight size={16} />
-            </Button>
-            <Button type="button" variant="secondary" className="w-full justify-between" onClick={() => navigate(ROUTES.ACCOUNT_ADDRESSES)}>
-              Address Book
-              <ArrowRight size={16} />
-            </Button>
-            <Button type="button" variant="secondary" className="w-full justify-between" onClick={() => navigate(ROUTES.ACCOUNT_ORDERS)}>
-              My Orders
-              <ArrowRight size={16} />
-            </Button>
-            <Button type="button" variant="secondary" className="w-full justify-between" onClick={() => navigate(ROUTES.ACCOUNT_WISHLIST)}>
-              Wishlist
-              <ArrowRight size={16} />
-            </Button>
-          </div>
-        </div>
       </section>
     </div>
   );

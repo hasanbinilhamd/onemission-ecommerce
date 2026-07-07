@@ -1,4 +1,4 @@
-import { CircleUserRound, KeyRound, LogOut, MapPinned, Package2, UserRound, ChevronDown } from 'lucide-react';
+import { CircleUserRound, LogOut, Package2, UserRound, ChevronDown } from 'lucide-react';
 import {
   useCallback,
   useEffect,
@@ -49,24 +49,9 @@ export function AccountMenu() {
     if (user?.email) {
       return [
         {
-          label: 'My Profile',
-          icon: UserRound,
-          onSelect: () => navigate(ROUTES.ACCOUNT_PROFILE),
-        },
-        {
-          label: 'Address Book',
-          icon: MapPinned,
-          onSelect: () => navigate(ROUTES.ACCOUNT_ADDRESSES),
-        },
-        {
-          label: 'My Orders',
+          label: 'My Account',
           icon: Package2,
-          onSelect: () => navigate(ROUTES.ORDERS),
-        },
-        {
-          label: 'Change Password',
-          icon: KeyRound,
-          onSelect: () => navigate(ROUTES.ACCOUNT_CHANGE_PASSWORD),
+          onSelect: () => navigate(ROUTES.ACCOUNT),
         },
         {
           label: 'Logout',

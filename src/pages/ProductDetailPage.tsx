@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, type ReactNode } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, Minus, Plus, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Heart, Minus, Plus, ShoppingCart } from 'lucide-react';
 import type { Product } from '../types';
 import { Button } from '../components/shared';
 import { ProductCard } from '../features/catalog/ProductCard';
@@ -10,6 +10,7 @@ import { productService } from '../services/product';
 import { formatCurrency } from '../utils/formatting';
 import { IMAGE_PLACEHOLDER } from '../app/constants';
 import { useCartStore } from '../stores';
+import { useWishlist } from '../features/customer';
 import { DURATION, EASING } from '../utils/motion';
 import { NavigationThemeProvider, useNavigationTheme } from '../features/navigation';
 
@@ -249,6 +250,7 @@ function ProductDetailContent() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
   const { addItem } = useCartStore();
+  const { isWishlisted, toggleItem } = useWishlist();
   const { colors } = useNavigationTheme();
 
   const loadProduct = useCallback(async () => {
@@ -523,9 +525,31 @@ function ProductDetailContent() {
               {product.name}
             </h1>
 
-            <p style={{ margin: '0 0 16px', fontSize: '22px', fontWeight: 600, color: '#111827' }}>
-              {formatCurrency(displayPrice)}
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', marginBottom: '16px' }}>
+              <p style={{ margin: 0, fontSize: '22px', fontWeight: 600, color: '#111827' }}>
+                {formatCurrency(displayPrice)}
+              </p>
+              <button
+                type="button"
+                onClick={() => toggleItem(product)}
+                aria-label={isWishlisted(product.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                style={{
+                  width: '42px',
+                  height: '42px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '9999px',
+                  border: isWishlisted(product.id) ? '1px solid #111827' : '1px solid #E5E7EB',
+                  backgroundColor: isWishlisted(product.id) ? '#111827' : '#FFFFFF',
+                  color: isWishlisted(product.id) ? '#FFFFFF' : '#111827',
+                  cursor: 'pointer',
+                  transition: 'all 150ms ease',
+                }}
+              >
+                <Heart size={18} fill={isWishlisted(product.id) ? 'currentColor' : 'none'} />
+              </button>
+            </div>
 
             {product.description && (
               <p style={{ margin: '0 0 28px', fontSize: '14px', lineHeight: 1.6, color: '#6B7280' }}>

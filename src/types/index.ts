@@ -215,6 +215,7 @@ export interface CommerceOrderListItem {
   customerName: string;
   totalAmount: number;
   paymentStatus: CommerceOrderPaymentStatus;
+  status: string;
   fulfillmentStatus: CommerceOrderFulfillmentStatus;
   fulfillmentStatusLabel: CommerceOrderFulfillmentStatus;
   courier: string;

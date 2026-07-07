@@ -1,11 +1,8 @@
 import { Badge } from '../../components/shared';
-import type {
-  CommerceOrderFulfillmentStatus,
-  CommerceOrderPaymentStatus,
-} from '../../types';
+import type { CommerceOrderPaymentStatus } from '../../types';
 
 interface OrderStatusBadgeProps {
-  status: CommerceOrderFulfillmentStatus;
+  status: string;
 }
 
 interface OrderPaymentStatusBadgeProps {
@@ -16,18 +13,22 @@ function normalizeStatusLabel(value: string) {
   return value.trim().toUpperCase() || 'UNKNOWN';
 }
 
-function getFulfillmentBadgeVariant(status: CommerceOrderFulfillmentStatus) {
+function getFulfillmentBadgeVariant(status: string) {
   switch (normalizeStatusLabel(String(status || ''))) {
     case 'READY_FOR_FULFILLMENT':
       return 'default';
     case 'PROCESSING':
       return 'info';
     case 'PACKED':
+    case 'READY_TO_SHIP':
       return 'warning';
     case 'SHIPPED':
       return 'info';
+    case 'DELIVERED':
     case 'COMPLETED':
       return 'success';
+    case 'CANCELLED':
+      return 'error';
     default:
       return 'default';
   }

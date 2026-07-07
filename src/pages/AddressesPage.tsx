@@ -1,10 +1,9 @@
-import { ArrowLeft, MapPinned, Pencil, Plus, Star, Trash2 } from 'lucide-react';
+import { MapPinned, Pencil, Star, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../app/config/routes';
 import { Button, EmptyState, Input, LoadingSkeleton, Select } from '../components/shared';
-import { CustomerPageHeader, CustomerPageShell, useAuthenticatedCustomer } from '../features/customer';
-import { NavigationThemeProvider } from '../features/navigation';
+import { useAuthenticatedCustomer } from '../features/customer';
 import {
   createCustomerAddress,
   deleteCustomerAddress,
@@ -59,7 +58,6 @@ const initialAddressFormState: AddressFormState = {
 
 function validateAddressForm(values: AddressFormState): AddressFormErrors {
   const errors: AddressFormErrors = {};
-
   if (!isRequired(values.recipientName)) errors.recipientName = 'Recipient Name is required.';
   if (!isRequired(values.phoneNumber)) errors.phoneNumber = 'Phone Number is required.';
   if (!isRequired(values.provinceId)) errors.provinceId = 'Province is required.';
@@ -67,7 +65,6 @@ function validateAddressForm(values: AddressFormState): AddressFormErrors {
   if (!isRequired(values.districtId)) errors.districtId = 'District is required.';
   if (!isRequired(values.postalCode)) errors.postalCode = 'Postal Code is required.';
   if (!isRequired(values.streetAddress)) errors.streetAddress = 'Street Address is required.';
-
   return errors;
 }
 
@@ -106,24 +103,12 @@ function buildAddressPayload(form: AddressFormState): CustomerAddressInput {
 }
 
 function formatAddressSummary(address: CustomerAddress) {
-  return [
-    address.streetAddress,
-    address.district,
-    address.city,
-    address.province,
-    address.postalCode,
-  ].filter(Boolean).join(', ');
+  return [address.streetAddress, address.district, address.city, address.province, address.postalCode].filter(Boolean).join(', ');
 }
 
-function AddressesPageContent() {
+export function AddressesPage() {
   const navigate = useNavigate();
-  const {
-    user,
-    isLoading,
-    errorMessage,
-    getValidAccessToken,
-    reloadAuthenticatedCustomer,
-  } = useAuthenticatedCustomer();
+  const { user, isLoading, errorMessage, getValidAccessToken, reloadAuthenticatedCustomer } = useAuthenticatedCustomer();
 
   const [addresses, setAddresses] = useState<CustomerAddress[]>([]);
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
@@ -151,9 +136,7 @@ function AddressesPageContent() {
 
   const loadAddresses = useCallback(async () => {
     const accessToken = await getValidAccessToken();
-    if (!accessToken) {
-      return;
-    }
+    if (!accessToken) return;
 
     setIsLoadingAddresses(true);
     try {
@@ -168,43 +151,28 @@ function AddressesPageContent() {
   }, [getValidAccessToken]);
 
   useEffect(() => {
-    if (isLoading || !user) {
-      return;
-    }
-
+    if (isLoading || !user) return;
     void loadAddresses();
   }, [isLoading, loadAddresses, user]);
 
   useEffect(() => {
-    if (!showForm) {
-      return;
-    }
-
+    if (!showForm) return;
     let isMounted = true;
 
     const loadProvinceOptions = async () => {
       setIsLoadingProvinces(true);
       try {
         const nextProvinces = await shippingService.getProvinces();
-        if (isMounted) {
-          setProvinces(nextProvinces);
-        }
+        if (isMounted) setProvinces(nextProvinces);
       } catch (error) {
-        if (isMounted) {
-          setStatusMessage(getShippingServiceErrorMessage(error, 'Unable to load provinces.'));
-        }
+        if (isMounted) setStatusMessage(getShippingServiceErrorMessage(error, 'Unable to load provinces.'));
       } finally {
-        if (isMounted) {
-          setIsLoadingProvinces(false);
-        }
+        if (isMounted) setIsLoadingProvinces(false);
       }
     };
 
     void loadProvinceOptions();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [showForm]);
 
   useEffect(() => {
@@ -212,30 +180,20 @@ function AddressesPageContent() {
       setCities([]);
       return;
     }
-
     let isMounted = true;
     const loadCityOptions = async () => {
       setIsLoadingCities(true);
       try {
         const nextCities = await shippingService.getCities(form.provinceId);
-        if (isMounted) {
-          setCities(nextCities);
-        }
+        if (isMounted) setCities(nextCities);
       } catch (error) {
-        if (isMounted) {
-          setStatusMessage(getShippingServiceErrorMessage(error, 'Unable to load cities.'));
-        }
+        if (isMounted) setStatusMessage(getShippingServiceErrorMessage(error, 'Unable to load cities.'));
       } finally {
-        if (isMounted) {
-          setIsLoadingCities(false);
-        }
+        if (isMounted) setIsLoadingCities(false);
       }
     };
-
     void loadCityOptions();
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [form.provinceId, showForm]);
 
   useEffect(() => {
@@ -243,30 +201,20 @@ function AddressesPageContent() {
       setDistricts([]);
       return;
     }
-
     let isMounted = true;
     const loadDistrictOptions = async () => {
       setIsLoadingDistricts(true);
       try {
         const nextDistricts = await shippingService.getDistricts(form.cityId);
-        if (isMounted) {
-          setDistricts(nextDistricts);
-        }
+        if (isMounted) setDistricts(nextDistricts);
       } catch (error) {
-        if (isMounted) {
-          setStatusMessage(getShippingServiceErrorMessage(error, 'Unable to load districts.'));
-        }
+        if (isMounted) setStatusMessage(getShippingServiceErrorMessage(error, 'Unable to load districts.'));
       } finally {
-        if (isMounted) {
-          setIsLoadingDistricts(false);
-        }
+        if (isMounted) setIsLoadingDistricts(false);
       }
     };
-
     void loadDistrictOptions();
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [form.cityId, showForm]);
 
   const openCreateForm = () => {
@@ -294,56 +242,28 @@ function AddressesPageContent() {
 
   const handleProvinceChange = (provinceId: string) => {
     const selectedProvince = provinces.find((province) => province.id === provinceId) || null;
-    setForm((current) => ({
-      ...current,
-      provinceId,
-      province: selectedProvince?.name || '',
-      cityId: '',
-      city: '',
-      districtId: '',
-      district: '',
-      postalCode: '',
-    }));
+    setForm((current) => ({ ...current, provinceId, province: selectedProvince?.name || '', cityId: '', city: '', districtId: '', district: '', postalCode: '' }));
   };
 
   const handleCityChange = (cityId: string) => {
     const selectedCity = cities.find((city) => city.id === cityId) || null;
-    setForm((current) => ({
-      ...current,
-      cityId,
-      city: selectedCity?.name || '',
-      districtId: '',
-      district: '',
-      postalCode: '',
-    }));
+    setForm((current) => ({ ...current, cityId, city: selectedCity?.name || '', districtId: '', district: '', postalCode: '' }));
   };
 
   const handleDistrictChange = (districtId: string) => {
     const selectedDistrict = districts.find((district) => district.id === districtId) || null;
-    setForm((current) => ({
-      ...current,
-      districtId,
-      district: selectedDistrict?.name || '',
-      postalCode: current.postalCode || selectedDistrict?.postalCode || '',
-    }));
+    setForm((current) => ({ ...current, districtId, district: selectedDistrict?.name || '', postalCode: current.postalCode || selectedDistrict?.postalCode || '' }));
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
     const nextErrors = validateAddressForm(form);
     setFormErrors(nextErrors);
     setStatusMessage('');
-
-    if (Object.keys(nextErrors).length > 0) {
-      return;
-    }
+    if (Object.keys(nextErrors).length > 0) return;
 
     const accessToken = await getValidAccessToken();
-    if (!accessToken) {
-      return;
-    }
-
+    if (!accessToken) return;
     setIsSaving(true);
 
     try {
@@ -352,7 +272,6 @@ function AddressesPageContent() {
       } else {
         await createCustomerAddress(buildAddressPayload(form), accessToken);
       }
-
       await loadAddresses();
       await reloadAuthenticatedCustomer();
       setStatusMessage(editingAddressId ? 'Address updated successfully.' : 'Address added successfully.');
@@ -365,18 +284,11 @@ function AddressesPageContent() {
   };
 
   const handleDelete = async (addressId: string) => {
-    if (typeof window !== 'undefined' && !window.confirm('Delete this address?')) {
-      return;
-    }
-
+    if (typeof window !== 'undefined' && !window.confirm('Delete this address?')) return;
     const accessToken = await getValidAccessToken();
-    if (!accessToken) {
-      return;
-    }
-
+    if (!accessToken) return;
     setDeletingAddressId(addressId);
     setStatusMessage('');
-
     try {
       await deleteCustomerAddress(addressId, accessToken);
       await loadAddresses();
@@ -391,13 +303,9 @@ function AddressesPageContent() {
 
   const handleSetDefault = async (addressId: string) => {
     const accessToken = await getValidAccessToken();
-    if (!accessToken) {
-      return;
-    }
-
+    if (!accessToken) return;
     setIsSettingDefaultId(addressId);
     setStatusMessage('');
-
     try {
       await setDefaultCustomerAddress(addressId, accessToken);
       await loadAddresses();
@@ -410,71 +318,35 @@ function AddressesPageContent() {
     }
   };
 
-  const emptyStateAction = useMemo(() => (
-    <Button type="button" onClick={openCreateForm}>
-      Add Address
-    </Button>
-  ), []);
+  const emptyStateAction = useMemo(() => <Button type="button" onClick={openCreateForm}>Add Address</Button>, []);
 
   if (isLoading) {
     return (
-      <CustomerPageShell maxWidth="1120px">
-        <CustomerPageHeader
-          sectionLabel="My Account"
-          title="Address Book"
-          description="Manage your saved delivery addresses and default checkout destination."
-        />
-        <div className="rounded-3xl border border-neutral-200 bg-white p-6">
-          <LoadingSkeleton rows={6} />
-        </div>
-      </CustomerPageShell>
+      <div className="rounded-3xl bg-white p-6 shadow-sm">
+        <LoadingSkeleton rows={6} />
+      </div>
     );
   }
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   return (
-    <CustomerPageShell maxWidth="1120px">
-      <CustomerPageHeader
-        sectionLabel="My Account"
-        title="Address Book"
-        description="Manage your saved delivery addresses and default checkout destination."
-        action={
-          <div className="flex flex-wrap gap-3">
-            <Button type="button" variant="ghost" size="sm" className="w-fit gap-2" onClick={() => navigate(ROUTES.ACCOUNT)}>
-              <ArrowLeft size={16} />
-              Back to Account
-            </Button>
-            <Button type="button" onClick={openCreateForm} className="gap-2">
-              <Plus size={16} />
-              Add Address
-            </Button>
-          </div>
-        }
-      />
+    <div className="space-y-6">
+      <div>
+        <p className="m-0 text-sm font-semibold uppercase tracking-[0.12em] text-neutral-400">Address Book</p>
+        <h2 className="mt-2 text-2xl font-semibold text-neutral-950">Saved Addresses</h2>
+        <p className="mt-2 text-sm leading-7 text-neutral-500">Manage your delivery addresses and choose which one should autofill checkout by default.</p>
+      </div>
 
-      {errorMessage ? (
-        <div className="mb-6 rounded-3xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
-          {errorMessage}
-        </div>
-      ) : null}
-
-      {statusMessage ? (
-        <div className={`mb-6 rounded-3xl p-4 text-sm ${statusMessage.toLowerCase().includes('success') ? 'border border-emerald-200 bg-emerald-50 text-emerald-700' : 'border border-red-200 bg-red-50 text-red-700'}`}>
-          {statusMessage}
-        </div>
-      ) : null}
+      {errorMessage ? <div className="rounded-3xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">{errorMessage}</div> : null}
+      {statusMessage ? <div className={`rounded-3xl p-4 text-sm ${statusMessage.toLowerCase().includes('success') ? 'border border-emerald-200 bg-emerald-50 text-emerald-700' : 'border border-red-200 bg-red-50 text-red-700'}`}>{statusMessage}</div> : null}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
         <section className="space-y-4">
           {isLoadingAddresses ? (
-            <div className="rounded-3xl border border-neutral-200 bg-white p-6">
-              <LoadingSkeleton rows={5} />
-            </div>
+            <div className="rounded-3xl bg-white p-6 shadow-sm"><LoadingSkeleton rows={5} /></div>
           ) : addresses.length === 0 ? (
-            <div className="rounded-3xl border border-neutral-200 bg-white p-6 sm:p-8">
+            <div className="rounded-3xl bg-white p-6 shadow-sm sm:p-8">
               <EmptyState
                 icon={<MapPinned size={36} />}
                 title="You don't have any saved addresses yet."
@@ -484,13 +356,13 @@ function AddressesPageContent() {
             </div>
           ) : (
             addresses.map((address) => (
-              <article key={address.id} className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
+              <article key={address.id} className="rounded-3xl bg-white p-5 shadow-sm sm:p-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="m-0 text-lg font-semibold text-neutral-950">{address.recipientName}</h2>
+                      <h3 className="m-0 text-lg font-semibold text-neutral-950">{address.recipientName}</h3>
                       {address.isDefault ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-neutral-900 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-white">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-black px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-white">
                           <Star size={12} />
                           Default Address
                         </span>
@@ -498,39 +370,20 @@ function AddressesPageContent() {
                     </div>
                     <p className="mt-2 text-sm font-medium text-neutral-700">{address.phoneNumber}</p>
                     <p className="mt-2 text-sm leading-7 text-neutral-600">{formatAddressSummary(address)}</p>
-                    {address.notes ? (
-                      <p className="mt-2 text-sm text-neutral-500">{address.notes}</p>
-                    ) : null}
+                    {address.notes ? <p className="mt-2 text-sm text-neutral-500">{address.notes}</p> : null}
                   </div>
 
                   <div className="flex flex-wrap gap-2 sm:justify-end">
                     <Button type="button" variant="secondary" size="sm" className="gap-2" onClick={() => openEditForm(address)}>
-                      <Pencil size={14} />
-                      Edit
+                      <Pencil size={14} /> Edit
                     </Button>
                     {!address.isDefault ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="gap-2"
-                        onClick={() => void handleSetDefault(address.id)}
-                        disabled={isSettingDefaultId === address.id}
-                      >
-                        <Star size={14} />
-                        {isSettingDefaultId === address.id ? 'Saving...' : 'Set Default'}
+                      <Button type="button" variant="outline" size="sm" className="gap-2" onClick={() => void handleSetDefault(address.id)} disabled={isSettingDefaultId === address.id}>
+                        <Star size={14} /> {isSettingDefaultId === address.id ? 'Saving...' : 'Set Default'}
                       </Button>
                     ) : null}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="gap-2 border-red-200 text-red-600 hover:bg-red-50"
-                      onClick={() => void handleDelete(address.id)}
-                      disabled={deletingAddressId === address.id}
-                    >
-                      <Trash2 size={14} />
-                      {deletingAddressId === address.id ? 'Deleting...' : 'Delete'}
+                    <Button type="button" variant="outline" size="sm" className="gap-2 border-red-200 text-red-600 hover:bg-red-50" onClick={() => void handleDelete(address.id)} disabled={deletingAddressId === address.id}>
+                      <Trash2 size={14} /> {deletingAddressId === address.id ? 'Deleting...' : 'Delete'}
                     </Button>
                   </div>
                 </div>
@@ -539,18 +392,14 @@ function AddressesPageContent() {
           )}
         </section>
 
-        <section className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
+        <section className="rounded-3xl bg-white p-6 shadow-sm sm:p-8">
           <div className="mb-5 flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 text-neutral-700">
               <MapPinned size={20} />
             </div>
             <div>
-              <h2 className="m-0 text-xl font-semibold text-neutral-950">
-                {editingAddressId ? 'Edit Address' : 'Add Address'}
-              </h2>
-              <p className="mt-1 text-sm text-neutral-500">
-                Save delivery details for faster checkout next time.
-              </p>
+              <h3 className="m-0 text-xl font-semibold text-neutral-950">{editingAddressId ? 'Edit Address' : 'Add Address'}</h3>
+              <p className="mt-1 text-sm text-neutral-500">Save delivery details for faster checkout next time.</p>
             </div>
           </div>
 
@@ -563,115 +412,41 @@ function AddressesPageContent() {
             />
           ) : (
             <form className="grid gap-4" onSubmit={handleSubmit}>
-              <Input
-                label="Recipient Name"
-                value={form.recipientName}
-                onChange={(event) => setForm((current) => ({ ...current, recipientName: event.target.value }))}
-                error={formErrors.recipientName}
-                disabled={isSaving}
-              />
-              <Input
-                label="Phone Number"
-                type="tel"
-                value={form.phoneNumber}
-                onChange={(event) => setForm((current) => ({ ...current, phoneNumber: event.target.value }))}
-                error={formErrors.phoneNumber}
-                disabled={isSaving}
-              />
+              <Input label="Recipient Name" value={form.recipientName} onChange={(event) => setForm((current) => ({ ...current, recipientName: event.target.value }))} error={formErrors.recipientName} disabled={isSaving} />
+              <Input label="Phone Number" type="tel" value={form.phoneNumber} onChange={(event) => setForm((current) => ({ ...current, phoneNumber: event.target.value }))} error={formErrors.phoneNumber} disabled={isSaving} />
 
-              <Select
-                label="Province"
-                value={form.provinceId}
-                onChange={(event) => handleProvinceChange(event.target.value)}
-                error={formErrors.provinceId}
-                disabled={isSaving || isLoadingProvinces}
-              >
+              <Select label="Province" value={form.provinceId} onChange={(event) => handleProvinceChange(event.target.value)} error={formErrors.provinceId} disabled={isSaving || isLoadingProvinces}>
                 <option value="">{isLoadingProvinces ? 'Loading provinces...' : 'Select province'}</option>
-                {provinces.map((province) => (
-                  <option key={province.id} value={province.id}>{province.name}</option>
-                ))}
+                {provinces.map((province) => <option key={province.id} value={province.id}>{province.name}</option>)}
               </Select>
 
-              <Select
-                label="City"
-                value={form.cityId}
-                onChange={(event) => handleCityChange(event.target.value)}
-                error={formErrors.cityId}
-                disabled={isSaving || !form.provinceId || isLoadingCities}
-              >
+              <Select label="City" value={form.cityId} onChange={(event) => handleCityChange(event.target.value)} error={formErrors.cityId} disabled={isSaving || !form.provinceId || isLoadingCities}>
                 <option value="">{isLoadingCities ? 'Loading cities...' : 'Select city'}</option>
-                {cities.map((city) => (
-                  <option key={city.id} value={city.id}>{city.name}</option>
-                ))}
+                {cities.map((city) => <option key={city.id} value={city.id}>{city.name}</option>)}
               </Select>
 
-              <Select
-                label="District"
-                value={form.districtId}
-                onChange={(event) => handleDistrictChange(event.target.value)}
-                error={formErrors.districtId}
-                disabled={isSaving || !form.cityId || isLoadingDistricts}
-              >
+              <Select label="District" value={form.districtId} onChange={(event) => handleDistrictChange(event.target.value)} error={formErrors.districtId} disabled={isSaving || !form.cityId || isLoadingDistricts}>
                 <option value="">{isLoadingDistricts ? 'Loading districts...' : 'Select district'}</option>
-                {districts.map((district) => (
-                  <option key={district.id} value={district.id}>{district.name}</option>
-                ))}
+                {districts.map((district) => <option key={district.id} value={district.id}>{district.name}</option>)}
               </Select>
 
-              <Input
-                label="Postal Code"
-                value={form.postalCode}
-                onChange={(event) => setForm((current) => ({ ...current, postalCode: event.target.value }))}
-                error={formErrors.postalCode}
-                disabled={isSaving}
-              />
-
-              <Input
-                label="Street Address"
-                value={form.streetAddress}
-                onChange={(event) => setForm((current) => ({ ...current, streetAddress: event.target.value }))}
-                error={formErrors.streetAddress}
-                disabled={isSaving}
-              />
-
-              <Input
-                label="Notes"
-                value={form.notes}
-                onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))}
-                disabled={isSaving}
-                placeholder="Optional notes for this address"
-              />
+              <Input label="Postal Code" value={form.postalCode} onChange={(event) => setForm((current) => ({ ...current, postalCode: event.target.value }))} error={formErrors.postalCode} disabled={isSaving} />
+              <Input label="Street Address" value={form.streetAddress} onChange={(event) => setForm((current) => ({ ...current, streetAddress: event.target.value }))} error={formErrors.streetAddress} disabled={isSaving} />
+              <Input label="Notes" value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} disabled={isSaving} placeholder="Optional notes for this address" />
 
               <label className="flex items-center gap-3 rounded-2xl bg-neutral-50 px-4 py-3 text-sm text-neutral-700">
-                <input
-                  type="checkbox"
-                  checked={form.isDefault}
-                  onChange={(event) => setForm((current) => ({ ...current, isDefault: event.target.checked }))}
-                  disabled={isSaving}
-                />
+                <input type="checkbox" checked={form.isDefault} onChange={(event) => setForm((current) => ({ ...current, isDefault: event.target.checked }))} disabled={isSaving} />
                 Set as Default Address
               </label>
 
               <div className="flex flex-wrap gap-3 pt-2">
-                <Button type="submit" disabled={isSaving} className="gap-2">
-                  {isSaving ? 'Saving...' : editingAddressId ? 'Save Address' : 'Add Address'}
-                </Button>
-                <Button type="button" variant="secondary" onClick={closeForm} disabled={isSaving}>
-                  Cancel
-                </Button>
+                <Button type="submit" disabled={isSaving}>{isSaving ? 'Saving...' : editingAddressId ? 'Save Address' : 'Add Address'}</Button>
+                <Button type="button" variant="secondary" onClick={closeForm} disabled={isSaving}>Cancel</Button>
               </div>
             </form>
           )}
         </section>
       </div>
-    </CustomerPageShell>
-  );
-}
-
-export function AddressesPage() {
-  return (
-    <NavigationThemeProvider theme="dark">
-      <AddressesPageContent />
-    </NavigationThemeProvider>
+    </div>
   );
 }

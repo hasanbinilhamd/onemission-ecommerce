@@ -1,10 +1,9 @@
-import { ArrowLeft, Save, UserRound } from 'lucide-react';
+import { Save, UserRound } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../app/config/routes';
 import { Button, Input, LoadingSkeleton } from '../components/shared';
-import { CustomerPageHeader, CustomerPageShell, useAuthenticatedCustomer } from '../features/customer';
-import { NavigationThemeProvider } from '../features/navigation';
+import { useAuthenticatedCustomer } from '../features/customer';
 import { updateCustomerProfile } from '../services/api/customerService';
 import { formatDate } from '../utils/formatting';
 import { isRequired } from '../utils/validation';
@@ -33,7 +32,7 @@ function validateProfileForm(values: ProfileFormState): ProfileFormErrors {
   return errors;
 }
 
-function ProfilePageContent() {
+export function ProfilePage() {
   const navigate = useNavigate();
   const {
     user,
@@ -75,7 +74,7 @@ function ProfilePageContent() {
     setErrors(nextErrors);
     setStatusMessage('');
 
-    if (Object.keys(nextErrors).length > 0 || !user?.id || !user.email) {
+    if (Object.keys(nextErrors).length > 0 || !user?.email) {
       return;
     }
 
@@ -100,16 +99,9 @@ function ProfilePageContent() {
 
   if (isLoading) {
     return (
-      <CustomerPageShell maxWidth="860px">
-        <CustomerPageHeader
-          sectionLabel="My Account"
-          title="My Profile"
-          description="Update your customer information."
-        />
-        <div className="rounded-3xl border border-neutral-200 bg-white p-6">
-          <LoadingSkeleton rows={6} />
-        </div>
-      </CustomerPageShell>
+      <div className="rounded-3xl bg-white p-6 shadow-sm">
+        <LoadingSkeleton rows={6} />
+      </div>
     );
   }
 
@@ -118,26 +110,20 @@ function ProfilePageContent() {
   }
 
   return (
-    <CustomerPageShell maxWidth="860px">
-      <CustomerPageHeader
-        sectionLabel="My Account"
-        title="My Profile"
-        description="Keep your customer information up to date so checkout autofill stays accurate."
-        action={
-          <Button type="button" variant="ghost" size="sm" className="w-fit gap-2" onClick={() => navigate(ROUTES.ACCOUNT)}>
-            <ArrowLeft size={16} />
-            Back to Account
-          </Button>
-        }
-      />
+    <div className="space-y-6">
+      <div>
+        <p className="m-0 text-sm font-semibold uppercase tracking-[0.12em] text-neutral-400">My Profile</p>
+        <h2 className="mt-2 text-2xl font-semibold text-neutral-950">Profile Settings</h2>
+        <p className="mt-2 text-sm leading-7 text-neutral-500">Update your customer profile and keep your checkout autofill accurate.</p>
+      </div>
 
       {errorMessage ? (
-        <div className="mb-6 rounded-3xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+        <div className="rounded-3xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
           {errorMessage}
         </div>
       ) : null}
 
-      <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
+      <div className="rounded-3xl bg-white p-6 shadow-sm sm:p-8">
         <div className="mb-6 flex items-center gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-neutral-900 text-white">
             <UserRound size={24} />
@@ -186,13 +172,13 @@ function ProfilePageContent() {
               <p className="mt-1 font-medium text-neutral-900">{joinedDate}</p>
             </div>
             <div>
-              <p className="m-0 text-xs font-semibold uppercase tracking-[0.12em] text-neutral-400">Customer ID</p>
+              <p className="m-0 text-xs font-semibold uppercase tracking-[0.12em] text-neutral-400">Customer Number</p>
               <p className="mt-1 font-medium text-neutral-900">{customerIdentifier || '—'}</p>
             </div>
           </div>
 
           {statusMessage ? (
-            <div className={`rounded-2xl px-4 py-3 text-sm ${statusMessage.toLowerCase().includes('success') ? 'border border-emerald-200 bg-emerald-50 text-emerald-700' : 'border border-red-200 bg-red-50 text-red-700'}`}>
+            <div className={`rounded-2xl px-4 py-3 text-sm ${statusMessage.toLowerCase().includes('successfully') ? 'border border-emerald-200 bg-emerald-50 text-emerald-700' : 'border border-red-200 bg-red-50 text-red-700'}`}>
               {statusMessage}
             </div>
           ) : null}
@@ -202,20 +188,9 @@ function ProfilePageContent() {
               <Save size={16} />
               {isSaving ? 'Saving...' : 'Save Profile'}
             </Button>
-            <Button type="button" variant="secondary" onClick={() => navigate(ROUTES.ORDERS)}>
-              My Orders
-            </Button>
           </div>
         </form>
       </div>
-    </CustomerPageShell>
-  );
-}
-
-export function ProfilePage() {
-  return (
-    <NavigationThemeProvider theme="dark">
-      <ProfilePageContent />
-    </NavigationThemeProvider>
+    </div>
   );
 }

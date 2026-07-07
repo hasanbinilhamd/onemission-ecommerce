@@ -1,52 +1,94 @@
-import { ArrowRight, CalendarDays, KeyRound, LogOut, Mail, MapPinned, Phone, ShoppingBag, UserRound } from 'lucide-react';
+import { ArrowRight, CalendarDays, Mail, MapPinned, Package2, Phone, ShoppingBag } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../app/config/routes';
-import { Button, LoadingSkeleton } from '../components/shared';
-import { CustomerPageHeader, CustomerPageShell, useAuthenticatedCustomer } from '../features/customer';
-import { NavigationThemeProvider } from '../features/navigation';
-import { formatDate } from '../utils/formatting';
+import { ROUTES, orderDetailPath } from '../app/config/routes';
+import { Button, EmptyState, LoadingSkeleton } from '../components/shared';
+import { OrderPaymentStatusBadge, OrderStatusBadge, useAuthenticatedCustomer } from '../features/customer';
+import { listCustomerAddresses } from '../services/api/customerService';
+import { getOrdersByCustomerEmail } from '../services/api/orderService';
+import type { CommerceOrderListItem, CustomerAddress } from '../types';
+import { formatCurrency, formatDate } from '../utils/formatting';
 
-function AccountPageContent() {
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+export function AccountPage() {
   const navigate = useNavigate();
-  const { user, profile, isLoading, errorMessage, logout } = useAuthenticatedCustomer();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const {
+    user,
+    profile,
+    isLoading,
+    errorMessage,
+    getValidAccessToken,
+  } = useAuthenticatedCustomer();
+
+  const [orders, setOrders] = useState<CommerceOrderListItem[]>([]);
+  const [addresses, setAddresses] = useState<CustomerAddress[]>([]);
+  const [isLoadingOverview, setIsLoadingOverview] = useState(true);
 
   useEffect(() => {
-    if (!isLoading && !user) {
-      navigate(ROUTES.LOGIN, { replace: true });
+    if (!user?.email) {
+      setOrders([]);
+      setAddresses([]);
+      setIsLoadingOverview(false);
+      return;
     }
-  }, [isLoading, navigate, user]);
+
+    let isMounted = true;
+
+    const loadOverview = async () => {
+      setIsLoadingOverview(true);
+
+      try {
+        const accessToken = await getValidAccessToken();
+        if (!accessToken) {
+          return;
+        }
+
+        const [nextOrders, nextAddresses] = await Promise.all([
+          getOrdersByCustomerEmail(normalizeEmail(user.email), accessToken),
+          listCustomerAddresses(accessToken),
+        ]);
+
+        if (!isMounted) {
+          return;
+        }
+
+        setOrders(nextOrders);
+        setAddresses(nextAddresses);
+      } finally {
+        if (isMounted) {
+          setIsLoadingOverview(false);
+        }
+      }
+    };
+
+    void loadOverview();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [getValidAccessToken, user?.email]);
 
   const joinedDate = useMemo(() => (user?.createdAt ? formatDate(user.createdAt) : '—'), [user?.createdAt]);
-
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-      await logout();
-      navigate(ROUTES.HOME, { replace: true });
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
+  const completedOrders = useMemo(() => orders.filter((order) => String(order.status || '').toUpperCase() === 'COMPLETED').length, [orders]);
+  const pendingOrders = useMemo(() => orders.filter((order) => String(order.status || '').toUpperCase() !== 'COMPLETED').length, [orders]);
+  const recentOrders = useMemo(() => orders.slice(0, 5), [orders]);
 
   if (isLoading) {
     return (
-      <CustomerPageShell>
-        <CustomerPageHeader
-          sectionLabel="My Account"
-          title="My Account"
-          description="Manage your customer settings and account activity."
-        />
-        <div className="grid gap-6">
-          <div className="rounded-3xl border border-neutral-200 bg-white p-6">
-            <LoadingSkeleton rows={4} />
-          </div>
-          <div className="rounded-3xl border border-neutral-200 bg-white p-6">
-            <LoadingSkeleton rows={3} />
-          </div>
+      <div className="space-y-6">
+        <div className="rounded-3xl bg-white p-6 shadow-sm">
+          <LoadingSkeleton rows={4} />
         </div>
-      </CustomerPageShell>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-3xl bg-white p-6 shadow-sm"><LoadingSkeleton rows={3} /></div>
+          <div className="rounded-3xl bg-white p-6 shadow-sm"><LoadingSkeleton rows={3} /></div>
+          <div className="rounded-3xl bg-white p-6 shadow-sm"><LoadingSkeleton rows={3} /></div>
+          <div className="rounded-3xl bg-white p-6 shadow-sm"><LoadingSkeleton rows={3} /></div>
+        </div>
+      </div>
     );
   }
 
@@ -55,101 +97,155 @@ function AccountPageContent() {
   }
 
   return (
-    <CustomerPageShell>
-      <CustomerPageHeader
-        sectionLabel="My Account"
-        title="My Account"
-        description="Manage your customer settings and account activity."
-      />
-
+    <div className="space-y-6">
       {errorMessage ? (
-        <div className="mb-6 rounded-3xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+        <div className="rounded-3xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
           {errorMessage}
         </div>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <section className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+      <section className="rounded-3xl bg-white p-6 shadow-sm sm:p-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
             <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-neutral-900 text-2xl font-semibold uppercase text-white">
               {profile.initials}
             </div>
             <div>
-              <h2 className="m-0 text-2xl font-semibold text-neutral-950">{profile.fullName || user.customerName}</h2>
-              <p className="mt-2 text-sm text-neutral-500">{user.customerCode || user.id}</p>
+              <p className="m-0 text-sm font-semibold uppercase tracking-[0.12em] text-neutral-400">Overview</p>
+              <h2 className="mt-2 text-2xl font-semibold text-neutral-950">{profile.fullName || user.customerName}</h2>
+              <div className="mt-4 grid gap-2 text-sm text-neutral-600 sm:grid-cols-2">
+                <p className="m-0 inline-flex items-center gap-2"><Mail size={16} /> {user.email}</p>
+                <p className="m-0 inline-flex items-center gap-2"><Phone size={16} /> {user.phone || '—'}</p>
+                <p className="m-0 inline-flex items-center gap-2"><Package2 size={16} /> {user.customerCode || user.id}</p>
+                <p className="m-0 inline-flex items-center gap-2"><CalendarDays size={16} /> Joined {joinedDate}</p>
+              </div>
             </div>
           </div>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            <div className="rounded-2xl bg-neutral-50 px-4 py-4">
-              <div className="flex items-center gap-3 text-neutral-700">
-                <Mail size={18} />
-                <p className="m-0 text-xs font-semibold uppercase tracking-[0.12em] text-neutral-400">Email</p>
-              </div>
-              <p className="mt-3 text-sm font-medium text-neutral-900">{user.email}</p>
-            </div>
-            <div className="rounded-2xl bg-neutral-50 px-4 py-4">
-              <div className="flex items-center gap-3 text-neutral-700">
-                <Phone size={18} />
-                <p className="m-0 text-xs font-semibold uppercase tracking-[0.12em] text-neutral-400">Phone</p>
-              </div>
-              <p className="mt-3 text-sm font-medium text-neutral-900">{user.phone || '—'}</p>
-            </div>
-            <div className="rounded-2xl bg-neutral-50 px-4 py-4 sm:col-span-2">
-              <div className="flex items-center gap-3 text-neutral-700">
-                <CalendarDays size={18} />
-                <p className="m-0 text-xs font-semibold uppercase tracking-[0.12em] text-neutral-400">Joined Date</p>
-              </div>
-              <p className="mt-3 text-sm font-medium text-neutral-900">{joinedDate}</p>
-            </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:w-[340px]">
+            <Button type="button" className="justify-between" onClick={() => navigate(ROUTES.ACCOUNT_PROFILE)}>
+              Edit Profile
+              <ArrowRight size={16} />
+            </Button>
+            <Button type="button" variant="secondary" className="justify-between" onClick={() => navigate(ROUTES.ACCOUNT_ADDRESSES)}>
+              Address Book
+              <ArrowRight size={16} />
+            </Button>
+            <Button type="button" variant="secondary" className="justify-between" onClick={() => navigate(ROUTES.ACCOUNT_ORDERS)}>
+              My Orders
+              <ArrowRight size={16} />
+            </Button>
+            <Button type="button" variant="secondary" className="justify-between" onClick={() => navigate(ROUTES.ACCOUNT_WISHLIST)}>
+              Wishlist
+              <ArrowRight size={16} />
+            </Button>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
-          <div className="mb-5 flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 text-neutral-700">
-              <UserRound size={20} />
-            </div>
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {[
+          { label: 'Total Orders', value: orders.length, icon: Package2 },
+          { label: 'Completed Orders', value: completedOrders, icon: ShoppingBag },
+          { label: 'Pending Orders', value: pendingOrders, icon: Package2 },
+          { label: 'Saved Addresses', value: addresses.length, icon: MapPinned },
+        ].map((card) => {
+          const Icon = card.icon;
+          return (
+            <article key={card.label} className="rounded-3xl bg-white p-5 shadow-sm">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="m-0 text-xs font-semibold uppercase tracking-[0.12em] text-neutral-400">{card.label}</p>
+                  <p className="mt-3 text-3xl font-semibold text-neutral-950">{isLoadingOverview ? '—' : card.value}</p>
+                </div>
+                <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-neutral-100 text-neutral-700">
+                  <Icon size={18} />
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="rounded-3xl bg-white p-6 shadow-sm sm:p-8">
+          <div className="mb-5 flex items-center justify-between gap-4">
             <div>
-              <h2 className="m-0 text-xl font-semibold text-neutral-950">Account Center</h2>
-              <p className="mt-1 text-sm text-neutral-500">
-                Quick access to your profile and order activity.
-              </p>
+              <h3 className="m-0 text-xl font-semibold text-neutral-950">Recent Orders</h3>
+              <p className="mt-1 text-sm text-neutral-500">Your 5 most recent orders.</p>
             </div>
+            <Button type="button" variant="ghost" size="sm" onClick={() => navigate(ROUTES.ACCOUNT_ORDERS)}>
+              View All
+            </Button>
           </div>
 
-          <div className="grid gap-3">
+          {isLoadingOverview ? (
+            <LoadingSkeleton rows={5} />
+          ) : recentOrders.length === 0 ? (
+            <EmptyState
+              icon={<Package2 size={28} />}
+              title="No orders yet"
+              description="When you place your first order, it will appear here for quick access."
+            />
+          ) : (
+            <div className="grid gap-4">
+              {recentOrders.map((order) => (
+                <button
+                  key={order.id}
+                  type="button"
+                  onClick={() => navigate(orderDetailPath(order.publicOrderNumber))}
+                  className="flex flex-col gap-3 rounded-2xl bg-neutral-50 px-4 py-4 text-left transition-colors hover:bg-neutral-100"
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="m-0 text-xs font-semibold uppercase tracking-[0.12em] text-neutral-400">Order Number</p>
+                      <p className="mt-1 font-mono text-sm font-semibold text-neutral-900">{order.publicOrderNumber}</p>
+                    </div>
+                    <OrderStatusBadge status={order.status || order.fulfillmentStatusLabel || order.fulfillmentStatus} />
+                  </div>
+                  <div className="grid gap-2 text-sm text-neutral-600 sm:grid-cols-3">
+                    <div>
+                      <p className="m-0 text-xs font-semibold uppercase tracking-[0.12em] text-neutral-400">Created Date</p>
+                      <p className="mt-1 text-neutral-900">{formatDate(order.orderDate)}</p>
+                    </div>
+                    <div>
+                      <p className="m-0 text-xs font-semibold uppercase tracking-[0.12em] text-neutral-400">Total</p>
+                      <p className="mt-1 text-neutral-900">{formatCurrency(order.totalAmount)}</p>
+                    </div>
+                    <div>
+                      <p className="m-0 text-xs font-semibold uppercase tracking-[0.12em] text-neutral-400">Payment</p>
+                      <div className="mt-1"><OrderPaymentStatusBadge status={order.paymentStatus} /></div>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-3xl bg-white p-6 shadow-sm sm:p-8">
+          <h3 className="m-0 text-xl font-semibold text-neutral-950">Quick Action</h3>
+          <p className="mt-1 text-sm text-neutral-500">Move faster through common account tasks.</p>
+          <div className="mt-5 grid gap-3">
             <Button type="button" className="w-full justify-between" onClick={() => navigate(ROUTES.ACCOUNT_PROFILE)}>
-              <span className="inline-flex items-center gap-2"><UserRound size={16} /> Edit Profile</span>
+              Edit Profile
               <ArrowRight size={16} />
             </Button>
             <Button type="button" variant="secondary" className="w-full justify-between" onClick={() => navigate(ROUTES.ACCOUNT_ADDRESSES)}>
-              <span className="inline-flex items-center gap-2"><MapPinned size={16} /> Address Book</span>
+              Address Book
               <ArrowRight size={16} />
             </Button>
-            <Button type="button" variant="secondary" className="w-full justify-between" onClick={() => navigate(ROUTES.ORDERS)}>
-              <span className="inline-flex items-center gap-2"><ShoppingBag size={16} /> My Orders</span>
+            <Button type="button" variant="secondary" className="w-full justify-between" onClick={() => navigate(ROUTES.ACCOUNT_ORDERS)}>
+              My Orders
               <ArrowRight size={16} />
             </Button>
-            <Button type="button" variant="secondary" className="w-full justify-between" onClick={() => navigate(ROUTES.ACCOUNT_CHANGE_PASSWORD)}>
-              <span className="inline-flex items-center gap-2"><KeyRound size={16} /> Change Password</span>
+            <Button type="button" variant="secondary" className="w-full justify-between" onClick={() => navigate(ROUTES.ACCOUNT_WISHLIST)}>
+              Wishlist
               <ArrowRight size={16} />
-            </Button>
-            <Button type="button" variant="outline" className="w-full justify-between border-red-200 text-red-600 hover:bg-red-50" onClick={() => void handleLogout()} disabled={isLoggingOut}>
-              <span className="inline-flex items-center gap-2">{isLoggingOut ? 'Logging Out...' : 'Logout'}</span>
-              <LogOut size={16} />
             </Button>
           </div>
-        </section>
-      </div>
-    </CustomerPageShell>
-  );
-}
-
-export function AccountPage() {
-  return (
-    <NavigationThemeProvider theme="dark">
-      <AccountPageContent />
-    </NavigationThemeProvider>
+        </div>
+      </section>
+    </div>
   );
 }

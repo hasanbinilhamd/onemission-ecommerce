@@ -1,0 +1,111 @@
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import type { Product } from '../../types';
+import {
+  clearGuestWishlistItems,
+  getCustomerWishlistItems,
+  getGuestWishlistItems,
+  mapProductToWishlistItem,
+  mergeWishlistItems,
+  setCustomerWishlistItems,
+  setGuestWishlistItems,
+  type WishlistItemRecord,
+} from '../../services/wishlist/wishlistStorage';
+import { useAuthenticatedCustomer } from './useAuthenticatedCustomer';
+
+interface WishlistContextValue {
+  items: WishlistItemRecord[];
+  isLoading: boolean;
+  addItem: (product: Product) => void;
+  removeItem: (productId: string) => void;
+  toggleItem: (product: Product) => void;
+  isWishlisted: (productId: string) => boolean;
+  clearWishlist: () => void;
+}
+
+const WishlistContext = createContext<WishlistContextValue | null>(null);
+
+export function WishlistProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuthenticatedCustomer();
+  const [items, setItems] = useState<WishlistItemRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (user?.id) {
+      const guestItems = getGuestWishlistItems();
+      const storedItems = getCustomerWishlistItems(user.id);
+      const mergedItems = mergeWishlistItems(storedItems, guestItems);
+      setCustomerWishlistItems(user.id, mergedItems);
+      clearGuestWishlistItems();
+      setItems(mergedItems);
+      setIsLoading(false);
+      return;
+    }
+
+    setItems(getGuestWishlistItems());
+    setIsLoading(false);
+  }, [user?.id]);
+
+  const persistItems = useCallback((nextItems: WishlistItemRecord[]) => {
+    if (user?.id) {
+      setCustomerWishlistItems(user.id, nextItems);
+    } else {
+      setGuestWishlistItems(nextItems);
+    }
+
+    setItems(nextItems);
+  }, [user?.id]);
+
+  const addItem = useCallback((product: Product) => {
+    const nextItem = mapProductToWishlistItem(product);
+    const nextItems = mergeWishlistItems([nextItem], items);
+    persistItems(nextItems);
+  }, [items, persistItems]);
+
+  const removeItem = useCallback((productId: string) => {
+    const nextItems = items.filter((item) => item.productId !== productId);
+    persistItems(nextItems);
+  }, [items, persistItems]);
+
+  const toggleItem = useCallback((product: Product) => {
+    const exists = items.some((item) => item.productId === product.id);
+    if (exists) {
+      removeItem(product.id);
+      return;
+    }
+
+    addItem(product);
+  }, [addItem, items, removeItem]);
+
+  const clearWishlist = useCallback(() => {
+    persistItems([]);
+  }, [persistItems]);
+
+  const isWishlisted = useCallback((productId: string) => (
+    items.some((item) => item.productId === productId)
+  ), [items]);
+
+  const value = useMemo<WishlistContextValue>(() => ({
+    items,
+    isLoading,
+    addItem,
+    removeItem,
+    toggleItem,
+    isWishlisted,
+    clearWishlist,
+  }), [addItem, clearWishlist, isLoading, isWishlisted, items, removeItem, toggleItem]);
+
+  return (
+    <WishlistContext.Provider value={value}>
+      {children}
+    </WishlistContext.Provider>
+  );
+}
+
+export function useWishlist() {
+  const context = useContext(WishlistContext);
+  if (!context) {
+    throw new Error('useWishlist must be used within a WishlistProvider');
+  }
+
+  return context;
+}

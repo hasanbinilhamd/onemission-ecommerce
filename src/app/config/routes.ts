@@ -12,12 +12,15 @@ export const ROUTES = {
   FORGOT_PASSWORD: '/forgot-password',
   ACCOUNT: '/account',
   ACCOUNT_PROFILE: '/account/profile',
-  ACCOUNT_ADDRESSES: '/account/addresses',
-  ACCOUNT_CHANGE_PASSWORD: '/account/change-password',
-  ORDERS: '/orders',
-  ORDER_DETAIL: '/orders/:orderNumber',
+  ACCOUNT_ADDRESSES: '/account/address',
+  ACCOUNT_ORDERS: '/account/orders',
+  ACCOUNT_ORDER_DETAIL: '/account/orders/:orderNumber',
+  ACCOUNT_WISHLIST: '/account/wishlist',
+  ACCOUNT_PASSWORD: '/account/password',
+  ORDERS: '/account/orders',
+  ORDER_DETAIL: '/account/orders/:orderNumber',
   TRACK_ORDER: '/track-order',
-  WISHLIST: '/wishlist',
+  WISHLIST: '/account/wishlist',
 } as const;
 
 export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES];
@@ -29,5 +32,5 @@ export function productPath(slug: string): string {
 
 /** Build an order detail URL from a public order number. */
 export function orderDetailPath(orderNumber: string): string {
-  return `/orders/${encodeURIComponent(orderNumber)}`;
+  return `/account/orders/${encodeURIComponent(orderNumber)}`;
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { Navigate, Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
 import { HomePage } from './pages/HomePage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
@@ -15,9 +15,11 @@ import { TrackOrderPage } from './pages/TrackOrderPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { AddressesPage } from './pages/AddressesPage';
 import { ChangePasswordPage } from './pages/ChangePasswordPage';
-import { ForgotPasswordPage, WishlistPage } from './pages/PlaceholderPages';
+import { WishlistPage } from './pages/WishlistPage';
+import { ForgotPasswordPage } from './pages/PlaceholderPages';
 import { CatalogDrawer } from './features/catalog';
 import { FloatingNavigation, MiniCartDrawer } from './features/cart';
+import { AccountDashboardLayout } from './features/customer';
 import { SearchOverlay } from './features/search';
 import { NavigationThemeProvider } from './features/navigation';
 import { DURATION, EASING } from './utils/motion';
@@ -36,6 +38,11 @@ import { DURATION, EASING } from './utils/motion';
  *  2. User clicks "Back to Collection" → navigate('/', { restoreCatalog: true })
  *  3. useEffect detects restoreCatalog flag → setCatalogOpen(true)
  */
+function LegacyOrderRedirect() {
+  const { orderNumber = '' } = useParams<{ orderNumber: string }>();
+  return <Navigate to={`/account/orders/${encodeURIComponent(orderNumber)}`} replace />;
+}
+
 function App() {
   const [catalogOpen, setCatalogOpen] = useState(false);
   const navigate   = useNavigate();
@@ -101,17 +108,26 @@ function App() {
           <Route path="/payment/success" element={<PaymentSuccessPage />} />
           <Route path="/payment/pending" element={<PaymentPendingPage />} />
           <Route path="/payment/failed" element={<PaymentFailedPage />} />
-          <Route path="/account" element={<AccountPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/orders" element={<MyOrdersPage />} />
-          <Route path="/orders/:orderNumber" element={<OrderDetailPage />} />
           <Route path="/track-order" element={<TrackOrderPage />} />
-          <Route path="/account/addresses" element={<AddressesPage />} />
-          <Route path="/account/profile" element={<ProfilePage />} />
-          <Route path="/account/change-password" element={<ChangePasswordPage />} />
-          <Route path="/wishlist" element={<WishlistPage />} />
+
+          <Route path="/account" element={<AccountDashboardLayout />}>
+            <Route index element={<AccountPage />} />
+            <Route path="profile" element={<ProfilePage />} />
+            <Route path="address" element={<AddressesPage />} />
+            <Route path="orders" element={<MyOrdersPage />} />
+            <Route path="orders/:orderNumber" element={<OrderDetailPage />} />
+            <Route path="wishlist" element={<WishlistPage />} />
+            <Route path="password" element={<ChangePasswordPage />} />
+          </Route>
+
+          <Route path="/account/addresses" element={<Navigate to="/account/address" replace />} />
+          <Route path="/account/change-password" element={<Navigate to="/account/password" replace />} />
+          <Route path="/orders" element={<Navigate to="/account/orders" replace />} />
+          <Route path="/orders/:orderNumber" element={<LegacyOrderRedirect />} />
+          <Route path="/wishlist" element={<Navigate to="/account/wishlist" replace />} />
 
           {/* Fallback → home */}
           <Route path="*" element={<MainLayout><HomePage onDiscover={handleDiscover} /></MainLayout>} />

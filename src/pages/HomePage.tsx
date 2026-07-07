@@ -1,6 +1,5 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { HeroMedia, type HeroMediaConfig } from '../features/hero/HeroMedia';
 import { HERO_THEMES, createHeroGradient } from '../features/hero/theme';
 
 type ImageItem = {
@@ -98,7 +97,6 @@ const GRAIN_SVG =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E";
 
 const HERO_GRADIENTS = IMAGES.map(item => createHeroGradient(item.theme.accentColor));
-const HERO_VIDEO_SAMPLE_URL = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
 
 const HeroGradientBackground = memo(function HeroGradientBackground({ activeIndex }: { activeIndex: number }) {
   const [visibleLayer, setVisibleLayer] = useState<0 | 1>(0);
@@ -256,16 +254,6 @@ export function HomePage({ onDiscover }: HomePageProps) {
     window.setTimeout(() => setIsAnimating(false), DURATION);
   };
 
-  const heroMedia = useMemo<HeroMediaConfig>(() => ({
-    type: 'video',
-    desktopVideo: HERO_VIDEO_SAMPLE_URL,
-    mobileVideo: '',
-    desktopImage: IMAGES[activeIndex]?.src,
-    mobileImage: IMAGES[activeIndex]?.src,
-  }), [activeIndex]);
-
-  const useImageHero = heroMedia.type === 'image';
-
   return (
     <div
       style={{
@@ -274,18 +262,14 @@ export function HomePage({ onDiscover }: HomePageProps) {
       className="relative w-full overflow-hidden"
     >
       <div className="relative w-full" style={{ height: '100vh', overflow: 'hidden' }}>
-        {useImageHero ? (
-          <HeroGradientBackground activeIndex={activeIndex} />
-        ) : (
-          <HeroMedia media={heroMedia} />
-        )}
+        <HeroGradientBackground activeIndex={activeIndex} />
 
         <div
           aria-hidden="true"
           className="absolute inset-0 pointer-events-none"
           style={{
             zIndex: 1,
-            background: 'linear-gradient(180deg, rgba(10,10,10,0.24) 0%, rgba(10,10,10,0.14) 44%, rgba(229,228,226,0.10) 100%)',
+            background: 'linear-gradient(180deg, rgba(10,10,10,0.12) 0%, rgba(10,10,10,0.04) 44%, rgba(229,228,226,0.08) 100%)',
           }}
         />
 
@@ -336,7 +320,7 @@ export function HomePage({ onDiscover }: HomePageProps) {
           />
         </div>
 
-        {useImageHero ? <HeroCarouselImages activeIndex={activeIndex} isMobile={isMobile} /> : null}
+        <HeroCarouselImages activeIndex={activeIndex} isMobile={isMobile} />
 
         <div
           className="absolute bottom-6 left-4 sm:bottom-20 sm:left-24"
@@ -365,54 +349,52 @@ export function HomePage({ onDiscover }: HomePageProps) {
             vision, the 3D craft is flawless. Many thanks! Wishing you the win.
             Order now.
           </p>
-          {useImageHero ? (
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                aria-label="Previous"
-                onClick={() => rotateHero('prev')}
-                className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center"
-                style={{
-                  backgroundColor: 'transparent',
-                  border: '2px solid #ffffff',
-                  color: '#ffffff',
-                  transition: 'transform 150ms ease, background-color 150ms ease',
-                }}
-                onMouseEnter={(event) => {
-                  event.currentTarget.style.transform = 'scale(1.08)';
-                  event.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.12)';
-                }}
-                onMouseLeave={(event) => {
-                  event.currentTarget.style.transform = 'scale(1)';
-                  event.currentTarget.style.backgroundColor = 'transparent';
-                }}
-              >
-                <ArrowLeft size={26} strokeWidth={2.25} />
-              </button>
-              <button
-                type="button"
-                aria-label="Next"
-                onClick={() => rotateHero('next')}
-                className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center"
-                style={{
-                  backgroundColor: 'transparent',
-                  border: '2px solid #ffffff',
-                  color: '#ffffff',
-                  transition: 'transform 150ms ease, background-color 150ms ease',
-                }}
-                onMouseEnter={(event) => {
-                  event.currentTarget.style.transform = 'scale(1.08)';
-                  event.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.12)';
-                }}
-                onMouseLeave={(event) => {
-                  event.currentTarget.style.transform = 'scale(1)';
-                  event.currentTarget.style.backgroundColor = 'transparent';
-                }}
-              >
-                <ArrowRight size={26} strokeWidth={2.25} />
-              </button>
-            </div>
-          ) : null}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              aria-label="Previous"
+              onClick={() => rotateHero('prev')}
+              className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center"
+              style={{
+                backgroundColor: 'transparent',
+                border: '2px solid #ffffff',
+                color: '#ffffff',
+                transition: 'transform 150ms ease, background-color 150ms ease',
+              }}
+              onMouseEnter={(event) => {
+                event.currentTarget.style.transform = 'scale(1.08)';
+                event.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.12)';
+              }}
+              onMouseLeave={(event) => {
+                event.currentTarget.style.transform = 'scale(1)';
+                event.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              <ArrowLeft size={26} strokeWidth={2.25} />
+            </button>
+            <button
+              type="button"
+              aria-label="Next"
+              onClick={() => rotateHero('next')}
+              className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center"
+              style={{
+                backgroundColor: 'transparent',
+                border: '2px solid #ffffff',
+                color: '#ffffff',
+                transition: 'transform 150ms ease, background-color 150ms ease',
+              }}
+              onMouseEnter={(event) => {
+                event.currentTarget.style.transform = 'scale(1.08)';
+                event.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.12)';
+              }}
+              onMouseLeave={(event) => {
+                event.currentTarget.style.transform = 'scale(1)';
+                event.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              <ArrowRight size={26} strokeWidth={2.25} />
+            </button>
+          </div>
         </div>
 
         <a

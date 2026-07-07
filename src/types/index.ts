@@ -68,6 +68,25 @@ export interface Customer {
   address?: string;
 }
 
+export interface CustomerAddress {
+  id: string;
+  customerId: string;
+  recipientName: string;
+  phoneNumber: string;
+  provinceId: string;
+  province: string;
+  cityId: string;
+  city: string;
+  districtId: string;
+  district: string;
+  postalCode: string;
+  streetAddress: string;
+  notes?: string;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CartItem {
   productId: string;
   variantId?: string;

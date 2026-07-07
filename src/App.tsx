@@ -13,7 +13,9 @@ import { MyOrdersPage } from './pages/MyOrdersPage';
 import { OrderDetailPage } from './pages/OrderDetailPage';
 import { TrackOrderPage } from './pages/TrackOrderPage';
 import { ProfilePage } from './pages/ProfilePage';
-import { AddressBookPage, ForgotPasswordPage, WishlistPage } from './pages/PlaceholderPages';
+import { AddressesPage } from './pages/AddressesPage';
+import { ChangePasswordPage } from './pages/ChangePasswordPage';
+import { ForgotPasswordPage, WishlistPage } from './pages/PlaceholderPages';
 import { CatalogDrawer } from './features/catalog';
 import { FloatingNavigation, MiniCartDrawer } from './features/cart';
 import { SearchOverlay } from './features/search';
@@ -106,8 +108,9 @@ function App() {
           <Route path="/orders" element={<MyOrdersPage />} />
           <Route path="/orders/:orderNumber" element={<OrderDetailPage />} />
           <Route path="/track-order" element={<TrackOrderPage />} />
-          <Route path="/account/address" element={<AddressBookPage />} />
+          <Route path="/account/addresses" element={<AddressesPage />} />
           <Route path="/account/profile" element={<ProfilePage />} />
+          <Route path="/account/change-password" element={<ChangePasswordPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
 
           {/* Fallback → home */}

@@ -83,7 +83,7 @@ function ProfilePageContent() {
 
     try {
       const accessToken = await getValidAccessToken();
-      await updateCustomerProfile(user.id, {
+      await updateCustomerProfile({
         customerName: form.fullName,
         email: user.email,
         phone: form.phone,

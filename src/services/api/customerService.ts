@@ -1,4 +1,4 @@
-import type { Customer } from '../../types';
+import type { Customer, CustomerAddress } from '../../types';
 import { env } from '../../app/config/env';
 import type { CustomerAuthCustomer } from '../auth/customerAuthService';
 
@@ -17,6 +17,21 @@ interface UpdateCustomerProfileInput {
   email: string;
   phone: string;
   accessToken?: string;
+}
+
+export interface CustomerAddressInput {
+  recipientName: string;
+  phoneNumber: string;
+  provinceId: string;
+  province: string;
+  cityId: string;
+  city: string;
+  districtId: string;
+  district: string;
+  postalCode: string;
+  streetAddress: string;
+  notes?: string;
+  isDefault?: boolean;
 }
 
 function getApiBaseUrl() {
@@ -79,6 +94,27 @@ function mapCustomerAuthCustomer(payload: Record<string, unknown>): CustomerAuth
   };
 }
 
+function mapCustomerAddress(payload: Record<string, unknown>): CustomerAddress {
+  return {
+    id: String(payload.id || ''),
+    customerId: String(payload.customerId || ''),
+    recipientName: String(payload.recipientName || ''),
+    phoneNumber: String(payload.phoneNumber || ''),
+    provinceId: String(payload.provinceId || ''),
+    province: String(payload.province || ''),
+    cityId: String(payload.cityId || ''),
+    city: String(payload.city || ''),
+    districtId: String(payload.districtId || ''),
+    district: String(payload.district || ''),
+    postalCode: String(payload.postalCode || ''),
+    streetAddress: String(payload.streetAddress || ''),
+    notes: String(payload.notes || ''),
+    isDefault: Boolean(payload.isDefault),
+    createdAt: String(payload.createdAt || ''),
+    updatedAt: String(payload.updatedAt || ''),
+  };
+}
+
 export async function ensureCustomerRecord(input: EnsureCustomerRecordInput): Promise<Customer> {
   const fullName = input.fullName.trim();
   const email = input.email.trim().toLowerCase();
@@ -105,23 +141,71 @@ export async function ensureCustomerRecord(input: EnsureCustomerRecordInput): Pr
   };
 }
 
+export async function getCustomerProfile(accessToken = ''): Promise<CustomerAuthCustomer> {
+  const payload = await fetchJson<Record<string, unknown>>('/customer/profile', {
+    method: 'GET',
+  }, accessToken);
+
+  return mapCustomerAuthCustomer(payload);
+}
+
 export async function updateCustomerProfile(
-  id: string,
   data: UpdateCustomerProfileInput,
 ): Promise<CustomerAuthCustomer> {
-  const payload = await fetchJson<Record<string, unknown>>(`/customers/${encodeURIComponent(id)}`, {
+  const payload = await fetchJson<Record<string, unknown>>('/customer/profile', {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       customerName: data.customerName.trim(),
-      email: data.email.trim().toLowerCase(),
       phone: data.phone.trim(),
     }),
   }, data.accessToken || '');
 
   return mapCustomerAuthCustomer(payload);
+}
+
+export async function listCustomerAddresses(accessToken = ''): Promise<CustomerAddress[]> {
+  const payload = await fetchJson<Record<string, unknown>[]>('/customer/addresses', {
+    method: 'GET',
+  }, accessToken);
+
+  return payload.map(mapCustomerAddress);
+}
+
+export async function createCustomerAddress(input: CustomerAddressInput, accessToken = ''): Promise<CustomerAddress> {
+  const payload = await fetchJson<Record<string, unknown>>('/customer/addresses', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  }, accessToken);
+
+  return mapCustomerAddress(payload);
+}
+
+export async function updateCustomerAddress(addressId: string, input: CustomerAddressInput, accessToken = ''): Promise<CustomerAddress> {
+  const payload = await fetchJson<Record<string, unknown>>(`/customer/addresses/${encodeURIComponent(addressId)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  }, accessToken);
+
+  return mapCustomerAddress(payload);
+}
+
+export async function deleteCustomerAddress(addressId: string, accessToken = ''): Promise<{ ok: true }> {
+  return fetchJson<{ ok: true }>(`/customer/addresses/${encodeURIComponent(addressId)}`, {
+    method: 'DELETE',
+  }, accessToken);
+}
+
+export async function setDefaultCustomerAddress(addressId: string, accessToken = ''): Promise<CustomerAddress> {
+  const payload = await fetchJson<Record<string, unknown>>(`/customer/addresses/${encodeURIComponent(addressId)}/default`, {
+    method: 'POST',
+  }, accessToken);
+
+  return mapCustomerAddress(payload);
 }
 
 export async function getCustomer(id: string): Promise<Customer | null> {

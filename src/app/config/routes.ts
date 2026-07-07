@@ -11,11 +11,12 @@ export const ROUTES = {
   REGISTER: '/register',
   FORGOT_PASSWORD: '/forgot-password',
   ACCOUNT: '/account',
+  ACCOUNT_PROFILE: '/account/profile',
+  ACCOUNT_ADDRESSES: '/account/addresses',
+  ACCOUNT_CHANGE_PASSWORD: '/account/change-password',
   ORDERS: '/orders',
   ORDER_DETAIL: '/orders/:orderNumber',
   TRACK_ORDER: '/track-order',
-  ACCOUNT_ADDRESS: '/account/address',
-  ACCOUNT_PROFILE: '/account/profile',
   WISHLIST: '/wishlist',
 } as const;
 

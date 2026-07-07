@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarDays, LogOut, Mail, Phone, UserRound } from 'lucide-react';
+import { ArrowRight, CalendarDays, KeyRound, LogOut, Mail, MapPinned, Phone, ShoppingBag, UserRound } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../app/config/routes';
@@ -120,15 +120,23 @@ function AccountPageContent() {
 
           <div className="grid gap-3">
             <Button type="button" className="w-full justify-between" onClick={() => navigate(ROUTES.ACCOUNT_PROFILE)}>
-              Edit Profile
+              <span className="inline-flex items-center gap-2"><UserRound size={16} /> Edit Profile</span>
+              <ArrowRight size={16} />
+            </Button>
+            <Button type="button" variant="secondary" className="w-full justify-between" onClick={() => navigate(ROUTES.ACCOUNT_ADDRESSES)}>
+              <span className="inline-flex items-center gap-2"><MapPinned size={16} /> Address Book</span>
               <ArrowRight size={16} />
             </Button>
             <Button type="button" variant="secondary" className="w-full justify-between" onClick={() => navigate(ROUTES.ORDERS)}>
-              My Orders
+              <span className="inline-flex items-center gap-2"><ShoppingBag size={16} /> My Orders</span>
+              <ArrowRight size={16} />
+            </Button>
+            <Button type="button" variant="secondary" className="w-full justify-between" onClick={() => navigate(ROUTES.ACCOUNT_CHANGE_PASSWORD)}>
+              <span className="inline-flex items-center gap-2"><KeyRound size={16} /> Change Password</span>
               <ArrowRight size={16} />
             </Button>
             <Button type="button" variant="outline" className="w-full justify-between border-red-200 text-red-600 hover:bg-red-50" onClick={() => void handleLogout()} disabled={isLoggingOut}>
-              {isLoggingOut ? 'Logging Out...' : 'Logout'}
+              <span className="inline-flex items-center gap-2">{isLoggingOut ? 'Logging Out...' : 'Logout'}</span>
               <LogOut size={16} />
             </Button>
           </div>

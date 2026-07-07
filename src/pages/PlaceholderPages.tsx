@@ -43,16 +43,6 @@ export function ForgotPasswordPage() {
   );
 }
 
-export function AddressBookPage() {
-  return (
-    <PlaceholderPage
-      sectionLabel="Customer Account"
-      title="Address Book"
-      description="Saved delivery addresses will be managed here once the address book module is released."
-    />
-  );
-}
-
 export function WishlistPage() {
   return (
     <PlaceholderPage

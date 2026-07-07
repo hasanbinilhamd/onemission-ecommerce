@@ -151,6 +151,21 @@ export async function logoutAllCustomerSessions(accessToken: string): Promise<{ 
   }, accessToken);
 }
 
+export async function changeCustomerPassword(input: {
+  currentPassword: string;
+  newPassword: string;
+  accessToken: string;
+}): Promise<{ ok: true }> {
+  return fetchJson<{ ok: true }>('/customer/auth/change-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      currentPassword: input.currentPassword,
+      newPassword: input.newPassword,
+    }),
+  }, input.accessToken);
+}
+
 export async function getCurrentAuthenticatedCustomer(accessToken: string): Promise<CustomerAuthMePayload> {
   return fetchJson<CustomerAuthMePayload>('/customer/auth/me', {
     method: 'GET',

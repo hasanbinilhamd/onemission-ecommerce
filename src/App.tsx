@@ -16,7 +16,8 @@ import { ProfilePage } from './pages/ProfilePage';
 import { AddressesPage } from './pages/AddressesPage';
 import { ChangePasswordPage } from './pages/ChangePasswordPage';
 import { WishlistPage } from './pages/WishlistPage';
-import { ForgotPasswordPage } from './pages/PlaceholderPages';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { CatalogDrawer } from './features/catalog';
 import { FloatingNavigation, MiniCartDrawer } from './features/cart';
 import { AccountDashboardLayout } from './features/customer';
@@ -111,6 +112,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/track-order" element={<TrackOrderPage />} />
 
           <Route path="/account" element={<AccountDashboardLayout />}>

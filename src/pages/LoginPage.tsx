@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../app/config/routes';
 import { Button, Input } from '../components/shared';
 import { CustomerPageHeader, CustomerPageShell, GoogleLoginButton, useAuthenticatedCustomer } from '../features/customer';
@@ -32,8 +32,17 @@ function validateLoginForm(values: LoginFormState): LoginFormErrors {
   return errors;
 }
 
+function ToastMessage({ message }: { message: string }) {
+  return (
+    <div className="fixed right-4 top-4 z-[120] rounded-2xl border border-emerald-200 bg-white px-4 py-3 shadow-lg">
+      <p className="m-0 text-sm font-medium text-neutral-900">{message}</p>
+    </div>
+  );
+}
+
 function LoginPageContent() {
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     user,
     isLoading,
@@ -49,6 +58,28 @@ function LoginPageContent() {
   const [errors, setErrors] = useState<LoginFormErrors>({});
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+
+  useEffect(() => {
+    const locationState = location.state as { toastMessage?: string } | null;
+    const nextToastMessage = String(locationState?.toastMessage || '');
+
+    if (!nextToastMessage) {
+      return;
+    }
+
+    setToastMessage(nextToastMessage);
+    const timeout = window.setTimeout(() => {
+      setToastMessage('');
+    }, 4000);
+
+    window.history.replaceState(
+      { ...window.history.state, usr: { ...location.state, toastMessage: undefined } },
+      '',
+    );
+
+    return () => window.clearTimeout(timeout);
+  }, [location.state]);
 
   useEffect(() => {
     if (!isLoading && user && !formError && !isSubmitting) {
@@ -88,7 +119,9 @@ function LoginPageContent() {
   };
 
   return (
-    <CustomerPageShell maxWidth="720px">
+    <>
+      {toastMessage ? <ToastMessage message={toastMessage} /> : null}
+      <CustomerPageShell maxWidth="720px">
       <CustomerPageHeader
         sectionLabel="Customer Account"
         title="Login"
@@ -168,6 +201,7 @@ function LoginPageContent() {
         </div>
       </div>
     </CustomerPageShell>
+    </>
   );
 }
 

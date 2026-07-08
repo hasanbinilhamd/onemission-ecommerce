@@ -60,6 +60,16 @@ export interface CustomerAuthLoginInput {
   device?: string;
 }
 
+export interface CustomerAuthForgotPasswordInput {
+  email: string;
+}
+
+export interface CustomerAuthResetPasswordInput {
+  token: string;
+  password: string;
+  confirmPassword: string;
+}
+
 export class CustomerAuthApiError extends Error {
   statusCode: number;
 
@@ -164,6 +174,28 @@ export async function changeCustomerPassword(input: {
       newPassword: input.newPassword,
     }),
   }, input.accessToken);
+}
+
+export async function requestCustomerPasswordReset(input: CustomerAuthForgotPasswordInput): Promise<{ ok: true; message: string }> {
+  return fetchJson<{ ok: true; message: string }>('/customer/auth/forgot-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email: input.email,
+    }),
+  });
+}
+
+export async function resetCustomerPassword(input: CustomerAuthResetPasswordInput): Promise<{ ok: true }> {
+  return fetchJson<{ ok: true }>('/customer/auth/reset-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      token: input.token,
+      password: input.password,
+      confirmPassword: input.confirmPassword,
+    }),
+  });
 }
 
 export async function getCurrentAuthenticatedCustomer(accessToken: string): Promise<CustomerAuthMePayload> {

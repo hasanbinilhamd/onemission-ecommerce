@@ -10,6 +10,7 @@ export const ROUTES = {
   LOGIN: '/login',
   REGISTER: '/register',
   FORGOT_PASSWORD: '/forgot-password',
+  RESET_PASSWORD: '/reset-password',
   ACCOUNT: '/account',
   ACCOUNT_PROFILE: '/account/profile',
   ACCOUNT_ADDRESSES: '/account/address',

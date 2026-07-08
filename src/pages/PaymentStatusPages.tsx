@@ -191,8 +191,8 @@ export function PaymentSuccessPage() {
           <Button type="button" onClick={() => navigate('/')}>
             Continue Shopping
           </Button>
-          <Button type="button" variant="secondary" disabled>
-            View My Orders (Coming Soon)
+          <Button type="button" variant="secondary" onClick={() => navigate('/orders')}>
+            View My Orders
           </Button>
         </div>
       </div>

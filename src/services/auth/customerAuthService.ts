@@ -54,6 +54,31 @@ export interface CustomerAuthRegisterInput {
   device?: string;
 }
 
+export interface CustomerAuthRegisterRequestResponse {
+  ok: true;
+  email: string;
+  expiresAt: string;
+  resendAvailableAt: string;
+}
+
+export interface CustomerAuthRegisterVerifyInput {
+  email: string;
+  otp: string;
+  device?: string;
+}
+
+export interface CustomerAuthRegisterResendInput {
+  email: string;
+}
+
+export interface CustomerAuthRegisterResendResponse {
+  ok: true;
+  email: string;
+  expiresAt: string;
+  resendAvailableAt: string;
+  resendCount: number;
+}
+
 export interface CustomerAuthLoginInput {
   email: string;
   password: string;
@@ -115,8 +140,24 @@ async function fetchJson<T>(path: string, init?: RequestInit, accessToken = ''):
   return payload as T;
 }
 
-export async function registerCustomerAccount(input: CustomerAuthRegisterInput): Promise<CustomerAuthSessionPayload> {
-  return fetchJson<CustomerAuthSessionPayload>('/customer/auth/register', {
+export async function requestCustomerRegistration(input: CustomerAuthRegisterInput): Promise<CustomerAuthRegisterRequestResponse> {
+  return fetchJson<CustomerAuthRegisterRequestResponse>('/customer/auth/register/request', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function verifyCustomerRegistrationOtp(input: CustomerAuthRegisterVerifyInput): Promise<CustomerAuthSessionPayload> {
+  return fetchJson<CustomerAuthSessionPayload>('/customer/auth/register/verify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function resendCustomerRegistrationOtp(input: CustomerAuthRegisterResendInput): Promise<CustomerAuthRegisterResendResponse> {
+  return fetchJson<CustomerAuthRegisterResendResponse>('/customer/auth/register/resend', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),

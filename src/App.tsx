@@ -9,6 +9,7 @@ import { PaymentFailedPage, PaymentPendingPage, PaymentSuccessPage } from './pag
 import { AccountPage } from './pages/AccountPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import { MyOrdersPage } from './pages/MyOrdersPage';
 import { OrderDetailPage } from './pages/OrderDetailPage';
 import { TrackOrderPage } from './pages/TrackOrderPage';
@@ -111,6 +112,7 @@ function App() {
           <Route path="/payment/failed" element={<PaymentFailedPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/track-order" element={<TrackOrderPage />} />

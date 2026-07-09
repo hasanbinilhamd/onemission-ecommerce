@@ -4,7 +4,7 @@ import { ROUTES } from '../app/config/routes';
 import { Button, Input } from '../components/shared';
 import { CustomerPageHeader, CustomerPageShell, GoogleLoginButton, useAuthenticatedCustomer } from '../features/customer';
 import { NavigationThemeProvider } from '../features/navigation';
-import { isEmail, isRequired } from '../utils/validation';
+import { isEmail, isPhoneNumber, isRequired } from '../utils/validation';
 
 interface RegisterFormState {
   fullName: string;
@@ -37,6 +37,8 @@ function validateRegisterForm(values: RegisterFormState): RegisterFormErrors {
 
   if (!isRequired(values.phone)) {
     errors.phone = 'Phone is required.';
+  } else if (!isPhoneNumber(values.phone)) {
+    errors.phone = 'Enter a valid phone number.';
   }
 
   if (!isRequired(values.password)) {
@@ -98,13 +100,20 @@ function RegisterPageContent() {
     setIsSubmitting(true);
 
     try {
-      await register({
+      const response = await register({
         customerName: form.fullName,
         email: form.email,
         phone: form.phone,
         password: form.password,
       });
-      navigate(ROUTES.HOME, { replace: true });
+      navigate(ROUTES.VERIFY_EMAIL, {
+        replace: true,
+        state: {
+          email: response.email,
+          resendAvailableAt: response.resendAvailableAt,
+          expiresAt: response.expiresAt,
+        },
+      });
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'Unable to create your account right now.');
     } finally {

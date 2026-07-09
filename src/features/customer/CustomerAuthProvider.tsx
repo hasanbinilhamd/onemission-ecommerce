@@ -2,6 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { env } from '../../app/config/env';
 import {
   type CustomerAuthCustomer,
+  type CustomerAuthRegisterRequestResponse,
+  type CustomerAuthRegisterResendResponse,
   type CustomerAuthSessionPayload,
   getCurrentAuthenticatedCustomer,
   loginCustomerAccount,
@@ -9,12 +11,17 @@ import {
   logoutAllCustomerSessions,
   logoutCustomerSession,
   refreshCustomerSession,
-  registerCustomerAccount,
+  requestCustomerRegistration,
+  resendCustomerRegistrationOtp,
+  verifyCustomerRegistrationOtp,
 } from '../../services/auth/customerAuthService';
 import {
   clearStoredCustomerAuthTokens,
+  clearStoredPendingRegistration,
   loadStoredCustomerAuthTokens,
+  loadStoredPendingRegistration,
   persistCustomerAuthTokens,
+  persistStoredPendingRegistration,
 } from '../../services/auth/customerAuthStorage';
 import { isGoogleIdentityConfigured } from '../../services/auth/googleIdentity';
 import { getAuthenticatedCustomerProfile, type AuthenticatedCustomerProfile } from './customerSession';
@@ -29,7 +36,10 @@ interface CustomerAuthContextValue {
   isConfigured: boolean;
   isGoogleConfigured: boolean;
   login: (input: { email: string; password: string }) => Promise<void>;
-  register: (input: { customerName: string; email: string; phone: string; password: string }) => Promise<void>;
+  register: (input: { customerName: string; email: string; phone: string; password: string }) => Promise<CustomerAuthRegisterRequestResponse>;
+  verifyRegistrationOtp: (input: { email: string; otp: string }) => Promise<void>;
+  resendRegistrationOtp: (input: { email: string }) => Promise<CustomerAuthRegisterResendResponse>;
+  getPendingRegistrationEmail: () => string;
   loginWithGoogleToken: (idToken: string) => Promise<void>;
   logout: () => Promise<void>;
   logoutAll: () => Promise<void>;
@@ -260,16 +270,46 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
   }, [applySession]);
 
   const register = useCallback(async ({ customerName, email, phone, password }: { customerName: string; email: string; phone: string; password: string }) => {
-    const payload = await registerCustomerAccount({
+    const payload = await requestCustomerRegistration({
       customerName,
       email,
       phone,
       password,
       device: buildClientDeviceLabel(),
     });
+
+    persistStoredPendingRegistration({
+      email: payload.email,
+      resendAvailableAt: payload.resendAvailableAt,
+      expiresAt: payload.expiresAt,
+    });
+    setErrorMessage(null);
+    return payload;
+  }, []);
+
+  const verifyRegistrationOtp = useCallback(async ({ email, otp }: { email: string; otp: string }) => {
+    const payload = await verifyCustomerRegistrationOtp({
+      email,
+      otp,
+      device: buildClientDeviceLabel(),
+    });
     applySession(payload);
+    clearStoredPendingRegistration();
     setErrorMessage(null);
   }, [applySession]);
+
+  const resendRegistrationOtp = useCallback(async ({ email }: { email: string }) => {
+    const payload = await resendCustomerRegistrationOtp({ email });
+    persistStoredPendingRegistration({
+      email: payload.email,
+      resendAvailableAt: payload.resendAvailableAt,
+      expiresAt: payload.expiresAt,
+    });
+    setErrorMessage(null);
+    return payload;
+  }, []);
+
+  const getPendingRegistrationEmail = useCallback(() => loadStoredPendingRegistration().email, []);
 
   const loginWithGoogleToken = useCallback(async (idToken: string) => {
     const payload = await loginCustomerWithGoogle({
@@ -334,6 +374,9 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
     isGoogleConfigured,
     login,
     register,
+    verifyRegistrationOtp,
+    resendRegistrationOtp,
+    getPendingRegistrationEmail,
     loginWithGoogleToken,
     logout,
     logoutAll,
@@ -343,6 +386,7 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
   }), [
     accessToken,
     errorMessage,
+    getPendingRegistrationEmail,
     getValidAccessToken,
     isConfigured,
     isGoogleConfigured,
@@ -356,7 +400,9 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
     refreshToken,
     register,
     reloadAuthenticatedCustomer,
+    resendRegistrationOtp,
     user,
+    verifyRegistrationOtp,
   ]);
 
   return (

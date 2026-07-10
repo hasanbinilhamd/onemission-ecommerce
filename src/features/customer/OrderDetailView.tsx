@@ -2,7 +2,7 @@ import { ChevronLeft, Mail, MapPin, Package, Truck } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '../../components/shared';
 import { IMAGE_PLACEHOLDER } from '../../app/constants';
-import type { CommerceOrderDetail } from '../../types';
+import type { CommerceOrderDetail, CommerceOrderTimelineEntry } from '../../types';
 import { formatCurrency, formatDate } from '../../utils/formatting';
 import { OrderPaymentStatusBadge, OrderStatusBadge } from './OrderStatusBadge';
 
@@ -77,10 +77,109 @@ function buildShippingAddress(order: CommerceOrderDetail) {
   ].filter(Boolean).join(', ');
 }
 
+interface CustomerTimelinePresentation {
+  title: string;
+  description: string;
+  noteLines: string[];
+  visible: boolean;
+}
+
+function splitTimelineNotes(notes: string) {
+  return String(notes || '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function getCustomerTimelinePresentation(entry: CommerceOrderTimelineEntry): CustomerTimelinePresentation {
+  const eventName = String(entry.eventName || '').trim();
+  const noteLines = splitTimelineNotes(entry.notes || '');
+
+  switch (eventName) {
+    case 'Order Created':
+      return {
+        title: 'Order Created',
+        description: 'Order has been successfully created.',
+        noteLines: [],
+        visible: true,
+      };
+    case 'Payment Received':
+      return {
+        title: 'Payment Received',
+        description: 'Your payment has been successfully confirmed.',
+        noteLines: [],
+        visible: true,
+      };
+    case 'PACKING_STARTED':
+    case 'PICKING_STARTED':
+      return {
+        title: 'Packing Started',
+        description: 'Our warehouse has started preparing your order.',
+        noteLines,
+        visible: true,
+      };
+    case 'READY_TO_SHIP':
+      return {
+        title: 'Ready to Ship',
+        description: 'Your package has been packed and is waiting for courier pickup.',
+        noteLines,
+        visible: true,
+      };
+    case 'ORDER_SHIPPED':
+      return {
+        title: 'Shipment Dispatched',
+        description: 'Your package has been handed over to the courier.',
+        noteLines,
+        visible: true,
+      };
+    case 'ORDER_DELIVERED':
+      return {
+        title: 'Delivered',
+        description: 'Your order has been delivered successfully.',
+        noteLines,
+        visible: true,
+      };
+    case 'CANCELLED':
+      return {
+        title: 'Cancelled',
+        description: 'Your order has been cancelled.',
+        noteLines,
+        visible: true,
+      };
+    case 'REFUNDED':
+      return {
+        title: 'Refunded',
+        description: 'Your refund has been completed.',
+        noteLines,
+        visible: true,
+      };
+    default:
+      if (eventName.startsWith('ORDER_STATUS_')) {
+        return {
+          title: '',
+          description: '',
+          noteLines: [],
+          visible: false,
+        };
+      }
+
+      return {
+        title: '',
+        description: '',
+        noteLines: [],
+        visible: false,
+      };
+  }
+}
+
 export function OrderDetailView({ order, backLabel = 'Back', onBack }: OrderDetailViewProps) {
-  const sortedTimeline = [...order.timeline].sort(
-    (left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime(),
-  );
+  const sortedTimeline = [...order.timeline]
+    .sort((left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime())
+    .map((entry) => ({
+      entry,
+      presentation: getCustomerTimelinePresentation(entry),
+    }))
+    .filter(({ presentation }) => presentation.visible);
 
   return (
     <div className="space-y-6">
@@ -231,7 +330,7 @@ export function OrderDetailView({ order, backLabel = 'Back', onBack }: OrderDeta
             <p className="m-0 text-sm text-neutral-500">No order timeline is available yet.</p>
           ) : (
             <div className="relative ml-2 grid gap-5">
-              {sortedTimeline.map((entry, index) => (
+              {sortedTimeline.map(({ entry, presentation }, index) => (
                 <div key={entry.id} className="relative pl-6">
                   <span className="absolute left-0 top-1.5 h-3 w-3 rounded-full bg-black" />
                   {index < sortedTimeline.length - 1 && (
@@ -240,17 +339,19 @@ export function OrderDetailView({ order, backLabel = 'Back', onBack }: OrderDeta
                   <div className="rounded-2xl border border-neutral-200 p-4">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                       <div>
-                        <p className="m-0 text-sm font-semibold text-neutral-950">{entry.eventName}</p>
-                        <p className="mt-1 text-xs uppercase tracking-[0.12em] text-neutral-400">
-                          Updated by {entry.updatedBy || 'System'}
-                        </p>
+                        <p className="m-0 text-sm font-semibold text-neutral-950">{presentation.title}</p>
                       </div>
                       <p className="m-0 text-sm text-neutral-500">
                         {formatDateTime(entry.createdAt || entry.timestamp)}
                       </p>
                     </div>
-                    {entry.notes ? (
-                      <p className="mt-3 text-sm leading-6 text-neutral-600">{entry.notes}</p>
+                    <p className="mt-3 text-sm leading-6 text-neutral-600">{presentation.description}</p>
+                    {presentation.noteLines.length > 0 ? (
+                      <div className="mt-3 grid gap-1 text-sm leading-6 text-neutral-600">
+                        {presentation.noteLines.map((line, lineIndex) => (
+                          <p key={`${entry.id}-mobile-note-${lineIndex}`} className="m-0">{line}</p>
+                        ))}
+                      </div>
                     ) : null}
                   </div>
                 </div>
@@ -285,7 +386,7 @@ export function OrderDetailView({ order, backLabel = 'Back', onBack }: OrderDeta
             <p className="m-0 text-sm text-neutral-500">No order timeline is available yet.</p>
           ) : (
             <div className="relative ml-2 grid gap-5">
-              {sortedTimeline.map((entry, index) => (
+              {sortedTimeline.map(({ entry, presentation }, index) => (
                 <div key={entry.id} className="relative pl-6">
                   <span className="absolute left-0 top-1.5 h-3 w-3 rounded-full bg-black" />
                   {index < sortedTimeline.length - 1 && (
@@ -294,17 +395,19 @@ export function OrderDetailView({ order, backLabel = 'Back', onBack }: OrderDeta
                   <div className="rounded-2xl border border-neutral-200 p-4">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                       <div>
-                        <p className="m-0 text-sm font-semibold text-neutral-950">{entry.eventName}</p>
-                        <p className="mt-1 text-xs uppercase tracking-[0.12em] text-neutral-400">
-                          Updated by {entry.updatedBy || 'System'}
-                        </p>
+                        <p className="m-0 text-sm font-semibold text-neutral-950">{presentation.title}</p>
                       </div>
                       <p className="m-0 text-sm text-neutral-500">
                         {formatDateTime(entry.createdAt || entry.timestamp)}
                       </p>
                     </div>
-                    {entry.notes ? (
-                      <p className="mt-3 text-sm leading-6 text-neutral-600">{entry.notes}</p>
+                    <p className="mt-3 text-sm leading-6 text-neutral-600">{presentation.description}</p>
+                    {presentation.noteLines.length > 0 ? (
+                      <div className="mt-3 grid gap-1 text-sm leading-6 text-neutral-600">
+                        {presentation.noteLines.map((line, lineIndex) => (
+                          <p key={`${entry.id}-desktop-note-${lineIndex}`} className="m-0">{line}</p>
+                        ))}
+                      </div>
                     ) : null}
                   </div>
                 </div>

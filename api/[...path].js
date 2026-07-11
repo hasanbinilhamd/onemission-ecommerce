@@ -94,7 +94,8 @@ export default async function handler(req, res) {
       : typeof req.query.path === 'string'
         ? [req.query.path]
         : [];
-    const publicPath = pathSegments.join('/');
+    const fallbackPath = url.pathname.replace(/^\/api\/?/, '').replace(/^\/+|\/+$/g, '');
+    const publicPath = pathSegments.length > 0 ? pathSegments.join('/') : fallbackPath;
 
     if (!publicPath || !isAllowedPublicPath(publicPath)) {
       res.status(404).json({ error: 'Commerce public API route was not found.' });

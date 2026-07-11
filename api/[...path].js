@@ -85,6 +85,8 @@ async function readRequestBody(req) {
 }
 
 export default async function handler(req, res) {
+  const startedAt = Date.now();
+
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
     const pathSegments = Array.isArray(req.query.path)
@@ -133,5 +135,9 @@ export default async function handler(req, res) {
     res.status(500).json({
       error: 'Commerce API proxy could not complete the request.',
     });
+  } finally {
+    if (process.env.NODE_ENV === 'development') {
+      console.info(`${req.method} ${req.url} Response Time: ${Date.now() - startedAt} ms`);
+    }
   }
 }

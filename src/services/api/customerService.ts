@@ -8,10 +8,6 @@ interface EnsureCustomerRecordInput {
   phone: string;
 }
 
-interface CustomerRecordResponse {
-  id: string;
-}
-
 interface UpdateCustomerProfileInput {
   customerName: string;
   email: string;
@@ -120,25 +116,12 @@ export async function ensureCustomerRecord(input: EnsureCustomerRecordInput): Pr
   const email = input.email.trim().toLowerCase();
   const phone = input.phone.trim();
 
-  const payload = await fetchJson<CustomerRecordResponse>('/customers/find-or-create', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      customerName: fullName,
-      email,
-      phone,
-      customerType: 'Individual',
-    }),
-  });
-
-  return {
-    id: payload.id,
+  return Promise.resolve({
+    id: email || phone || fullName || 'guest-customer',
     name: fullName,
     email,
     phone,
-  };
+  });
 }
 
 export async function getCustomerProfile(accessToken = ''): Promise<CustomerAuthCustomer> {

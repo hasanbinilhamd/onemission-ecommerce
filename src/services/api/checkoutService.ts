@@ -1,9 +1,5 @@
 import { env } from '../../app/config/env';
 
-interface CustomerRecord {
-  id: string;
-}
-
 interface SalesChannelRecord {
   id: string;
   channelName?: string;
@@ -12,7 +8,13 @@ interface SalesChannelRecord {
 }
 
 export interface CheckoutSessionPayload {
-  customerId: string;
+  customerId?: string;
+  customer?: {
+    customerName: string;
+    email: string;
+    phone: string;
+    customerType?: string;
+  };
   salesChannelId: string;
   currency: string;
   discount: number;
@@ -84,29 +86,6 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 let cachedSalesChannelId = '';
-
-export async function findOrCreateCustomer(input: {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-}): Promise<string> {
-  const customerName = `${input.firstName} ${input.lastName}`.trim();
-  const customer = await fetchJson<CustomerRecord>('/customers/find-or-create', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      customerName,
-      email: input.email,
-      phone: input.phone,
-      customerType: 'Individual',
-    }),
-  });
-
-  return customer.id;
-}
 
 export async function getDefaultSalesChannelId(): Promise<string> {
   if (cachedSalesChannelId) {

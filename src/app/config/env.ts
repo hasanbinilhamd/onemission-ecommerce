@@ -3,7 +3,7 @@
 // Add VITE_* variables to .env and reference them here — never inline them.
 
 export const env = {
-  apiBaseUrl: (import.meta.env['VITE_API_BASE_URL'] as string | undefined) ?? '',
+  apiBaseUrl: '/api',
   midtransClientKey: (import.meta.env['VITE_MIDTRANS_CLIENT_KEY'] as string | undefined) ?? '',
   midtransIsProduction: ((import.meta.env['VITE_MIDTRANS_IS_PRODUCTION'] as string | undefined) ?? '').trim().toLowerCase() === 'true',
   googleClientId: (import.meta.env['VITE_GOOGLE_CLIENT_ID'] as string | undefined) ?? '',

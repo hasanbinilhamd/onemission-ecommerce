@@ -1,3 +1,5 @@
+const DEFAULT_HQ_UPSTREAM_URL = 'https://onemission-world.vercel.app/api';
+
 const ALLOWED_PUBLIC_PATTERNS = [
   /^commerce\/categories$/,
   /^commerce\/products$/,
@@ -45,11 +47,7 @@ function getUpstreamBaseUrl() {
     process.env.NEXT_PUBLIC_HQ_URL,
   ];
 
-  const value = candidates.find((candidate) => String(candidate || '').trim());
-  if (!value) {
-    throw new Error('HQ upstream API base URL is not configured.');
-  }
-
+  const value = candidates.find((candidate) => String(candidate || '').trim()) || DEFAULT_HQ_UPSTREAM_URL;
   return String(value).trim().replace(/\/$/, '');
 }
 

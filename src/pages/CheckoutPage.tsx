@@ -32,7 +32,6 @@ import {
   createCheckoutSession,
   createPaymentAttempt,
   generateSnapToken,
-  getDefaultSalesChannelId,
 } from '../services/api/checkoutService';
 import {
   getShippingServiceErrorMessage,
@@ -938,8 +937,6 @@ function CheckoutPageContent() {
 
       setStatusMessage('Preparing your secure payment session...');
 
-      const salesChannelId = await getDefaultSalesChannelId();
-
       const checkoutSession = await createCheckoutSession({
         customer: {
           customerName: `${contactInformation.firstName} ${contactInformation.lastName}`.trim(),
@@ -947,7 +944,6 @@ function CheckoutPageContent() {
           phone: contactInformation.phoneNumber.trim(),
           customerType: 'Individual',
         },
-        salesChannelId,
         currency: 'IDR',
         discount: 0,
         tax: 0,

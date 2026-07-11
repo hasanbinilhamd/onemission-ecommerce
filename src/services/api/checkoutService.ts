@@ -1,12 +1,5 @@
 import { env } from '../../app/config/env';
 
-interface SalesChannelRecord {
-  id: string;
-  channelName?: string;
-  isDefault?: boolean;
-  status?: string;
-}
-
 export interface CheckoutSessionPayload {
   customerId?: string;
   customer?: {
@@ -15,7 +8,7 @@ export interface CheckoutSessionPayload {
     phone: string;
     customerType?: string;
   };
-  salesChannelId: string;
+  salesChannelId?: string;
   currency: string;
   discount: number;
   tax: number;
@@ -83,26 +76,6 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   return payload as T;
-}
-
-let cachedSalesChannelId = '';
-
-export async function getDefaultSalesChannelId(): Promise<string> {
-  if (cachedSalesChannelId) {
-    return cachedSalesChannelId;
-  }
-
-  const channels = await fetchJson<SalesChannelRecord[]>('/saleschannels?status=Active');
-  const selected = channels.find((channel) => channel.isDefault)
-    || channels.find((channel) => String(channel.channelName || '').toLowerCase() === 'website')
-    || channels[0];
-
-  if (!selected?.id) {
-    throw new Error('No active sales channel is available for checkout.');
-  }
-
-  cachedSalesChannelId = selected.id;
-  return selected.id;
 }
 
 export async function createCheckoutSession(payload: CheckoutSessionPayload): Promise<CheckoutSessionResponse> {

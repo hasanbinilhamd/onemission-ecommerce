@@ -3,6 +3,7 @@
 // filtering, sorting, filter bottom sheet, product grid, and load more.
 
 export { CatalogDrawer } from './CatalogDrawer';
+export { CatalogLayer } from './CatalogLayer';
 export { ProductCard } from './ProductCard';
 export { FilterDrawer } from './FilterDrawer';
 export type { FilterState } from './FilterDrawer';

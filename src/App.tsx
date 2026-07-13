@@ -19,22 +19,17 @@ import { ChangePasswordPage } from './pages/ChangePasswordPage';
 import { WishlistPage } from './pages/WishlistPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
-import { CatalogDrawer } from './features/catalog';
 import { FloatingNavigation, MiniCartDrawer } from './features/cart';
 import { AccountDashboardLayout } from './features/customer';
 import { SearchOverlay } from './features/search';
 import { NavigationThemeProvider } from './features/navigation';
 
-type CatalogOpenMode = 'animated' | 'instant';
-
 type HomeExperienceSnapshot = {
   scrollY: number;
-  catalogWasOpen: boolean;
+  heroIndex: number;
 };
 
 const HOME_EXPERIENCE_SNAPSHOT_KEY = 'om-home-experience-snapshot';
-const HERO_CAROUSEL_INTERVAL_MS = 4600;
-const HERO_SLIDE_COUNT = 4;
 
 function readHomeExperienceSnapshot(): HomeExperienceSnapshot | null {
   if (typeof window === 'undefined') return null;
@@ -45,7 +40,7 @@ function readHomeExperienceSnapshot(): HomeExperienceSnapshot | null {
     const parsedSnapshot = JSON.parse(rawSnapshot) as Partial<HomeExperienceSnapshot>;
     return {
       scrollY: Number.isFinite(Number(parsedSnapshot.scrollY)) ? Number(parsedSnapshot.scrollY) : 0,
-      catalogWasOpen: Boolean(parsedSnapshot.catalogWasOpen),
+      heroIndex: Number.isFinite(Number(parsedSnapshot.heroIndex)) ? Number(parsedSnapshot.heroIndex) : 0,
     };
   } catch {
     return null;
@@ -78,94 +73,53 @@ function LegacyOrderRedirect() {
 }
 
 function App() {
-  const [catalogOpen, setCatalogOpen] = useState(false);
-  const [catalogOpenMode, setCatalogOpenMode] = useState<CatalogOpenMode>('animated');
-  const [heroIndex, setHeroIndex] = useState(0);
-  const [heroAutoplayPaused, setHeroAutoplayPaused] = useState(false);
-
   const navigate = useNavigate();
   const location = useLocation();
   const previousPathRef = useRef(location.pathname);
+  const [heroIndex, setHeroIndex] = useState(() => readHomeExperienceSnapshot()?.heroIndex ?? 0);
 
   const isHome = location.pathname === '/';
-  const shouldPauseHeroAutoplay = heroAutoplayPaused || catalogOpen || !isHome;
-
-  useEffect(() => {
-    if (shouldPauseHeroAutoplay) return undefined;
-
-    const timer = window.setInterval(() => {
-      setHeroIndex((currentIndex) => (currentIndex + 1) % HERO_SLIDE_COUNT);
-    }, HERO_CAROUSEL_INTERVAL_MS);
-
-    return () => window.clearInterval(timer);
-  }, [shouldPauseHeroAutoplay]);
 
   useEffect(() => {
     const previousPath = previousPathRef.current;
+    const requestedRestore = Boolean(location.state?.restoreCatalog);
     const cameFromProductDetail = previousPath.startsWith('/product/');
-    const requestedRestore = Boolean(location.state?.restoreCatalog) || (isHome && cameFromProductDetail);
 
-    if (isHome && requestedRestore) {
+    if (isHome && (requestedRestore || cameFromProductDetail)) {
       const snapshot = readHomeExperienceSnapshot();
-      const restoreScrollY = snapshot?.scrollY ?? 0;
-      const restoreCatalog = Boolean(location.state?.restoreCatalog ?? snapshot?.catalogWasOpen);
-
-      requestAnimationFrame(() => {
-        window.scrollTo({ top: restoreScrollY, behavior: 'auto' });
-
-        if (restoreCatalog) {
-          setCatalogOpenMode('instant');
+      if (snapshot) {
+        setHeroIndex(snapshot.heroIndex);
+        requestAnimationFrame(() => {
           requestAnimationFrame(() => {
-            setCatalogOpen(true);
-            requestAnimationFrame(() => setCatalogOpenMode('animated'));
+            window.scrollTo({ top: snapshot.scrollY, behavior: 'auto' });
           });
-        }
-      });
+        });
+      }
 
-      clearRestoreCatalogFlag(location.state as Record<string, unknown> | undefined);
+      if (requestedRestore) {
+        clearRestoreCatalogFlag(location.state as Record<string, unknown> | undefined);
+      }
     }
 
     previousPathRef.current = location.pathname;
   }, [isHome, location.pathname, location.state]);
 
-  const handleDiscover = useCallback(() => {
-    setCatalogOpenMode('animated');
-    setCatalogOpen(true);
-  }, []);
-
-  const handleCatalogClose = useCallback(() => {
-    setCatalogOpenMode('animated');
-    setCatalogOpen(false);
-
-    if (location.pathname === '/') {
-      requestAnimationFrame(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      });
-    }
-  }, [location.pathname]);
-
   const handleProductSelect = useCallback((slug: string) => {
     persistHomeExperienceSnapshot({
       scrollY: window.scrollY,
-      catalogWasOpen: true,
+      heroIndex,
     });
 
-    setCatalogOpen(false);
     navigate(`/product/${slug}`, { state: { fromCatalog: true } });
-  }, [navigate]);
-
-  const handleHeroAutoplayPauseChange = useCallback((paused: boolean) => {
-    setHeroAutoplayPaused(paused);
-  }, []);
+  }, [heroIndex, navigate]);
 
   const renderHomePage = useCallback(() => (
     <HomePage
       activeIndex={heroIndex}
-      catalogOpen={catalogOpen}
-      onDiscover={handleDiscover}
-      onAutoplayPauseChange={handleHeroAutoplayPauseChange}
+      onActiveIndexChange={setHeroIndex}
+      onProductSelect={handleProductSelect}
     />
-  ), [catalogOpen, handleDiscover, handleHeroAutoplayPauseChange, heroIndex]);
+  ), [handleProductSelect, heroIndex]);
 
   return (
     <NavigationThemeProvider theme={isHome ? 'light' : 'dark'}>
@@ -173,11 +127,7 @@ function App() {
         <Routes>
           <Route
             path="/"
-            element={
-              <MainLayout>
-                {renderHomePage()}
-              </MainLayout>
-            }
+            element={<MainLayout>{renderHomePage()}</MainLayout>}
           />
 
           <Route path="/product/:slug" element={<ProductDetailPage />} />
@@ -211,13 +161,6 @@ function App() {
 
           <Route path="*" element={<MainLayout>{renderHomePage()}</MainLayout>} />
         </Routes>
-
-        <CatalogDrawer
-          open={isHome ? catalogOpen : false}
-          openMode={catalogOpenMode}
-          onClose={handleCatalogClose}
-          onProductSelect={handleProductSelect}
-        />
 
         <FloatingNavigation />
         <MiniCartDrawer />

@@ -512,6 +512,7 @@ export function CatalogLayer({ revealProgress = 0, onProductSelect }: CatalogLay
                   product={product}
                   onClick={handleProductClick}
                   isNew={newProductIds.has(product.id)}
+                  appearance="collection"
                 />
               ))}
             </div>

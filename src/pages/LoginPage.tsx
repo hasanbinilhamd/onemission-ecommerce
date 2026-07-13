@@ -43,6 +43,11 @@ function ToastMessage({ message }: { message: string }) {
 function LoginPageContent() {
   const navigate = useNavigate();
   const location = useLocation();
+  const locationState = location.state as {
+    toastMessage?: string;
+    redirectTo?: string;
+    restoreCatalog?: boolean;
+  } | null;
   const {
     user,
     isLoading,
@@ -61,7 +66,6 @@ function LoginPageContent() {
   const [toastMessage, setToastMessage] = useState('');
 
   useEffect(() => {
-    const locationState = location.state as { toastMessage?: string } | null;
     const nextToastMessage = String(locationState?.toastMessage || '');
 
     if (!nextToastMessage) {
@@ -81,11 +85,18 @@ function LoginPageContent() {
     return () => window.clearTimeout(timeout);
   }, [location.state]);
 
+  const navigateAfterLogin = useMemo(() => {
+    const redirectTo = locationState?.redirectTo || ROUTES.HOME;
+    const redirectState = locationState?.restoreCatalog ? { restoreCatalog: true } : undefined;
+
+    return () => navigate(redirectTo, { replace: true, state: redirectState });
+  }, [locationState?.redirectTo, locationState?.restoreCatalog, navigate]);
+
   useEffect(() => {
     if (!isLoading && user && !formError && !isSubmitting) {
-      navigate(ROUTES.HOME, { replace: true });
+      navigateAfterLogin();
     }
-  }, [formError, isLoading, isSubmitting, navigate, user]);
+  }, [formError, isLoading, isSubmitting, navigateAfterLogin, user]);
 
   const isDisabled = useMemo(
     () => isSubmitting || !isConfigured,
@@ -110,7 +121,7 @@ function LoginPageContent() {
         email: form.email,
         password: form.password,
       });
-      navigate(ROUTES.HOME, { replace: true });
+      navigateAfterLogin();
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'Unable to login right now.');
     } finally {
@@ -179,7 +190,7 @@ function LoginPageContent() {
                 try {
                   setFormError('');
                   await loginWithGoogleToken(idToken);
-                  navigate(ROUTES.HOME, { replace: true });
+                  navigateAfterLogin();
                 } catch (error) {
                   setFormError(error instanceof Error ? error.message : 'Unable to login with Google right now.');
                 }

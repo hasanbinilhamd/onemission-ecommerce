@@ -232,17 +232,15 @@ interface HomePageProps {
   activeIndex: number;
   onActiveIndexChange: (index: number) => void;
   onProductSelect: (slug: string) => void;
-  onDiscover?: () => void;
 }
 
-export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, onDiscover }: HomePageProps) {
+export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: HomePageProps) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.innerWidth < 640 : false,
   );
   const [collectionRevealProgress, setCollectionRevealProgress] = useState(0);
   const heroGestureRef = useRef<HTMLDivElement | null>(null);
-  const collectionLayerRef = useRef<HTMLElement | null>(null);
   const rafRef = useRef<number | null>(null);
   const dragStateRef = useRef({
     pointerId: -1,
@@ -304,17 +302,6 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
     onActiveIndexChange(nextIndex);
     window.setTimeout(() => setIsAnimating(false), DURATION);
   }, [activeIndex, isAnimating, onActiveIndexChange]);
-
-  const handleDiscoverClick = useCallback((event: React.MouseEvent<HTMLAnchorElement>) => {
-    event.preventDefault();
-
-    if (onDiscover) {
-      onDiscover();
-      return;
-    }
-
-    collectionLayerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [onDiscover]);
 
   const resetGestureState = useCallback(() => {
     dragStateRef.current = {
@@ -628,7 +615,6 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
       </section>
 
       <section
-        ref={collectionLayerRef}
         aria-label="Collection layer"
         style={{
           position: 'relative',

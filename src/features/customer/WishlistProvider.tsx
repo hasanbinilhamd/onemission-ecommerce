@@ -2,8 +2,10 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import type { Product } from '../../types';
 import {
   clearGuestWishlistItems,
+  clearPendingWishlistItem,
   getCustomerWishlistItems,
   getGuestWishlistItems,
+  getPendingWishlistItem,
   mapProductToWishlistItem,
   mergeWishlistItems,
   setCustomerWishlistItems,
@@ -33,9 +35,14 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     if (user?.id) {
       const guestItems = getGuestWishlistItems();
       const storedItems = getCustomerWishlistItems(user.id);
-      const mergedItems = mergeWishlistItems(storedItems, guestItems);
+      const pendingWishlistItem = getPendingWishlistItem();
+      const mergedItems = mergeWishlistItems(
+        storedItems,
+        pendingWishlistItem ? [pendingWishlistItem, ...guestItems] : guestItems,
+      );
       setCustomerWishlistItems(user.id, mergedItems);
       clearGuestWishlistItems();
+      clearPendingWishlistItem();
       setItems(mergedItems);
       setIsLoading(false);
       return;

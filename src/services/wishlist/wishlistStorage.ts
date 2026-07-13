@@ -11,6 +11,7 @@ export interface WishlistItemRecord {
 }
 
 const GUEST_WISHLIST_STORAGE_KEY = 'onemission-wishlist-guest';
+const PENDING_WISHLIST_STORAGE_KEY = 'onemission-wishlist-pending';
 
 function buildCustomerWishlistStorageKey(customerId: string) {
   return `onemission-wishlist-customer:${customerId}`;
@@ -40,6 +41,37 @@ function writeWishlistStorage(key: string, value: WishlistItemRecord[]) {
   }
 
   window.localStorage.setItem(key, JSON.stringify(value));
+}
+
+function readPendingWishlistItemStorage(): WishlistItemRecord | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const payload = window.sessionStorage.getItem(PENDING_WISHLIST_STORAGE_KEY);
+    if (!payload) {
+      return null;
+    }
+
+    const parsed = JSON.parse(payload) as WishlistItemRecord | null;
+    return parsed && typeof parsed.productId === 'string' ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function writePendingWishlistItemStorage(item: WishlistItemRecord | null) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  if (!item) {
+    window.sessionStorage.removeItem(PENDING_WISHLIST_STORAGE_KEY);
+    return;
+  }
+
+  window.sessionStorage.setItem(PENDING_WISHLIST_STORAGE_KEY, JSON.stringify(item));
 }
 
 export function mapProductToWishlistItem(product: Product): WishlistItemRecord {
@@ -76,6 +108,18 @@ export function getCustomerWishlistItems(customerId: string) {
 
 export function setCustomerWishlistItems(customerId: string, items: WishlistItemRecord[]) {
   writeWishlistStorage(buildCustomerWishlistStorageKey(customerId), items);
+}
+
+export function getPendingWishlistItem() {
+  return readPendingWishlistItemStorage();
+}
+
+export function setPendingWishlistItem(item: WishlistItemRecord) {
+  writePendingWishlistItemStorage(item);
+}
+
+export function clearPendingWishlistItem() {
+  writePendingWishlistItemStorage(null);
 }
 
 export function mergeWishlistItems(primary: WishlistItemRecord[], secondary: WishlistItemRecord[]) {

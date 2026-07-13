@@ -16,7 +16,7 @@ export function FloatingNavigation() {
         position: 'fixed',
         top: '16px',
         right: '16px',
-        zIndex: 100,
+        zIndex: 50,
         display: 'flex',
         alignItems: 'center',
         gap: '4px',

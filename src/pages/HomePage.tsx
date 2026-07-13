@@ -632,7 +632,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
         aria-label="Collection layer"
         style={{
           position: 'relative',
-          zIndex: 20,
+          zIndex: 60,
           marginTop: COLLECTION_OVERLAP,
           borderTopLeftRadius: `${collectionRadius}px`,
           borderTopRightRadius: `${collectionRadius}px`,

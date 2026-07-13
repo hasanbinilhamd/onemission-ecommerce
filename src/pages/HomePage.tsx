@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
-import useEmblaCarousel from 'embla-carousel-react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { CatalogLayer } from '../features/catalog';
 import { HERO_THEMES, createHeroGradient } from '../features/hero/theme';
@@ -135,19 +134,21 @@ interface HomePageProps {
 }
 
 export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: HomePageProps) {
-  const initialIndexRef = useRef(activeIndex);
   const rafRef = useRef<number | null>(null);
+  const gestureLayerRef = useRef<HTMLDivElement | null>(null);
+  const dragStateRef = useRef({
+    pointerId: -1,
+    startX: 0,
+    startY: 0,
+    deltaX: 0,
+    deltaY: 0,
+    isHorizontalGesture: false,
+  });
   const [collectionRevealProgress, setCollectionRevealProgress] = useState(0);
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.innerWidth < 640 : false,
   );
-  const [emblaRef, emblaApi] = useEmblaCarousel({
-    loop: true,
-    dragFree: false,
-    skipSnaps: false,
-    startIndex: initialIndexRef.current,
-    duration: 30,
-  });
+  const [isDraggingModel, setIsDraggingModel] = useState(false);
 
   const currentModel = IMAGES[activeIndex];
   const previousModel = IMAGES[(activeIndex + IMAGES.length - 1) % IMAGES.length];
@@ -166,23 +167,6 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  useEffect(() => {
-    if (!emblaApi) return undefined;
-
-    const updateSelectedIndex = () => {
-      onActiveIndexChange(emblaApi.selectedScrollSnap());
-    };
-
-    emblaApi.on('select', updateSelectedIndex);
-    emblaApi.on('reInit', updateSelectedIndex);
-    updateSelectedIndex();
-
-    return () => {
-      emblaApi.off('select', updateSelectedIndex);
-      emblaApi.off('reInit', updateSelectedIndex);
-    };
-  }, [emblaApi, onActiveIndexChange]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -211,13 +195,97 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
     };
   }, []);
 
+  const goToModel = useCallback((nextIndex: number) => {
+    onActiveIndexChange((nextIndex + IMAGES.length) % IMAGES.length);
+  }, [onActiveIndexChange]);
+
   const handlePrevious = useCallback(() => {
-    emblaApi?.scrollPrev();
-  }, [emblaApi]);
+    goToModel(activeIndex - 1);
+  }, [activeIndex, goToModel]);
 
   const handleNext = useCallback(() => {
-    emblaApi?.scrollNext();
-  }, [emblaApi]);
+    goToModel(activeIndex + 1);
+  }, [activeIndex, goToModel]);
+
+  const resetDragState = useCallback(() => {
+    dragStateRef.current = {
+      pointerId: -1,
+      startX: 0,
+      startY: 0,
+      deltaX: 0,
+      deltaY: 0,
+      isHorizontalGesture: false,
+    };
+    setIsDraggingModel(false);
+  }, []);
+
+  const handleGestureEnd = useCallback((shouldNavigate = true) => {
+    const layer = gestureLayerRef.current;
+    const { deltaX, isHorizontalGesture } = dragStateRef.current;
+
+    if (shouldNavigate && layer && isHorizontalGesture) {
+      const threshold = layer.clientWidth * 0.24;
+      if (Math.abs(deltaX) >= threshold) {
+        if (deltaX < 0) {
+          handleNext();
+        } else {
+          handlePrevious();
+        }
+      }
+    }
+
+    if (layer && dragStateRef.current.pointerId !== -1) {
+      try {
+        layer.releasePointerCapture(dragStateRef.current.pointerId);
+      } catch {
+        // Ignore release errors from browsers that already cancelled capture.
+      }
+    }
+
+    resetDragState();
+  }, [handleNext, handlePrevious, resetDragState]);
+
+  const handlePointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+    dragStateRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      deltaX: 0,
+      deltaY: 0,
+      isHorizontalGesture: false,
+    };
+
+    setIsDraggingModel(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }, []);
+
+  const handlePointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (dragStateRef.current.pointerId !== event.pointerId) return;
+
+    const deltaX = event.clientX - dragStateRef.current.startX;
+    const deltaY = event.clientY - dragStateRef.current.startY;
+    const isHorizontalGesture = dragStateRef.current.isHorizontalGesture
+      || (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10);
+
+    dragStateRef.current = {
+      ...dragStateRef.current,
+      deltaX,
+      deltaY,
+      isHorizontalGesture,
+    };
+  }, []);
+
+  const handlePointerUp = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (dragStateRef.current.pointerId !== event.pointerId) return;
+    handleGestureEnd(true);
+  }, [handleGestureEnd]);
+
+  const handlePointerCancel = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (dragStateRef.current.pointerId !== event.pointerId) return;
+    handleGestureEnd(false);
+  }, [handleGestureEnd]);
 
   const handleHeroKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'ArrowLeft') {
@@ -327,31 +395,21 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
         </div>
 
         <div
-          ref={emblaRef}
+          ref={gestureLayerRef}
           aria-hidden="true"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerCancel}
           style={{
             position: 'absolute',
             inset: 0,
             zIndex: 45,
             overflow: 'hidden',
             touchAction: 'pan-y pinch-zoom',
-            cursor: emblaApi ? 'grab' : 'default',
+            cursor: isDraggingModel ? 'grabbing' : 'grab',
           }}
-        >
-          <div style={{ display: 'flex', height: '100%', willChange: 'transform' }}>
-            {IMAGES.map((imageItem) => (
-              <div
-                key={imageItem.src}
-                style={{
-                  flex: '0 0 100%',
-                  minWidth: 0,
-                  height: '100%',
-                  background: 'transparent',
-                }}
-              />
-            ))}
-          </div>
-        </div>
+        />
 
         <button
           type="button"

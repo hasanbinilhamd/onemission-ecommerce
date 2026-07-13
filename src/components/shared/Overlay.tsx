@@ -5,6 +5,8 @@ interface OverlayProps {
   onClick?: () => void;
   className?: string;
   zIndex?: number;
+  backgroundColor?: string;
+  targetOpacity?: number;
 }
 
 /**
@@ -16,7 +18,14 @@ interface OverlayProps {
  * App-level blur/dim effect on the hero — the two layers combine to
  * create the right visual depth without over-darkening.
  */
-export function Overlay({ visible, onClick, className = '', zIndex = 100 }: OverlayProps) {
+export function Overlay({
+  visible,
+  onClick,
+  className = '',
+  zIndex = 100,
+  backgroundColor = 'rgba(0, 0, 0, 0.28)',
+  targetOpacity = 1,
+}: OverlayProps) {
   return (
     <div
       aria-hidden="true"
@@ -26,8 +35,8 @@ export function Overlay({ visible, onClick, className = '', zIndex = 100 }: Over
         position: 'fixed',
         inset: 0,
         zIndex,
-        backgroundColor: 'rgba(0, 0, 0, 0.28)',
-        opacity: visible ? 1 : 0,
+        backgroundColor,
+        opacity: visible ? targetOpacity : 0,
         pointerEvents: visible ? 'auto' : 'none',
         transition: fadeTransition(DURATION.normal),
         // GPU layer so the fade doesn't trigger paint

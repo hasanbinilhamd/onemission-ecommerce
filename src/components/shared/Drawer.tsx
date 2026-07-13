@@ -17,6 +17,10 @@ interface DrawerProps {
   title?: string;
   width?: DrawerWidth;
   mobileFullScreen?: boolean;
+  openMode?: 'animated' | 'instant';
+  overlayColor?: string;
+  overlayOpacity?: number;
+  panelStyleOverrides?: CSSProperties;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -116,6 +120,10 @@ export function Drawer({
   title,
   width = 'md',
   mobileFullScreen = false,
+  openMode = 'animated',
+  overlayColor,
+  overlayOpacity,
+  panelStyleOverrides,
 }: DrawerProps) {
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -127,24 +135,36 @@ export function Drawer({
   useEffect(() => {
     if (open) {
       setMounted(true);
+
+      if (openMode === 'instant') {
+        setVisible(true);
+        return undefined;
+      }
+
       // Two frames: first paints off-screen, second triggers the transition.
       // This guarantees opening and closing use the exact same duration.
       const raf = requestAnimationFrame(() => {
         requestAnimationFrame(() => setVisible(true));
       });
       return () => cancelAnimationFrame(raf);
-    } else {
-      setVisible(false);
-      const timer = setTimeout(() => setMounted(false), DURATION.normal);
-      return () => clearTimeout(timer);
     }
-  }, [open]);
+
+    setVisible(false);
+    const timer = setTimeout(() => setMounted(false), DURATION.normal);
+    return () => clearTimeout(timer);
+  }, [open, openMode]);
 
   if (!mounted) return null;
 
   return (
     <>
-      <Overlay visible={visible} onClick={onClose} zIndex={Z_OVERLAY} />
+      <Overlay
+        visible={visible}
+        onClick={onClose}
+        zIndex={Z_OVERLAY}
+        backgroundColor={overlayColor}
+        targetOpacity={overlayOpacity}
+      />
 
       <div
         ref={containerRef}
@@ -154,6 +174,7 @@ export function Drawer({
         tabIndex={-1}
         style={{
           ...panelStyle(position, width, mobileFullScreen),
+          ...panelStyleOverrides,
           transform: visible ? VISIBLE_TRANSFORM : HIDDEN_TRANSFORM[position],
         }}
       >

@@ -62,11 +62,12 @@ function matchesSize(product: Product, sizes: string[]): boolean {
 
 interface CatalogDrawerProps {
   open: boolean;
+  openMode?: 'animated' | 'instant';
   onClose: () => void;
   onProductSelect: (slug: string) => void;
 }
 
-export function CatalogDrawer({ open, onClose, onProductSelect }: CatalogDrawerProps) {
+export function CatalogDrawer({ open, openMode = 'animated', onClose, onProductSelect }: CatalogDrawerProps) {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [sort, setSort] = useState<SortOption>('newest');
@@ -249,7 +250,21 @@ export function CatalogDrawer({ open, onClose, onProductSelect }: CatalogDrawerP
   }), []);
 
   return (
-    <Drawer open={open} onClose={onClose} position="left" width="full" title="Collection">
+    <Drawer
+      open={open}
+      openMode={openMode}
+      onClose={onClose}
+      position="bottom"
+      width="full"
+      title="Collection"
+      overlayColor="rgba(8, 15, 26, 0.22)"
+      overlayOpacity={0.72}
+      panelStyleOverrides={{
+        maxHeight: 'min(88vh, 980px)',
+        borderRadius: '28px 28px 0 0',
+        boxShadow: '0 -20px 60px rgba(0,0,0,0.24)',
+      }}
+    >
       <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#fff', borderBottom: '1px solid #F3F4F6', padding: '12px 20px' }}>
         <div style={{ position: 'relative', marginBottom: '12px' }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2"

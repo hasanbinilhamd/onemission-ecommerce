@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Navigate, Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
 import { HomePage } from './pages/HomePage';
@@ -24,22 +24,54 @@ import { FloatingNavigation, MiniCartDrawer } from './features/cart';
 import { AccountDashboardLayout } from './features/customer';
 import { SearchOverlay } from './features/search';
 import { NavigationThemeProvider } from './features/navigation';
-import { DURATION, EASING } from './utils/motion';
 
-/**
- * App
- *
- * Routing root.
- *
- * CatalogDrawer is rendered OUTSIDE <Routes> and stays mounted for the
- * lifetime of the app. This ensures its internal state (search, category,
- * sort, scroll position) survives navigation to /product/:slug and back.
- *
- * State restoration flow:
- *  1. User clicks product → catalogOpen=false, navigate(/product/:slug, { fromCatalog: true })
- *  2. User clicks "Back to Collection" → navigate('/', { restoreCatalog: true })
- *  3. useEffect detects restoreCatalog flag → setCatalogOpen(true)
- */
+type CatalogOpenMode = 'animated' | 'instant';
+
+type HomeExperienceSnapshot = {
+  scrollY: number;
+  catalogWasOpen: boolean;
+};
+
+const HOME_EXPERIENCE_SNAPSHOT_KEY = 'om-home-experience-snapshot';
+const HERO_CAROUSEL_INTERVAL_MS = 4600;
+const HERO_SLIDE_COUNT = 4;
+
+function readHomeExperienceSnapshot(): HomeExperienceSnapshot | null {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const rawSnapshot = window.sessionStorage.getItem(HOME_EXPERIENCE_SNAPSHOT_KEY);
+    if (!rawSnapshot) return null;
+    const parsedSnapshot = JSON.parse(rawSnapshot) as Partial<HomeExperienceSnapshot>;
+    return {
+      scrollY: Number.isFinite(Number(parsedSnapshot.scrollY)) ? Number(parsedSnapshot.scrollY) : 0,
+      catalogWasOpen: Boolean(parsedSnapshot.catalogWasOpen),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function persistHomeExperienceSnapshot(snapshot: HomeExperienceSnapshot): void {
+  if (typeof window === 'undefined') return;
+  window.sessionStorage.setItem(HOME_EXPERIENCE_SNAPSHOT_KEY, JSON.stringify(snapshot));
+}
+
+function clearRestoreCatalogFlag(locationState: Record<string, unknown> | null | undefined): void {
+  if (typeof window === 'undefined') return;
+
+  window.history.replaceState(
+    {
+      ...window.history.state,
+      usr: {
+        ...(locationState || {}),
+        restoreCatalog: undefined,
+      },
+    },
+    '',
+  );
+}
+
 function LegacyOrderRedirect() {
   const { orderNumber = '' } = useParams<{ orderNumber: string }>();
   return <Navigate to={`/account/orders/${encodeURIComponent(orderNumber)}`} replace />;
@@ -47,34 +79,93 @@ function LegacyOrderRedirect() {
 
 function App() {
   const [catalogOpen, setCatalogOpen] = useState(false);
-  const navigate   = useNavigate();
-  const location   = useLocation();
+  const [catalogOpenMode, setCatalogOpenMode] = useState<CatalogOpenMode>('animated');
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [heroAutoplayPaused, setHeroAutoplayPaused] = useState(false);
+
+  const navigate = useNavigate();
+  const location = useLocation();
+  const previousPathRef = useRef(location.pathname);
 
   const isHome = location.pathname === '/';
+  const shouldPauseHeroAutoplay = heroAutoplayPaused || catalogOpen || !isHome;
 
-  // Re-open the catalog when returning from Product Detail
   useEffect(() => {
-    if (location.state?.restoreCatalog) {
-      setCatalogOpen(true);
-      // Clear the flag so it doesn't re-trigger if the component re-renders
-      window.history.replaceState(
-        { ...window.history.state, usr: { ...location.state, restoreCatalog: undefined } },
-        '',
-      );
+    if (shouldPauseHeroAutoplay) return undefined;
+
+    const timer = window.setInterval(() => {
+      setHeroIndex((currentIndex) => (currentIndex + 1) % HERO_SLIDE_COUNT);
+    }, HERO_CAROUSEL_INTERVAL_MS);
+
+    return () => window.clearInterval(timer);
+  }, [shouldPauseHeroAutoplay]);
+
+  useEffect(() => {
+    const previousPath = previousPathRef.current;
+    const cameFromProductDetail = previousPath.startsWith('/product/');
+    const requestedRestore = Boolean(location.state?.restoreCatalog) || (isHome && cameFromProductDetail);
+
+    if (isHome && requestedRestore) {
+      const snapshot = readHomeExperienceSnapshot();
+      const restoreScrollY = snapshot?.scrollY ?? 0;
+      const restoreCatalog = Boolean(location.state?.restoreCatalog ?? snapshot?.catalogWasOpen);
+
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: restoreScrollY, behavior: 'auto' });
+
+        if (restoreCatalog) {
+          setCatalogOpenMode('instant');
+          requestAnimationFrame(() => {
+            setCatalogOpen(true);
+            requestAnimationFrame(() => setCatalogOpenMode('animated'));
+          });
+        }
+      });
+
+      clearRestoreCatalogFlag(location.state as Record<string, unknown> | undefined);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname, location.state?.restoreCatalog]);
 
-  const handleDiscover = useCallback(() => setCatalogOpen(true), []);
-  const handleCatalogClose = useCallback(() => setCatalogOpen(false), []);
+    previousPathRef.current = location.pathname;
+  }, [isHome, location.pathname, location.state]);
 
-  const handleProductSelect = useCallback(
-    (slug: string) => {
-      setCatalogOpen(false);
-      navigate(`/product/${slug}`, { state: { fromCatalog: true } });
-    },
-    [navigate],
-  );
+  const handleDiscover = useCallback(() => {
+    setCatalogOpenMode('animated');
+    setCatalogOpen(true);
+  }, []);
+
+  const handleCatalogClose = useCallback(() => {
+    setCatalogOpenMode('animated');
+    setCatalogOpen(false);
+
+    if (location.pathname === '/') {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+  }, [location.pathname]);
+
+  const handleProductSelect = useCallback((slug: string) => {
+    persistHomeExperienceSnapshot({
+      scrollY: window.scrollY,
+      catalogWasOpen: true,
+    });
+
+    setCatalogOpen(false);
+    navigate(`/product/${slug}`, { state: { fromCatalog: true } });
+  }, [navigate]);
+
+  const handleHeroAutoplayPauseChange = useCallback((paused: boolean) => {
+    setHeroAutoplayPaused(paused);
+  }, []);
+
+  const renderHomePage = useCallback(() => (
+    <HomePage
+      activeIndex={heroIndex}
+      catalogOpen={catalogOpen}
+      onDiscover={handleDiscover}
+      onAutoplayPauseChange={handleHeroAutoplayPauseChange}
+    />
+  ), [catalogOpen, handleDiscover, handleHeroAutoplayPauseChange, heroIndex]);
 
   return (
     <NavigationThemeProvider theme={isHome ? 'light' : 'dark'}>
@@ -84,22 +175,7 @@ function App() {
             path="/"
             element={
               <MainLayout>
-                {/*
-                 * Hero wrapper — blurred/dimmed/non-interactive while the
-                 * Catalog Drawer is open. Transition matches DURATION.normal
-                 * so the hero and drawer animate in sync.
-                 */}
-                <div
-                  style={{
-                    transition: `filter ${DURATION.normal}ms ${EASING.standard}, opacity ${DURATION.normal}ms ${EASING.standard}`,
-                    filter: catalogOpen ? 'blur(4px) brightness(0.7)' : 'none',
-                    opacity: catalogOpen ? 0.85 : 1,
-                    pointerEvents: catalogOpen ? 'none' : 'auto',
-                    willChange: 'filter, opacity',
-                  }}
-                >
-                  <HomePage onDiscover={handleDiscover} />
-                </div>
+                {renderHomePage()}
               </MainLayout>
             }
           />
@@ -133,23 +209,15 @@ function App() {
           <Route path="/orders/:orderNumber" element={<LegacyOrderRedirect />} />
           <Route path="/wishlist" element={<Navigate to="/account/wishlist" replace />} />
 
-          {/* Fallback → home */}
-          <Route path="*" element={<MainLayout><HomePage onDiscover={handleDiscover} /></MainLayout>} />
+          <Route path="*" element={<MainLayout>{renderHomePage()}</MainLayout>} />
         </Routes>
 
-        {/*
-         * CatalogDrawer is intentionally outside <Routes>.
-         * It stays mounted on every route so its React state is preserved
-         * across navigation. The `open` prop controls visibility.
-         * On non-home routes the Drawer is not open so it renders null.
-         */}
-        {isHome && (
-          <CatalogDrawer
-            open={catalogOpen}
-            onClose={handleCatalogClose}
-            onProductSelect={handleProductSelect}
-          />
-        )}
+        <CatalogDrawer
+          open={isHome ? catalogOpen : false}
+          openMode={catalogOpenMode}
+          onClose={handleCatalogClose}
+          onProductSelect={handleProductSelect}
+        />
 
         <FloatingNavigation />
         <MiniCartDrawer />

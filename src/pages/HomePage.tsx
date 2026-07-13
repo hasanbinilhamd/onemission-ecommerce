@@ -1,5 +1,4 @@
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import type { CSSProperties, KeyboardEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { CatalogLayer } from '../features/catalog';
@@ -37,8 +36,52 @@ const IMAGES: readonly ImageItem[] = [
   },
 ] as const;
 
+const STATIC_HERO_GRADIENT = createHeroGradient(HERO_THEMES[0].accentColor);
 const GRAIN_SVG =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E";
+
+const COLLECTION_REVEAL_SCROLL_RANGE = 220;
+const COLLECTION_OVERLAP = 'max(-72px, -10vh)';
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+function getRoleStyle(role: 'center' | 'left' | 'right', isMobile: boolean): CSSProperties {
+  if (role === 'center') {
+    return {
+      left: '50%',
+      height: isMobile ? '58%' : '92%',
+      bottom: isMobile ? '17%' : 0,
+      transform: `translate3d(-50%, 0, 0) scale(${isMobile ? 1.22 : 1.68})`,
+      filter: 'blur(0px)',
+      opacity: 1,
+      zIndex: 20,
+    };
+  }
+
+  if (role === 'left') {
+    return {
+      left: isMobile ? '21%' : '30%',
+      height: isMobile ? '16%' : '28%',
+      bottom: isMobile ? '31%' : '12%',
+      transform: 'translate3d(-50%, 0, 0) scale(1)',
+      filter: 'blur(3px)',
+      opacity: 0.78,
+      zIndex: 10,
+    };
+  }
+
+  return {
+    left: isMobile ? '79%' : '70%',
+    height: isMobile ? '16%' : '28%',
+    bottom: isMobile ? '31%' : '12%',
+    transform: 'translate3d(-50%, 0, 0) scale(1)',
+    filter: 'blur(3px)',
+    opacity: 0.78,
+    zIndex: 10,
+  };
+}
 
 function HeroModelLayer({
   image,
@@ -49,35 +92,7 @@ function HeroModelLayer({
   role: 'center' | 'left' | 'right';
   isMobile: boolean;
 }) {
-  const style: CSSProperties = role === 'center'
-    ? {
-        left: '50%',
-        height: isMobile ? '58%' : '92%',
-        bottom: isMobile ? '17%' : 0,
-        transform: `translate3d(-50%, 0, 0) scale(${isMobile ? 1.22 : 1.68})`,
-        filter: 'blur(0px)',
-        opacity: 1,
-        zIndex: 20,
-      }
-    : role === 'left'
-      ? {
-          left: isMobile ? '21%' : '30%',
-          height: isMobile ? '16%' : '28%',
-          bottom: isMobile ? '31%' : '12%',
-          transform: 'translate3d(-50%, 0, 0) scale(1)',
-          filter: 'blur(3px)',
-          opacity: 0.78,
-          zIndex: 10,
-        }
-      : {
-          left: isMobile ? '79%' : '70%',
-          height: isMobile ? '16%' : '28%',
-          bottom: isMobile ? '31%' : '12%',
-          transform: 'translate3d(-50%, 0, 0) scale(1)',
-          filter: 'blur(3px)',
-          opacity: 0.78,
-          zIndex: 10,
-        };
+  const style = getRoleStyle(role, isMobile);
 
   return (
     <div
@@ -92,7 +107,8 @@ function HeroModelLayer({
         filter: style.filter,
         opacity: style.opacity,
         zIndex: style.zIndex,
-        willChange: 'transform, opacity, filter',
+        transition: 'transform 620ms cubic-bezier(0.22, 1, 0.36, 1), opacity 620ms cubic-bezier(0.22, 1, 0.36, 1), filter 620ms cubic-bezier(0.22, 1, 0.36, 1), left 620ms cubic-bezier(0.22, 1, 0.36, 1)',
+        willChange: 'transform, opacity, filter, left',
       }}
     >
       <img
@@ -105,109 +121,12 @@ function HeroModelLayer({
           objectFit: 'contain',
           objectPosition: 'bottom center',
           userSelect: 'none',
+          pointerEvents: 'none',
         }}
       />
     </div>
   );
 }
-
-const HeroSlide = memo(function HeroSlide({
-  index,
-  isMobile,
-}: {
-  index: number;
-  isMobile: boolean;
-}) {
-  const current = IMAGES[index];
-  const previous = IMAGES[(index + IMAGES.length - 1) % IMAGES.length];
-  const next = IMAGES[(index + 1) % IMAGES.length];
-
-  return (
-    <div
-      className="relative min-w-0 flex-[0_0_100%]"
-      style={{
-        position: 'relative',
-        height: '100vh',
-        overflow: 'hidden',
-      }}
-    >
-      <div
-        aria-hidden="true"
-        className="absolute inset-0"
-        style={{
-          zIndex: 0,
-          backgroundImage: createHeroGradient(current.theme.accentColor),
-          backgroundRepeat: 'no-repeat',
-          backgroundSize: 'cover',
-          transform: 'translate3d(0,0,0)',
-        }}
-      />
-
-      <div
-        aria-hidden="true"
-        className="absolute inset-0"
-        style={{
-          zIndex: 1,
-          background: 'linear-gradient(180deg, rgba(10,10,10,0.16) 0%, rgba(10,10,10,0.06) 42%, rgba(229,228,226,0.10) 100%)',
-        }}
-      />
-
-      <div
-        aria-hidden="true"
-        className="absolute inset-0"
-        style={{
-          zIndex: 50,
-          backgroundImage: `url("${GRAIN_SVG}")`,
-          backgroundRepeat: 'repeat',
-          backgroundSize: '200px 200px',
-          opacity: 0.32,
-          pointerEvents: 'none',
-        }}
-      />
-
-      <div
-        className="absolute inset-x-0 flex items-center justify-center select-none pointer-events-none"
-        style={{
-          zIndex: 2,
-          top: '18%',
-          fontFamily: "'Anton', sans-serif",
-          fontSize: 'clamp(46px, 17vw, 380px)',
-          fontWeight: 900,
-          color: '#FFFFFF',
-          lineHeight: 1,
-          textTransform: 'uppercase',
-          letterSpacing: '-0.02em',
-          whiteSpace: 'nowrap',
-          padding: '0 10px',
-        }}
-      >
-        VALUES MATTER
-      </div>
-
-      <div className="absolute inset-0" style={{ zIndex: 3 }}>
-        <HeroModelLayer image={previous} role="left" isMobile={isMobile} />
-        <HeroModelLayer image={next} role="right" isMobile={isMobile} />
-        <HeroModelLayer image={current} role="center" isMobile={isMobile} />
-      </div>
-
-      <div
-        className="absolute top-6 left-4 sm:left-8"
-        style={{
-          zIndex: 60,
-          color: '#FFFFFF',
-          opacity: 0.9,
-          letterSpacing: '0.18em',
-        }}
-      >
-        <img
-          src="https://ik.imagekit.io/edyl3oplm/Onemission/logos/AMAN_ONEMISSION.png?updatedAt=1782542636942"
-          alt="ONEMISSION"
-          className="h-8 md:h-12 w-auto"
-        />
-      </div>
-    </div>
-  );
-});
 
 interface HomePageProps {
   activeIndex: number;
@@ -217,18 +136,23 @@ interface HomePageProps {
 
 export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: HomePageProps) {
   const initialIndexRef = useRef(activeIndex);
+  const rafRef = useRef<number | null>(null);
+  const [collectionRevealProgress, setCollectionRevealProgress] = useState(0);
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' ? window.innerWidth < 640 : false,
+  );
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
     dragFree: false,
-    align: 'start',
     skipSnaps: false,
     startIndex: initialIndexRef.current,
     duration: 30,
   });
 
-  const [isMobile, setIsMobile] = useState(
-    typeof window !== 'undefined' ? window.innerWidth < 640 : false,
-  );
+  const currentModel = IMAGES[activeIndex];
+  const previousModel = IMAGES[(activeIndex + IMAGES.length - 1) % IMAGES.length];
+  const nextModel = IMAGES[(activeIndex + 1) % IMAGES.length];
+  const collectionRadius = Math.round(32 * (1 - collectionRevealProgress));
 
   useEffect(() => {
     IMAGES.forEach((imageItem) => {
@@ -244,7 +168,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
   }, []);
 
   useEffect(() => {
-    if (!emblaApi) return;
+    if (!emblaApi) return undefined;
 
     const updateSelectedIndex = () => {
       onActiveIndexChange(emblaApi.selectedScrollSnap());
@@ -259,6 +183,33 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
       emblaApi.off('reInit', updateSelectedIndex);
     };
   }, [emblaApi, onActiveIndexChange]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (rafRef.current !== null) return;
+
+      rafRef.current = window.requestAnimationFrame(() => {
+        const nextProgress = clamp(window.scrollY / COLLECTION_REVEAL_SCROLL_RANGE, 0, 1);
+        setCollectionRevealProgress((currentProgress) => {
+          if (Math.abs(currentProgress - nextProgress) < 0.01) {
+            return currentProgress;
+          }
+          return nextProgress;
+        });
+        rafRef.current = null;
+      });
+    };
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (rafRef.current !== null) {
+        window.cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, []);
 
   const handlePrevious = useCallback(() => {
     emblaApi?.scrollPrev();
@@ -300,17 +251,111 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
           overflow: 'hidden',
         }}
       >
-        <div className="overflow-hidden" ref={emblaRef} style={{ height: '100%', touchAction: 'pan-y pinch-zoom', cursor: emblaApi ? 'grab' : 'default' }}>
+        <div
+          aria-hidden="true"
+          className="absolute inset-0"
+          style={{
+            zIndex: 0,
+            backgroundImage: STATIC_HERO_GRADIENT,
+            backgroundRepeat: 'no-repeat',
+            backgroundSize: 'cover',
+            transform: 'translate3d(0,0,0)',
+          }}
+        />
+
+        <div
+          aria-hidden="true"
+          className="absolute inset-0"
+          style={{
+            zIndex: 1,
+            background: 'linear-gradient(180deg, rgba(10,10,10,0.16) 0%, rgba(10,10,10,0.06) 42%, rgba(229,228,226,0.10) 100%)',
+          }}
+        />
+
+        <div
+          aria-hidden="true"
+          className="absolute inset-0"
+          style={{
+            zIndex: 50,
+            backgroundImage: `url("${GRAIN_SVG}")`,
+            backgroundRepeat: 'repeat',
+            backgroundSize: '200px 200px',
+            opacity: 0.32,
+            pointerEvents: 'none',
+          }}
+        />
+
+        <div
+          className="absolute inset-x-0 flex items-center justify-center select-none pointer-events-none"
+          style={{
+            zIndex: 2,
+            top: '18%',
+            fontFamily: "'Anton', sans-serif",
+            fontSize: 'clamp(46px, 17vw, 380px)',
+            fontWeight: 900,
+            color: '#FFFFFF',
+            lineHeight: 1,
+            textTransform: 'uppercase',
+            letterSpacing: '-0.02em',
+            whiteSpace: 'nowrap',
+            padding: '0 10px',
+          }}
+        >
+          VALUES MATTER
+        </div>
+
+        <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 3 }}>
+          <HeroModelLayer image={previousModel} role="left" isMobile={isMobile} />
+          <HeroModelLayer image={nextModel} role="right" isMobile={isMobile} />
+          <HeroModelLayer image={currentModel} role="center" isMobile={isMobile} />
+        </div>
+
+        <div
+          className="absolute top-6 left-4 sm:left-8"
+          style={{
+            zIndex: 60,
+            color: '#FFFFFF',
+            opacity: 0.9,
+            letterSpacing: '0.18em',
+          }}
+        >
+          <img
+            src="https://ik.imagekit.io/edyl3oplm/Onemission/logos/AMAN_ONEMISSION.png?updatedAt=1782542636942"
+            alt="ONEMISSION"
+            className="h-8 md:h-12 w-auto"
+          />
+        </div>
+
+        <div
+          ref={emblaRef}
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 45,
+            overflow: 'hidden',
+            touchAction: 'pan-y pinch-zoom',
+            cursor: emblaApi ? 'grab' : 'default',
+          }}
+        >
           <div style={{ display: 'flex', height: '100%', willChange: 'transform' }}>
-            {IMAGES.map((_, index) => (
-              <HeroSlide key={`${index}-${IMAGES[index].src}`} index={index} isMobile={isMobile} />
+            {IMAGES.map((imageItem) => (
+              <div
+                key={imageItem.src}
+                style={{
+                  flex: '0 0 100%',
+                  minWidth: 0,
+                  height: '100%',
+                  background: 'transparent',
+                }}
+              />
             ))}
           </div>
         </div>
 
         <button
           type="button"
-          aria-label="Previous hero slide"
+          aria-label="Previous model"
           onClick={handlePrevious}
           className="hidden md:flex"
           style={{
@@ -319,35 +364,35 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
             top: '50%',
             transform: 'translate3d(0, -50%, 0)',
             zIndex: 70,
-            width: '42px',
-            height: '42px',
+            width: '40px',
+            height: '40px',
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: '14px',
-            border: '1px solid rgba(255,255,255,0.18)',
+            border: '1px solid rgba(255,255,255,0.16)',
             background: 'rgba(255,255,255,0.10)',
             backdropFilter: 'blur(12px)',
             WebkitBackdropFilter: 'blur(12px)',
-            color: 'rgba(255,255,255,0.45)',
+            color: 'rgba(255,255,255,0.42)',
             transition: 'background-color 180ms ease, color 180ms ease, border-color 180ms ease',
           }}
           onMouseEnter={(event) => {
             event.currentTarget.style.background = 'rgba(255,255,255,0.16)';
-            event.currentTarget.style.color = 'rgba(255,255,255,0.88)';
+            event.currentTarget.style.color = 'rgba(255,255,255,0.9)';
             event.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)';
           }}
           onMouseLeave={(event) => {
             event.currentTarget.style.background = 'rgba(255,255,255,0.10)';
-            event.currentTarget.style.color = 'rgba(255,255,255,0.45)';
-            event.currentTarget.style.borderColor = 'rgba(255,255,255,0.18)';
+            event.currentTarget.style.color = 'rgba(255,255,255,0.42)';
+            event.currentTarget.style.borderColor = 'rgba(255,255,255,0.16)';
           }}
         >
-          <ArrowLeft size={16} strokeWidth={2.2} />
+          <ArrowLeft size={15} strokeWidth={2.2} />
         </button>
 
         <button
           type="button"
-          aria-label="Next hero slide"
+          aria-label="Next model"
           onClick={handleNext}
           className="hidden md:flex"
           style={{
@@ -356,30 +401,30 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
             top: '50%',
             transform: 'translate3d(0, -50%, 0)',
             zIndex: 70,
-            width: '42px',
-            height: '42px',
+            width: '40px',
+            height: '40px',
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: '14px',
-            border: '1px solid rgba(255,255,255,0.18)',
+            border: '1px solid rgba(255,255,255,0.16)',
             background: 'rgba(255,255,255,0.10)',
             backdropFilter: 'blur(12px)',
             WebkitBackdropFilter: 'blur(12px)',
-            color: 'rgba(255,255,255,0.45)',
+            color: 'rgba(255,255,255,0.42)',
             transition: 'background-color 180ms ease, color 180ms ease, border-color 180ms ease',
           }}
           onMouseEnter={(event) => {
             event.currentTarget.style.background = 'rgba(255,255,255,0.16)';
-            event.currentTarget.style.color = 'rgba(255,255,255,0.88)';
+            event.currentTarget.style.color = 'rgba(255,255,255,0.9)';
             event.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)';
           }}
           onMouseLeave={(event) => {
             event.currentTarget.style.background = 'rgba(255,255,255,0.10)';
-            event.currentTarget.style.color = 'rgba(255,255,255,0.45)';
-            event.currentTarget.style.borderColor = 'rgba(255,255,255,0.18)';
+            event.currentTarget.style.color = 'rgba(255,255,255,0.42)';
+            event.currentTarget.style.borderColor = 'rgba(255,255,255,0.16)';
           }}
         >
-          <ArrowRight size={16} strokeWidth={2.2} />
+          <ArrowRight size={15} strokeWidth={2.2} />
         </button>
       </section>
 
@@ -388,15 +433,20 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
         style={{
           position: 'relative',
           zIndex: 20,
-          marginTop: 'max(-72px, -10vh)',
-          borderTopLeftRadius: '32px',
-          borderTopRightRadius: '32px',
+          marginTop: COLLECTION_OVERLAP,
+          borderTopLeftRadius: `${collectionRadius}px`,
+          borderTopRightRadius: `${collectionRadius}px`,
           backgroundColor: '#FFFFFF',
           boxShadow: '0 -18px 48px rgba(0,0,0,0.16)',
           overflow: 'hidden',
+          transform: 'translate3d(0,0,0)',
+          willChange: 'border-radius',
         }}
       >
-        <CatalogLayer onProductSelect={onProductSelect} />
+        <CatalogLayer
+          revealProgress={collectionRevealProgress}
+          onProductSelect={onProductSelect}
+        />
       </section>
     </div>
   );

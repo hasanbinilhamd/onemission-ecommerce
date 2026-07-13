@@ -42,7 +42,7 @@ const EASE = 'cubic-bezier(0.4, 0, 0.2, 1)';
 const DURATION = 650;
 const GRADIENT_FADE_DURATION = 520;
 const COLLECTION_REVEAL_SCROLL_RANGE = 220;
-const COLLECTION_OVERLAP = 'max(-72px, -10vh)';
+const COLLECTION_OVERLAP = 'max(-35px, -10vh)';
 
 const GRAIN_SVG =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E";
@@ -522,10 +522,10 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
           />
 
           <div
-            className="absolute bottom-6 left-4 sm:bottom-20 sm:left-24"
-            style={{ zIndex: 60, maxWidth: '320px' }}
+            className="hidden sm:block absolute sm:bottom-1/3 sm:left-0 w-screen"
+            style={{ zIndex: 60 }}
           >
-            <p
+            {/* <p
               className="bold uppercase tracking-widest mb-2 sm:mb-3 text-base sm:text-[22px]"
               style={{
                 color: '#ffffff',
@@ -535,8 +535,8 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
               }}
             >
               TOONHUB FIGURINES
-            </p>
-            <p
+            </p> */}
+            {/* <p
               className="hidden sm:block text-xs sm:text-sm mb-4 sm:mb-5"
               style={{
                 color: '#ffffff',
@@ -547,13 +547,13 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
               The artwork is stunning, shipped fully prepared. The finish is a
               vision, the 3D craft is flawless. Many thanks! Wishing you the win.
               Order now.
-            </p>
-            <div className="flex items-center gap-3">
+            </p> */}
+            <div className="flex justify-between px-10 items-center">
               <button
                 type="button"
                 aria-label="Previous"
                 onClick={() => rotateHero('prev')}
-                className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center"
+                className="w-12 h-12 rounded-full flex items-center justify-center"
                 style={{
                   backgroundColor: 'transparent',
                   border: '2px solid #ffffff',
@@ -575,7 +575,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
                 type="button"
                 aria-label="Next"
                 onClick={() => rotateHero('next')}
-                className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center"
+                className="w-12 h-12 rounded-full flex items-center justify-center"
                 style={{
                   backgroundColor: 'transparent',
                   border: '2px solid #ffffff',
@@ -596,7 +596,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
             </div>
           </div>
 
-          <a
+          {/* <a
             href="#"
             onClick={handleDiscoverClick}
             className="absolute bottom-6 right-4 sm:bottom-20 sm:right-10 flex items-center"
@@ -623,7 +623,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
           >
             DISCOVER IT
             <ArrowRight className="w-5 h-5 sm:w-8 sm:h-8" strokeWidth={2.25} />
-          </a>
+          </a> */}
         </div>
       </section>
 

@@ -34,30 +34,49 @@ export function TopBackNavigation({
   }, [fallbackTo, location.key, navigate, onBack]);
 
   return (
-    <button
-      type="button"
-      onClick={handleBack}
-      className="fixed left-4 top-4 z-50 inline-flex items-center gap-1.5 sm:left-8"
+    <div
       style={{
-        background: 'none',
-        border: 'none',
-        cursor: 'pointer',
-        fontSize: '13px',
-        fontWeight: 500,
-        color: colors.muted,
-        padding: '8px 0',
-        lineHeight: 1,
-        transition: 'color 150ms ease',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 40,
+        height: '56px',
+        display: 'flex',
+        alignItems: 'center',
+        padding: '0 16px',
+        backgroundColor: 'rgba(255,255,255,0.92)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        borderBottom: '1px solid #F3F4F6',
       }}
-      onMouseEnter={(event) => {
-        event.currentTarget.style.color = colors.foreground;
-      }}
-      onMouseLeave={(event) => {
-        event.currentTarget.style.color = colors.muted;
-      }}
+      className="sm:px-8"
     >
-      <ChevronLeft size={16} strokeWidth={2} />
-      <span>{label}</span>
-    </button>
+      <button
+        type="button"
+        onClick={handleBack}
+        className="inline-flex items-center gap-1.5"
+        style={{
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          fontSize: '13px',
+          fontWeight: 500,
+          color: colors.muted,
+          padding: '6px 0',
+          lineHeight: 1,
+          transition: 'color 150ms ease',
+        }}
+        onMouseEnter={(event) => {
+          event.currentTarget.style.color = colors.foreground;
+        }}
+        onMouseLeave={(event) => {
+          event.currentTarget.style.color = colors.muted;
+        }}
+      >
+        <ChevronLeft size={16} strokeWidth={2} />
+        <span>{label}</span>
+      </button>
+    </div>
   );
 }

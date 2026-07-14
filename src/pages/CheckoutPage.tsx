@@ -1055,7 +1055,7 @@ function CheckoutPageContent() {
             description="Add products to your cart before continuing to checkout."
             action={
               <Button type="button" onClick={() => navigate('/cart')}>
-                Return to Cart
+                Go to Cart
               </Button>
             }
           />

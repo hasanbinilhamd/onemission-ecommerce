@@ -12,7 +12,7 @@ import { IMAGE_PLACEHOLDER } from '../app/constants';
 import { useCartStore } from '../stores';
 import { useWishlist } from '../features/customer';
 import { DURATION, EASING } from '../utils/motion';
-import { NavigationThemeProvider, useNavigationTheme } from '../features/navigation';
+import { NavigationThemeProvider, TopBackNavigation, useNavigationTheme } from '../features/navigation';
 
 function AccordionSection({ title, children }: { title: string; children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -418,11 +418,7 @@ function ProductDetailContent() {
   if (errorMessage) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#fff', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '20px 24px', borderBottom: '1px solid #F3F4F6' }}>
-          <button type="button" onClick={handleBack} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#374151' }}>
-            <ArrowLeft size={16} /> Back
-          </button>
-        </div>
+        <TopBackNavigation label={fromCatalog ? 'Back to Collection' : 'Back'} onBack={handleBack} />
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <EmptyState
             title="Unable to load product"
@@ -437,11 +433,7 @@ function ProductDetailContent() {
   if (!product) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#fff', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '20px 24px', borderBottom: '1px solid #F3F4F6' }}>
-          <button type="button" onClick={handleBack} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#374151' }}>
-            <ArrowLeft size={16} /> Back
-          </button>
-        </div>
+        <TopBackNavigation label={fromCatalog ? 'Back to Collection' : 'Back'} onBack={handleBack} />
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <EmptyState title="Product not found" description="This product may have been removed or the link is incorrect." />
         </div>

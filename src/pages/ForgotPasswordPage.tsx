@@ -102,7 +102,7 @@ function ForgotPasswordPageContent() {
         <div className="mt-6 text-sm text-neutral-600">
           Remembered your password?{' '}
           <Link to={ROUTES.LOGIN} className="font-medium text-neutral-900 underline-offset-4 hover:underline">
-            Back to Login
+            Login
           </Link>
         </div>
       </div>

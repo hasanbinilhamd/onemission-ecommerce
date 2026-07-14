@@ -196,7 +196,7 @@ function VerifyEmailPageContent() {
               Registration email was not found. Please start the registration process again.
             </div>
             <Button type="button" onClick={() => navigate(ROUTES.REGISTER)}>
-              Back to Register
+              Register
             </Button>
           </div>
         ) : (
@@ -267,7 +267,7 @@ function VerifyEmailPageContent() {
             <div className="text-center text-sm text-neutral-600">
               Need to change your email?{' '}
               <Link to={ROUTES.REGISTER} className="font-medium text-neutral-900 underline-offset-4 hover:underline">
-                Back to Register
+                Register
               </Link>
             </div>
           </div>

@@ -3,8 +3,13 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { CatalogLayer } from '../features/catalog';
 import { HERO_THEMES, createHeroGradient } from '../features/hero/theme';
 
+type HeroMediaType = 'image' | 'video';
+
 type ImageItem = {
-  src: string;
+  mediaType: HeroMediaType;
+  media: string;
+  poster: string;
+  blurMedia?: string;
   panel: string;
   theme: {
     title: string;
@@ -17,22 +22,30 @@ type Direction = 'next' | 'prev';
 
 const IMAGES: readonly ImageItem[] = [
   {
-    src: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/OKOWW.png?updatedAt=1782468174527',
+    mediaType: 'image',
+    media: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/OKOWW.png?updatedAt=1782468174527',
+    poster: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/OKOWW.png?updatedAt=1782468174527',
     panel: '#1F2128',
     theme: HERO_THEMES[0],
   },
   {
-    src: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/WEEE.png?updatedAt=1782468174345',
+    mediaType: 'image',
+    media: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/WEEE.png?updatedAt=1782468174345',
+    poster: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/WEEE.png?updatedAt=1782468174345',
     panel: '#4F5D75',
     theme: HERO_THEMES[1],
   },
   {
-    src: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/kmkmksss.png?updatedAt=1782468173729',
+    mediaType: 'image',
+    media: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/kmkmksss.png?updatedAt=1782468173729',
+    poster: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/kmkmksss.png?updatedAt=1782468173729',
     panel: '#76837A',
     theme: HERO_THEMES[2],
   },
   {
-    src: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/QW.png?updatedAt=1782468169304',
+    mediaType: 'image',
+    media: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/QW.png?updatedAt=1782468169304',
+    poster: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/QW.png?updatedAt=1782468169304',
     panel: '#7B7487',
     theme: HERO_THEMES[3],
   },
@@ -48,6 +61,14 @@ const GRAIN_SVG =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E";
 
 const HERO_GRADIENTS = IMAGES.map((item) => createHeroGradient(item.theme.accentColor));
+
+function getHeroPoster(item: ImageItem): string {
+  return item.poster || item.blurMedia || item.media;
+}
+
+function getHeroBlurMedia(item: ImageItem): string {
+  return item.blurMedia || getHeroPoster(item);
+}
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
@@ -189,13 +210,69 @@ const HeroGradientBackground = memo(function HeroGradientBackground({ activeInde
 });
 
 const HeroCarouselImages = memo(function HeroCarouselImages({ activeIndex, isMobile }: { activeIndex: number; isMobile: boolean }) {
+  const [failedVideoMedia, setFailedVideoMedia] = useState<Record<string, boolean>>({});
+  const activeVideoRef = useRef<HTMLVideoElement | null>(null);
+  const preloadedMediaRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const preloadIndexes = [
+      activeIndex,
+      (activeIndex + 1) % IMAGES.length,
+    ];
+
+    preloadIndexes.forEach((index) => {
+      const mediaItem = IMAGES[index];
+      const poster = getHeroPoster(mediaItem);
+
+      if (poster && !preloadedMediaRef.current.has(poster)) {
+        const image = new Image();
+        image.src = poster;
+        preloadedMediaRef.current.add(poster);
+      }
+
+      if (mediaItem.mediaType === 'video' && !preloadedMediaRef.current.has(mediaItem.media)) {
+        const video = document.createElement('video');
+        video.preload = 'auto';
+        video.muted = true;
+        video.playsInline = true;
+        video.src = mediaItem.media;
+        video.load();
+        preloadedMediaRef.current.add(mediaItem.media);
+      }
+    });
+  }, [activeIndex]);
+
+  useEffect(() => {
+    const activeVideo = activeVideoRef.current;
+    if (!activeVideo) {
+      return undefined;
+    }
+
+    activeVideo.currentTime = activeVideo.currentTime;
+    const playPromise = activeVideo.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(() => undefined);
+    }
+
+    return () => {
+      activeVideo.pause();
+    };
+  }, [activeIndex]);
+
   return (
     <div className="absolute inset-0" style={{ zIndex: 3 }}>
       {IMAGES.map((imageItem, index) => {
-        const style = roleStyle(getRole(index, activeIndex), isMobile);
+        const role = getRole(index, activeIndex);
+        const style = roleStyle(role, isMobile);
+        const poster = getHeroPoster(imageItem);
+        const mediaKey = `${imageItem.media}-${index}`;
+        const shouldRenderVideo = role === 'center'
+          && imageItem.mediaType === 'video'
+          && !failedVideoMedia[imageItem.media];
+
         return (
           <div
-            key={imageItem.src}
+            key={mediaKey}
             style={{
               position: 'absolute',
               left: style.left,
@@ -210,17 +287,45 @@ const HeroCarouselImages = memo(function HeroCarouselImages({ activeIndex, isMob
               willChange: 'transform, filter, opacity',
             }}
           >
-            <img
-              src={imageItem.src}
-              alt=""
-              draggable={false}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain',
-                objectPosition: 'bottom center',
-              }}
-            />
+            {shouldRenderVideo ? (
+              <video
+                ref={role === 'center' ? activeVideoRef : null}
+                src={imageItem.media}
+                poster={poster}
+                autoPlay
+                muted
+                playsInline
+                loop
+                preload="auto"
+                disablePictureInPicture
+                controls={false}
+                onError={() => {
+                  setFailedVideoMedia((current) => ({
+                    ...current,
+                    [imageItem.media]: true,
+                  }));
+                }}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                  objectPosition: 'bottom center',
+                  backgroundColor: 'transparent',
+                }}
+              />
+            ) : (
+              <img
+                src={role === 'center' ? poster : getHeroBlurMedia(imageItem)}
+                alt=""
+                draggable={false}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                  objectPosition: 'bottom center',
+                }}
+              />
+            )}
           </div>
         );
       })}
@@ -251,13 +356,6 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
     hasResolvedDirection: false,
     isHorizontal: false,
   });
-
-  useEffect(() => {
-    IMAGES.forEach((imageItem) => {
-      const image = new Image();
-      image.src = imageItem.src;
-    });
-  }, []);
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < 640);

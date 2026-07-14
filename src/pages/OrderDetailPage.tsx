@@ -110,7 +110,7 @@ export function OrderDetailPage() {
           description={errorMessage || 'We could not load the requested order.'}
           action={
             <div className="flex flex-wrap justify-center gap-3">
-              <Button type="button" onClick={() => navigate(ROUTES.ACCOUNT_ORDERS)}>Back to My Orders</Button>
+              <Button type="button" onClick={() => navigate(ROUTES.ACCOUNT_ORDERS)}>My Orders</Button>
               <Button type="button" variant="secondary" onClick={() => navigate(ROUTES.TRACK_ORDER)}>Track Order</Button>
             </div>
           }

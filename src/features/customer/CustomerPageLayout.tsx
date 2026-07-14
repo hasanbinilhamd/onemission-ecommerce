@@ -1,7 +1,7 @@
-import { ChevronLeft } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ROUTES } from '../../app/config/routes';
+import { TopBackNavigation } from '../navigation';
 
 const COMMERCE_LOGO_URL = 'https://ik.imagekit.io/edyl3oplm/Onemission/logos/AMAN_ONEMISSION.png?updatedAt=1782542636942';
 
@@ -35,27 +35,16 @@ export function CustomerPageHeader({
   action,
   showBackToHome = true,
 }: CustomerPageHeaderProps) {
-  const navigate = useNavigate();
-
   return (
     <div className="mb-8">
+      {showBackToHome ? <TopBackNavigation label="Back to Home" fallbackTo={ROUTES.HOME} /> : null}
+
       <Link to={ROUTES.HOME} aria-label="Back to ONEMISSION Commerce homepage" className="inline-flex items-center">
         <img src={COMMERCE_LOGO_URL} alt="ONEMISSION" className="h-8 w-auto sm:h-10" />
       </Link>
 
       <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="max-w-[720px]">
-          {showBackToHome ? (
-            <button
-              type="button"
-              onClick={() => navigate(ROUTES.HOME)}
-              className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-neutral-500 transition-colors hover:text-neutral-900"
-            >
-              <ChevronLeft size={16} />
-              Back to Home
-            </button>
-          ) : null}
-
           <p style={{ margin: '0 0 8px', fontSize: '12px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9CA3AF', fontWeight: 600 }}>
             {sectionLabel}
           </p>

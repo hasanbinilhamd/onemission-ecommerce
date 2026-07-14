@@ -1,9 +1,9 @@
-import { ChevronLeft, Mail, MapPin, Package, Truck } from 'lucide-react';
+import { Mail, MapPin, Package, Truck } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { Button } from '../../components/shared';
 import { IMAGE_PLACEHOLDER } from '../../app/constants';
 import type { CommerceOrderDetail, CommerceOrderTimelineEntry } from '../../types';
 import { formatCurrency, formatDate } from '../../utils/formatting';
+import { TopBackNavigation } from '../navigation';
 import { OrderPaymentStatusBadge, OrderStatusBadge } from './OrderStatusBadge';
 
 interface OrderDetailViewProps {
@@ -185,12 +185,7 @@ export function OrderDetailView({ order, backLabel = 'Back', onBack }: OrderDeta
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-3">
-          {onBack && (
-            <Button type="button" variant="ghost" size="sm" className="w-fit gap-2" onClick={onBack}>
-              <ChevronLeft size={16} />
-              {backLabel}
-            </Button>
-          )}
+          {onBack ? <TopBackNavigation label={backLabel} onBack={onBack} /> : null}
           <div>
             <h1 className="m-0 text-3xl font-semibold text-neutral-950 sm:text-4xl">
               Order Details

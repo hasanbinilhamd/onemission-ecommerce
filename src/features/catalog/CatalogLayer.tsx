@@ -307,13 +307,17 @@ export function CatalogLayer({ revealProgress = 0, onProductSelect }: CatalogLay
 
   return (
     <section
+      id="onemission-vision"
       aria-label="Collection"
+      className="flex flex-col items-center justify-center gap-5 sm:gap-16"
       style={{
         minHeight: '100vh',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: 'rgba(255,255,255,0.5)',
+        backdropFilter: 'blur(25px)',
+        WebkitBackdropFilter: 'blur(25px)',
       }}
     >
-      <div
+      {/* <div
         style={{
           position: 'sticky',
           top: 0,
@@ -466,9 +470,9 @@ export function CatalogLayer({ revealProgress = 0, onProductSelect }: CatalogLay
             </button>
           </div>
         </div>
-      </div>
+      </div> */}
 
-      <div style={{ padding: controlsRevealProgress > 0.15 ? '20px 20px 56px' : '12px 20px 56px', transition: 'padding 220ms ease' }}>
+      {/* <div style={{ padding: controlsRevealProgress > 0.15 ? '20px 20px 56px' : '12px 20px 56px', transition: 'padding 220ms ease' }}>
         {!isLoading && !errorMessage && (
           <p
             style={{
@@ -550,7 +554,42 @@ export function CatalogLayer({ revealProgress = 0, onProductSelect }: CatalogLay
             )}
           </>
         )}
-      </div>
+      </div> */}
+      <p
+        className="w-3/4 bold text-center uppercase tracking-widest mb-2 sm:mb-3 text-base sm:text-4xl"
+        style={{
+          color: '#0A0A0A',
+          opacity: 0.95,
+          letterSpacing: '0.02em',
+          fontWeight: 700,
+        }}
+      >
+        We are building a generation of Muslims who proudly live their values.
+      </p>
+
+      <p
+        className="w-3/4 bold text-center uppercase tracking-widest mb-2 sm:mb-3 text-base sm:text-4xl"
+        style={{
+          color: '#0A0A0A',
+          opacity: 0.95,
+          letterSpacing: '0.02em',
+          fontWeight: 700,
+        }}
+      >
+        We refuse to choose between excellence and faith—because we believe true greatness is built on both.
+      </p>
+
+      <p
+        className="w-3/4 bold text-center uppercase tracking-widest mb-2 sm:mb-3 text-base sm:text-4xl"
+        style={{
+          color: '#0A0A0A',
+          opacity: 0.95,
+          letterSpacing: '0.02em',
+          fontWeight: 700,
+        }}
+      >
+        One Mission is not just what we wear. It is how we live, compete, and leave a legacy.
+      </p>
 
       <FilterDrawer
         open={filterOpen}

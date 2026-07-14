@@ -55,7 +55,7 @@ const EASE = 'cubic-bezier(0.4, 0, 0.2, 1)';
 const DURATION = 650;
 const GRADIENT_FADE_DURATION = 520;
 const COLLECTION_REVEAL_SCROLL_RANGE = 220;
-const COLLECTION_OVERLAP = 'max(-35px, -10vh)';
+const COLLECTION_OVERLAP = 'max(0px, -10vh)';
 
 const GRAIN_SVG =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E";
@@ -718,9 +718,9 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
           position: 'relative',
           zIndex: 60,
           marginTop: COLLECTION_OVERLAP,
-          borderTopLeftRadius: `${collectionRadius}px`,
-          borderTopRightRadius: `${collectionRadius}px`,
-          backgroundColor: '#FFFFFF',
+          // borderTopLeftRadius: `${collectionRadius}px`,
+          // borderTopRightRadius: `${collectionRadius}px`,
+          backgroundColor: 'transparent',
           boxShadow: '0 -18px 48px rgba(0,0,0,0.16)',
           overflow: 'hidden',
           transform: 'translate3d(0,0,0)',

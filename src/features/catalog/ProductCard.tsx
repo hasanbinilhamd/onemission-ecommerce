@@ -34,14 +34,13 @@ export const ProductCard = memo(function ProductCard({
   product,
   onClick,
   isNew = false,
-  appearance = 'default',
+  appearance: _appearance = 'default',
 }: ProductCardProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuthenticatedCustomer();
   const { isWishlisted, toggleItem } = useWishlist();
   const wishlisted = isWishlisted(product.id);
-  const isCollectionAppearance = appearance === 'collection';
 
   const handleWishlistClick = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -86,7 +85,7 @@ export const ProductCard = memo(function ProductCard({
           style={{
             position: 'relative',
             width: '100%',
-            paddingBottom: isCollectionAppearance ? '100%' : '133%',
+            paddingBottom: '133%',
             overflow: 'hidden',
             borderRadius: '6px',
             backgroundColor: '#FFFFFF',
@@ -100,7 +99,7 @@ export const ProductCard = memo(function ProductCard({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              padding: isCollectionAppearance ? '16px' : '12px',
+              padding: '12px',
             }}
           >
             <img

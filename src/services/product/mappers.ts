@@ -11,7 +11,7 @@ import type {
 
 const COLOR_HEX_MAP: Record<string, string> = {
   black: '#1C1C1C',
-  white: '#F5F5F5',
+  white: '#F0F0F0',
   grey: '#9CA3AF',
   gray: '#9CA3AF',
   coral: '#F97316',

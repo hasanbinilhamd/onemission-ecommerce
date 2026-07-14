@@ -61,7 +61,7 @@ export const CartLineItem = memo(function CartLineItem({
           height: compact ? '110px' : '140px',
           borderRadius: '8px',
           overflow: 'hidden',
-          backgroundColor: '#F5F5F5',
+          backgroundColor: '#F0F0F0',
         }}
       >
         <img

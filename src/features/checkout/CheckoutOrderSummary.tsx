@@ -49,7 +49,7 @@ export function CheckoutOrderSummary({ className = '' }: CheckoutOrderSummaryPro
                     height: '92px',
                     borderRadius: '10px',
                     overflow: 'hidden',
-                    backgroundColor: '#F5F5F5',
+                    backgroundColor: '#F0F0F0',
                   }}
                 >
                   <img

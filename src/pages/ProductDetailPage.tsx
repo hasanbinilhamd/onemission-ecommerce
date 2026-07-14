@@ -84,7 +84,7 @@ function Gallery({ product }: { product: Product }) {
           paddingBottom: '125%',
           overflow: 'hidden',
           borderRadius: '10px',
-          backgroundColor: '#F5F5F5',
+          backgroundColor: '#F0F0F0',
           marginBottom: '12px',
         }}
       >
@@ -98,7 +98,7 @@ function Gallery({ product }: { product: Product }) {
             width: '100%',
             height: '100%',
             objectFit: 'contain',
-            objectPosition: 'center bottom',
+            objectPosition: 'center',
             animation: 'galleryFadeIn 250ms ease forwards',
           }}
         />
@@ -119,7 +119,7 @@ function Gallery({ product }: { product: Product }) {
                 border: index === mainIndex ? '2px solid #111827' : '2px solid transparent',
                 borderRadius: '6px',
                 overflow: 'hidden',
-                backgroundColor: '#F5F5F5',
+                backgroundColor: '#F0F0F0',
                 cursor: 'pointer',
                 padding: 0,
                 transition: 'border-color 150ms ease',
@@ -128,7 +128,7 @@ function Gallery({ product }: { product: Product }) {
               <img
                 src={src}
                 alt={`Thumbnail ${index + 1}`}
-                style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center bottom' }}
+                style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center' }}
               />
             </button>
           ))}

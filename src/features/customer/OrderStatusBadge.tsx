@@ -28,7 +28,15 @@ function getFulfillmentBadgeVariant(status: string) {
     case 'COMPLETED':
       return 'success';
     case 'CANCELLED':
+    case 'RETURN_REJECTED':
       return 'error';
+    case 'RETURN_REQUESTED':
+    case 'RETURN_APPROVED':
+    case 'REFUND_PROCESSING':
+      return 'warning';
+    case 'REFUND_COMPLETED':
+    case 'RETURNED':
+      return 'success';
     default:
       return 'default';
   }

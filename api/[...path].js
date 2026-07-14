@@ -32,6 +32,8 @@ const ALLOWED_PUBLIC_PATTERNS = [
   /^orders\/track$/,
   /^orders\/by-number\/[^/]+$/,
   /^orders\/by-checkout-session\/[^/]+$/,
+  /^orders\/[^/]+\/cancel$/,
+  /^orders\/[^/]+\/return-request$/,
   /^checkout\/session$/,
   /^checkout\/session\/[^/]+$/,
   /^payment-attempt$/,

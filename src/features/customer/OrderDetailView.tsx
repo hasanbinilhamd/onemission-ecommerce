@@ -1,7 +1,8 @@
 import { Mail, MapPin, Package, Truck } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { Button, Modal } from '../../components/shared';
 import { IMAGE_PLACEHOLDER } from '../../app/constants';
-import type { CommerceOrderDetail, CommerceOrderTimelineEntry } from '../../types';
+import type { CommerceOrderDetail, CommerceOrderReturnRequest, CommerceOrderTimelineEntry } from '../../types';
 import { formatCurrency, formatDate } from '../../utils/formatting';
 import { TopBackNavigation } from '../navigation';
 import { OrderPaymentStatusBadge, OrderStatusBadge } from './OrderStatusBadge';
@@ -10,6 +11,9 @@ interface OrderDetailViewProps {
   order: CommerceOrderDetail;
   backLabel?: string;
   onBack?: () => void;
+  onCancelOrder?: (input: { reason: string }) => Promise<void>;
+  onRequestReturn?: (input: { reason: string; description: string; attachments: string[] }) => Promise<void>;
+  isMutating?: boolean;
 }
 
 interface SectionCardProps {
@@ -91,6 +95,28 @@ function splitTimelineNotes(notes: string) {
     .filter(Boolean);
 }
 
+async function readFilesAsDataUrls(files: FileList | File[]): Promise<string[]> {
+  const items = Array.from(files || []);
+  return Promise.all(items.map((file) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('Photo evidence could not be read.'));
+    reader.readAsDataURL(file);
+  })));
+}
+
+function getReturnStatusLabel(returnRequest: CommerceOrderReturnRequest | null) {
+  if (!returnRequest) {
+    return 'None';
+  }
+
+  if (returnRequest.refundStatus === 'COMPLETED') return 'Refund Completed';
+  if (returnRequest.refundStatus === 'PROCESSING') return 'Refund Processing';
+  if (returnRequest.status === 'APPROVED') return 'Approved';
+  if (returnRequest.status === 'REJECTED') return 'Rejected';
+  return 'Pending Review';
+}
+
 function getCustomerTimelinePresentation(entry: CommerceOrderTimelineEntry): CustomerTimelinePresentation {
   const eventName = String(entry.eventName || '').trim();
   const noteLines = splitTimelineNotes(entry.notes || '');
@@ -153,6 +179,48 @@ function getCustomerTimelinePresentation(entry: CommerceOrderTimelineEntry): Cus
         noteLines,
         visible: true,
       };
+    case 'RETURN_REQUESTED':
+      return {
+        title: 'Return Requested',
+        description: 'Waiting Seller Review.',
+        noteLines,
+        visible: true,
+      };
+    case 'RETURN_PENDING_REVIEW':
+      return {
+        title: 'Pending Review',
+        description: 'Your return request is pending seller review.',
+        noteLines,
+        visible: true,
+      };
+    case 'RETURN_APPROVED':
+      return {
+        title: 'Return Approved',
+        description: 'Your return request has been approved.',
+        noteLines,
+        visible: true,
+      };
+    case 'RETURN_REJECTED':
+      return {
+        title: 'Return Rejected',
+        description: 'Your return request has been rejected.',
+        noteLines,
+        visible: true,
+      };
+    case 'REFUND_PROCESSING':
+      return {
+        title: 'Refund Processing',
+        description: 'Your refund is currently being processed.',
+        noteLines,
+        visible: true,
+      };
+    case 'REFUND_COMPLETED':
+      return {
+        title: 'Refund Completed',
+        description: 'Your refund has been completed successfully.',
+        noteLines,
+        visible: true,
+      };
     default:
       if (eventName.startsWith('ORDER_STATUS_')) {
         return {
@@ -172,7 +240,23 @@ function getCustomerTimelinePresentation(entry: CommerceOrderTimelineEntry): Cus
   }
 }
 
-export function OrderDetailView({ order, backLabel = 'Back', onBack }: OrderDetailViewProps) {
+export function OrderDetailView({
+  order,
+  backLabel = 'Back',
+  onBack,
+  onCancelOrder,
+  onRequestReturn,
+  isMutating = false,
+}: OrderDetailViewProps) {
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+  const [returnReason, setReturnReason] = useState('Wrong Size');
+  const [returnDescription, setReturnDescription] = useState('');
+  const [returnAttachments, setReturnAttachments] = useState<string[]>([]);
+  const [returnAttachmentNames, setReturnAttachmentNames] = useState<string[]>([]);
+  const [returnFormError, setReturnFormError] = useState('');
+
   const sortedTimeline = [...order.timeline]
     .sort((left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime())
     .map((entry) => ({
@@ -180,6 +264,58 @@ export function OrderDetailView({ order, backLabel = 'Back', onBack }: OrderDeta
       presentation: getCustomerTimelinePresentation(entry),
     }))
     .filter(({ presentation }) => presentation.visible);
+
+  const handleSubmitCancelOrder = async () => {
+    if (!cancelReason.trim() || !onCancelOrder) {
+      return;
+    }
+
+    await onCancelOrder({ reason: cancelReason.trim() });
+    setIsCancelModalOpen(false);
+    setCancelReason('');
+  };
+
+  const handleAttachmentChange = async (files: FileList | null) => {
+    if (!files || files.length === 0) {
+      setReturnAttachments([]);
+      setReturnAttachmentNames([]);
+      return;
+    }
+
+    const nextFiles = Array.from(files).slice(0, 5);
+    const invalidFile = nextFiles.find((file) => !file.type.startsWith('image/'));
+    if (invalidFile) {
+      setReturnFormError('Only image files are allowed for photo evidence.');
+      return;
+    }
+
+    const dataUrls = await readFilesAsDataUrls(nextFiles);
+    setReturnAttachments(dataUrls);
+    setReturnAttachmentNames(nextFiles.map((file) => file.name));
+    setReturnFormError('');
+  };
+
+  const handleSubmitReturnRequest = async () => {
+    if (!onRequestReturn) return;
+
+    if (!returnDescription.trim()) {
+      setReturnFormError('Please describe your return request.');
+      return;
+    }
+
+    await onRequestReturn({
+      reason: returnReason,
+      description: returnDescription.trim(),
+      attachments: returnAttachments,
+    });
+
+    setIsReturnModalOpen(false);
+    setReturnReason('Wrong Size');
+    setReturnDescription('');
+    setReturnAttachments([]);
+    setReturnAttachmentNames([]);
+    setReturnFormError('');
+  };
 
   return (
     <div className="space-y-6">
@@ -199,9 +335,23 @@ export function OrderDetailView({ order, backLabel = 'Back', onBack }: OrderDeta
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <OrderPaymentStatusBadge status={order.payment?.status || 'UNKNOWN'} />
-          <OrderStatusBadge status={order.fulfillmentStatusLabel || order.fulfillmentStatus} />
+        <div className="flex flex-col items-start gap-3 sm:items-end">
+          <div className="flex flex-wrap items-center gap-2">
+            <OrderPaymentStatusBadge status={order.payment?.status || 'UNKNOWN'} />
+            <OrderStatusBadge status={order.status || order.fulfillmentStatusLabel || order.fulfillmentStatus} />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {order.actions?.canCancel && onCancelOrder ? (
+              <Button type="button" variant="secondary" onClick={() => setIsCancelModalOpen(true)} disabled={isMutating}>
+                Cancel Order
+              </Button>
+            ) : null}
+            {order.actions?.canRequestReturn && onRequestReturn ? (
+              <Button type="button" variant="secondary" onClick={() => setIsReturnModalOpen(true)} disabled={isMutating}>
+                Request Return
+              </Button>
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -375,6 +525,36 @@ export function OrderDetailView({ order, backLabel = 'Back', onBack }: OrderDeta
         </SectionCard>
       </div>
 
+      {order.returnRequest ? (
+        <SectionCard icon={<Package size={18} />} title="Return Status">
+          <DetailRow label="Status" value={getReturnStatusLabel(order.returnRequest)} />
+          <DetailRow label="Reason" value={order.returnRequest.reason || '—'} />
+          <DetailRow label="Description" value={order.returnRequest.description || '—'} />
+          <DetailRow label="Refund Status" value={order.returnRequest.refundStatus || 'NONE'} />
+          <DetailRow label="Requested At" value={formatDateTime(order.returnRequest.requestedAt)} />
+          <DetailRow label="Approved At" value={formatDateTime(order.returnRequest.approvedAt)} />
+          <DetailRow label="Completed At" value={formatDateTime(order.returnRequest.completedAt)} />
+          {order.returnRequest.rejectReason ? (
+            <DetailRow label="Reject Reason" value={order.returnRequest.rejectReason} />
+          ) : null}
+          {order.returnRequest.attachments?.length ? (
+            <div className="grid gap-3 pt-3 sm:grid-cols-2 lg:grid-cols-3">
+              {order.returnRequest.attachments.map((attachment, index) => (
+                <a
+                  key={`${order.returnRequest?.id}-attachment-${index}`}
+                  href={attachment}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-50"
+                >
+                  <img src={attachment} alt={`Return evidence ${index + 1}`} className="h-40 w-full object-cover" />
+                </a>
+              ))}
+            </div>
+          ) : null}
+        </SectionCard>
+      ) : null}
+
       <div className="hidden md:block">
         <SectionCard icon={<Truck size={18} />} title="Order Timeline">
           {sortedTimeline.length === 0 ? (
@@ -411,6 +591,101 @@ export function OrderDetailView({ order, backLabel = 'Back', onBack }: OrderDeta
           )}
         </SectionCard>
       </div>
+
+      <Modal open={isCancelModalOpen} onClose={() => setIsCancelModalOpen(false)} title="Cancel Order?">
+        <div className="grid gap-4">
+          <p className="m-0 text-sm leading-6 text-neutral-600">
+            Are you sure you want to cancel this order? This action cannot be undone.
+          </p>
+          <div className="grid gap-2">
+            <label className="text-sm font-medium text-neutral-900" htmlFor="cancel-order-reason">
+              Reason for cancellation
+            </label>
+            <textarea
+              id="cancel-order-reason"
+              rows={4}
+              value={cancelReason}
+              onChange={(event) => setCancelReason(event.target.value)}
+              className="w-full rounded-2xl border border-neutral-200 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+            />
+          </div>
+          <div className="flex gap-3 justify-end">
+            <Button type="button" variant="secondary" onClick={() => setIsCancelModalOpen(false)}>
+              Keep Order
+            </Button>
+            <Button type="button" onClick={() => void handleSubmitCancelOrder()} disabled={isMutating || !cancelReason.trim()}>
+              Cancel Order
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={isReturnModalOpen} onClose={() => setIsReturnModalOpen(false)} title="Request Return">
+        <div className="grid gap-4">
+          <div className="grid gap-2">
+            <label className="text-sm font-medium text-neutral-900" htmlFor="return-reason-select">
+              Reason
+            </label>
+            <select
+              id="return-reason-select"
+              value={returnReason}
+              onChange={(event) => setReturnReason(event.target.value)}
+              className="w-full rounded-2xl border border-neutral-200 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+            >
+              {['Wrong Size', 'Wrong Item', 'Damaged Product', 'Defect', 'Other'].map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+          </div>
+          <div className="grid gap-2">
+            <label className="text-sm font-medium text-neutral-900" htmlFor="return-description">
+              Description
+            </label>
+            <textarea
+              id="return-description"
+              rows={4}
+              value={returnDescription}
+              onChange={(event) => setReturnDescription(event.target.value)}
+              className="w-full rounded-2xl border border-neutral-200 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+            />
+          </div>
+          <div className="grid gap-2">
+            <label className="text-sm font-medium text-neutral-900" htmlFor="return-photo-evidence">
+              Photo Evidence (max 5)
+            </label>
+            <input
+              id="return-photo-evidence"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={async (event) => {
+                try {
+                  await handleAttachmentChange(event.target.files);
+                } catch (error) {
+                  setReturnFormError(error instanceof Error ? error.message : 'Photo evidence could not be processed.');
+                }
+              }}
+              className="w-full rounded-2xl border border-neutral-200 px-4 py-3 text-sm"
+            />
+            {returnAttachmentNames.length > 0 ? (
+              <p className="m-0 text-xs text-neutral-500">{returnAttachmentNames.join(', ')}</p>
+            ) : null}
+          </div>
+          {returnFormError ? (
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {returnFormError}
+            </div>
+          ) : null}
+          <div className="flex gap-3 justify-end">
+            <Button type="button" variant="secondary" onClick={() => setIsReturnModalOpen(false)}>
+              Keep Order
+            </Button>
+            <Button type="button" onClick={() => void handleSubmitReturnRequest()} disabled={isMutating}>
+              Submit
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

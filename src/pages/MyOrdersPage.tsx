@@ -16,6 +16,11 @@ const ORDER_STATUS_FILTERS = [
   { value: 'DELIVERED', label: 'DELIVERED' },
   { value: 'COMPLETED', label: 'COMPLETED' },
   { value: 'CANCELLED', label: 'CANCELLED' },
+  { value: 'RETURN_REQUESTED', label: 'RETURN_REQUESTED' },
+  { value: 'RETURN_APPROVED', label: 'RETURN_APPROVED' },
+  { value: 'RETURN_REJECTED', label: 'RETURN_REJECTED' },
+  { value: 'REFUND_PROCESSING', label: 'REFUND_PROCESSING' },
+  { value: 'REFUND_COMPLETED', label: 'REFUND_COMPLETED' },
 ];
 
 const PAGE_SIZE = 10;

@@ -1,9 +1,9 @@
 import { PackageSearch } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button, EmptyState, LoadingSkeleton } from '../components/shared';
 import { OrderDetailView, useAuthenticatedCustomer } from '../features/customer';
-import { getOrderByNumber } from '../services/api/orderService';
+import { cancelCustomerOrder, createReturnRequest, getOrderByNumber } from '../services/api/orderService';
 import type { CommerceOrderDetail } from '../types';
 import { ROUTES } from '../app/config/routes';
 
@@ -23,48 +23,78 @@ export function OrderDetailPage() {
   } = useAuthenticatedCustomer();
   const [order, setOrder] = useState<CommerceOrderDetail | null>(null);
   const [isLoadingOrder, setIsLoadingOrder] = useState(false);
+  const [isMutatingOrder, setIsMutatingOrder] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
 
   const authenticatedEmail = useMemo(() => normalizeEmail(user?.email || ''), [user?.email]);
+
+  const loadOrder = useCallback(async () => {
+    if (!orderNumber || !authenticatedEmail) {
+      return;
+    }
+
+    setIsLoadingOrder(true);
+    setErrorMessage(null);
+
+    try {
+      const accessToken = await getValidAccessToken();
+      const nextOrder = await getOrderByNumber(orderNumber, accessToken || '');
+
+      if (normalizeEmail(nextOrder.customerEmail) !== authenticatedEmail) {
+        setOrder(null);
+        setErrorMessage('This order could not be found for your signed-in account.');
+        return;
+      }
+
+      setOrder(nextOrder);
+    } catch (error) {
+      setOrder(null);
+      setErrorMessage(error instanceof Error ? error.message : 'Unable to load this order right now.');
+    } finally {
+      setIsLoadingOrder(false);
+    }
+  }, [authenticatedEmail, getValidAccessToken, orderNumber]);
 
   useEffect(() => {
     if (isAuthLoading || !orderNumber || !authenticatedEmail) {
       return;
     }
 
-    let isMounted = true;
-
-    const loadOrder = async () => {
-      setIsLoadingOrder(true);
-      setErrorMessage(null);
-
-      try {
-        const accessToken = await getValidAccessToken();
-        const nextOrder = await getOrderByNumber(orderNumber, accessToken || '');
-        if (!isMounted) return;
-
-        if (normalizeEmail(nextOrder.customerEmail) !== authenticatedEmail) {
-          setOrder(null);
-          setErrorMessage('This order could not be found for your signed-in account.');
-          return;
-        }
-
-        setOrder(nextOrder);
-      } catch (error) {
-        if (!isMounted) return;
-        setOrder(null);
-        setErrorMessage(error instanceof Error ? error.message : 'Unable to load this order right now.');
-      } finally {
-        if (isMounted) setIsLoadingOrder(false);
-      }
-    };
-
     void loadOrder();
+  }, [authenticatedEmail, isAuthLoading, loadOrder, orderNumber]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [authenticatedEmail, getValidAccessToken, isAuthLoading, orderNumber]);
+  const handleCancelOrder = useCallback(async ({ reason }: { reason: string }) => {
+    if (!order) return;
+
+    setIsMutatingOrder(true);
+    try {
+      const accessToken = await getValidAccessToken();
+      const updatedOrder = await cancelCustomerOrder(order.id, reason, accessToken || '');
+      setOrder(updatedOrder);
+      setActionFeedback({ tone: 'success', message: 'Order cancelled successfully.' });
+    } catch (error) {
+      setActionFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Order could not be cancelled right now.' });
+    } finally {
+      setIsMutatingOrder(false);
+    }
+  }, [getValidAccessToken, order]);
+
+  const handleRequestReturn = useCallback(async (input: { reason: string; description: string; attachments: string[] }) => {
+    if (!order) return;
+
+    setIsMutatingOrder(true);
+    try {
+      const accessToken = await getValidAccessToken();
+      const updatedOrder = await createReturnRequest(order.id, input, accessToken || '');
+      setOrder(updatedOrder);
+      setActionFeedback({ tone: 'success', message: 'Return request submitted successfully.' });
+    } catch (error) {
+      setActionFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Return request could not be submitted right now.' });
+    } finally {
+      setIsMutatingOrder(false);
+    }
+  }, [getValidAccessToken, order]);
 
   const showLoadingState = isAuthLoading || isLoadingOrder;
 
@@ -119,5 +149,21 @@ export function OrderDetailPage() {
     );
   }
 
-  return <OrderDetailView order={order} backLabel="Back to My Orders" onBack={() => navigate(ROUTES.ACCOUNT_ORDERS)} />;
+  return (
+    <div className="space-y-4">
+      {actionFeedback ? (
+        <div className={`rounded-2xl border px-4 py-3 text-sm ${actionFeedback.tone === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
+          {actionFeedback.message}
+        </div>
+      ) : null}
+      <OrderDetailView
+        order={order}
+        backLabel="Back to My Orders"
+        onBack={() => navigate(ROUTES.ACCOUNT_ORDERS)}
+        onCancelOrder={handleCancelOrder}
+        onRequestReturn={handleRequestReturn}
+        isMutating={isMutatingOrder}
+      />
+    </div>
+  );
 }

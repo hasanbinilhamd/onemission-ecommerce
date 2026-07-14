@@ -164,3 +164,27 @@ export async function findGuestOrder({ email, orderNumber }: GuestOrderTrackingI
     throw error;
   }
 }
+
+export async function cancelCustomerOrder(orderId: string, reason: string, accessToken = ''): Promise<CommerceOrderDetail> {
+  return fetchJson<CommerceOrderDetail>(`/orders/${encodeURIComponent(orderId)}/cancel`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ reason }),
+  }, accessToken);
+}
+
+export async function createReturnRequest(
+  orderId: string,
+  payload: { reason: string; description: string; attachments: string[] },
+  accessToken = '',
+): Promise<CommerceOrderDetail> {
+  return fetchJson<CommerceOrderDetail>(`/orders/${encodeURIComponent(orderId)}/return-request`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  }, accessToken);
+}

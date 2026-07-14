@@ -306,6 +306,23 @@ export interface CommerceOrderTimelineEntry {
   createdAt: string;
 }
 
+export interface CommerceOrderReturnRequest {
+  id: string;
+  orderId: string;
+  customerId: string;
+  reason: string;
+  description: string;
+  status: string;
+  rejectReason: string;
+  refundStatus: string;
+  attachments: string[];
+  requestedAt: string;
+  approvedAt: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CommerceOrderDetail {
   id: string;
   orderNumber: string;
@@ -335,6 +352,16 @@ export interface CommerceOrderDetail {
   grandTotal: number;
   items: CommerceOrderProduct[];
   timeline: CommerceOrderTimelineEntry[];
+  returnRequest: CommerceOrderReturnRequest | null;
+  actions: {
+    canCancel: boolean;
+    canRequestReturn: boolean;
+  };
+  returnPolicy: {
+    returnWindowDays: number;
+    deliveredAt: string | null;
+    returnWindowEndsAt: string | null;
+  };
   createdAt: string;
   updatedAt: string;
 }

@@ -136,6 +136,13 @@ function getCustomerTimelinePresentation(entry: CommerceOrderTimelineEntry): Cus
         noteLines: [],
         visible: true,
       };
+    case 'WAITING_PAYMENT':
+      return {
+        title: 'Waiting Payment',
+        description: 'Waiting for your payment confirmation.',
+        noteLines,
+        visible: true,
+      };
     case 'PACKING_STARTED':
     case 'PICKING_STARTED':
       return {

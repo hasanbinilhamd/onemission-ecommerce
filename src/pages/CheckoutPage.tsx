@@ -1026,7 +1026,10 @@ function CheckoutPageContent() {
         onClose: () => {
           setIsSnapFocusMode(false);
           setIsSubmittingPayment(false);
-          setStatusMessage('Payment window closed. You can continue later from the same checkout details.');
+          const params = new URLSearchParams();
+          params.set('payment_attempt_id', paymentAttempt.id);
+          params.set('checkout_session_id', checkoutSession.id);
+          navigate(`/payment/pending?${params.toString()}`);
         },
       });
     } catch (error) {

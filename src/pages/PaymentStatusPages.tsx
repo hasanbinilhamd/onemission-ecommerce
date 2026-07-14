@@ -1,9 +1,13 @@
 import { CheckCircle2, Clock3, XCircle } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Button } from '../components/shared';
-import { getOrderByCheckoutSessionId } from '../services/api/orderService';
+import { Button, LoadingSkeleton } from '../components/shared';
+import { OrderDetailView, useAuthenticatedCustomer } from '../features/customer';
+import { createPaymentAttempt, generateSnapToken } from '../services/api/checkoutService';
+import { cancelCustomerOrder, getOrderByCheckoutSessionId } from '../services/api/orderService';
+import { openMidtransSnap } from '../services/payment/midtransSnap';
 import { useCartStore } from '../stores';
+import type { CommerceOrderDetail } from '../types';
 import { formatCurrency } from '../utils/formatting';
 
 const CLEARED_CHECKOUT_SESSION_STORAGE_KEY = 'onemission-cleared-checkout-session-id';
@@ -201,12 +205,149 @@ export function PaymentSuccessPage() {
 }
 
 export function PaymentPendingPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { getValidAccessToken } = useAuthenticatedCustomer();
+  const [order, setOrder] = useState<CommerceOrderDetail | null>(null);
+  const [isLoadingOrder, setIsLoadingOrder] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
+
+  const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const checkoutSessionId = query.get('checkout_session_id') || '';
+
+  const loadOrder = useCallback(async () => {
+    if (!checkoutSessionId) return;
+
+    setIsLoadingOrder(true);
+    try {
+      const nextOrder = await getOrderByCheckoutSessionId(checkoutSessionId);
+      setOrder(nextOrder);
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : 'Waiting payment order could not be loaded.');
+      setOrder(null);
+    } finally {
+      setIsLoadingOrder(false);
+    }
+  }, [checkoutSessionId]);
+
+  useEffect(() => {
+    void loadOrder();
+  }, [loadOrder]);
+
+  const handleContinuePayment = useCallback(async () => {
+    if (!checkoutSessionId) return;
+
+    setIsSubmitting(true);
+    setStatusMessage('Preparing your payment session...');
+
+    try {
+      const nextAttempt = await createPaymentAttempt(checkoutSessionId);
+      const snapAttempt = await generateSnapToken(nextAttempt.id);
+      if (!snapAttempt.snapToken) {
+        throw new Error('Midtrans Snap token was not returned.');
+      }
+
+      await openMidtransSnap({
+        token: snapAttempt.snapToken,
+        onSuccess: (result) => {
+          const params = new URLSearchParams();
+          params.set('order_id', String(result.order_id || snapAttempt.providerReference || ''));
+          params.set('transaction_status', String(result.transaction_status || 'settlement'));
+          params.set('status_code', String(result.status_code || '200'));
+          params.set('payment_attempt_id', nextAttempt.id);
+          params.set('checkout_session_id', checkoutSessionId);
+          params.set('payment_method', String(result.payment_type || result.payment_method || 'Midtrans'));
+          params.set('paid_amount', String(result.gross_amount || order?.grandTotal || 0));
+          navigate(`/payment/success?${params.toString()}`);
+        },
+        onPending: (result) => {
+          const params = new URLSearchParams();
+          params.set('order_id', String(result.order_id || snapAttempt.providerReference || ''));
+          params.set('transaction_status', String(result.transaction_status || 'pending'));
+          params.set('status_code', String(result.status_code || '201'));
+          params.set('payment_attempt_id', nextAttempt.id);
+          params.set('checkout_session_id', checkoutSessionId);
+          navigate(`/payment/pending?${params.toString()}`);
+        },
+        onError: (result) => {
+          const params = new URLSearchParams();
+          params.set('order_id', String(result.order_id || snapAttempt.providerReference || ''));
+          params.set('transaction_status', String(result.transaction_status || 'failed'));
+          params.set('status_code', String(result.status_code || '500'));
+          params.set('payment_attempt_id', nextAttempt.id);
+          params.set('checkout_session_id', checkoutSessionId);
+          navigate(`/payment/failed?${params.toString()}`);
+        },
+        onClose: () => {
+          setIsSubmitting(false);
+          setStatusMessage('Payment window closed. You can continue payment later using the same order.');
+        },
+      });
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : 'Unable to continue payment right now.');
+      setIsSubmitting(false);
+    }
+  }, [checkoutSessionId, navigate, order?.grandTotal]);
+
+  const handleCancelOrder = useCallback(async ({ reason }: { reason: string }) => {
+    if (!order) return;
+
+    setIsSubmitting(true);
+    try {
+      const accessToken = await getValidAccessToken();
+      const updatedOrder = await cancelCustomerOrder(order.id, reason, {
+        accessToken: accessToken || '',
+        email: order.customerEmail,
+      });
+      setOrder(updatedOrder);
+      setStatusMessage('Order cancelled successfully.');
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : 'Order could not be cancelled right now.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [getValidAccessToken, order]);
+
+  if (isLoadingOrder) {
+    return (
+      <div className="space-y-6 rounded-3xl bg-white p-6 shadow-sm sm:p-8">
+        <LoadingSkeleton rows={5} />
+        <LoadingSkeleton rows={8} />
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <PaymentStatusPage
+        title="Waiting Payment"
+        description={statusMessage || 'Your payment is still pending. Please complete the payment or cancel the order.'}
+        tone="pending"
+      />
+    );
+  }
+
   return (
-    <PaymentStatusPage
-      title="Payment Pending"
-      description="Your payment is still pending. Please complete the payment from Midtrans or wait for the provider confirmation."
-      tone="pending"
-    />
+    <div className="space-y-4">
+      {statusMessage ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+          {statusMessage}
+        </div>
+      ) : null}
+      <OrderDetailView
+        order={order}
+        backLabel="Back to Home"
+        onBack={() => navigate('/')}
+        onCancelOrder={handleCancelOrder}
+        isMutating={isSubmitting}
+      />
+      <div className="flex justify-end">
+        <Button type="button" onClick={() => void handleContinuePayment()} disabled={isSubmitting}>
+          Continue Payment
+        </Button>
+      </div>
+    </div>
   );
 }
 

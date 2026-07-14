@@ -165,19 +165,23 @@ export async function findGuestOrder({ email, orderNumber }: GuestOrderTrackingI
   }
 }
 
-export async function cancelCustomerOrder(orderId: string, reason: string, accessToken = ''): Promise<CommerceOrderDetail> {
+export async function cancelCustomerOrder(
+  orderId: string,
+  reason: string,
+  options: { accessToken?: string; email?: string } = {},
+): Promise<CommerceOrderDetail> {
   return fetchJson<CommerceOrderDetail>(`/orders/${encodeURIComponent(orderId)}/cancel`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ reason }),
-  }, accessToken);
+    body: JSON.stringify({ reason, email: options.email || '' }),
+  }, options.accessToken || '');
 }
 
 export async function createReturnRequest(
   orderId: string,
-  payload: { reason: string; description: string; attachments: string[] },
+  payload: { reason: string; description: string; attachments: string[]; email?: string },
   accessToken = '',
 ): Promise<CommerceOrderDetail> {
   return fetchJson<CommerceOrderDetail>(`/orders/${encodeURIComponent(orderId)}/return-request`, {

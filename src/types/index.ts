@@ -273,6 +273,7 @@ export interface CommerceOrderPaymentSummary {
   grossAmount: number;
   currency: string;
   status: CommerceOrderPaymentStatus;
+  expiresAt?: string;
 }
 
 export interface CommerceOrderShipment {

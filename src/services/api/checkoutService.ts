@@ -60,13 +60,17 @@ function getApiBaseUrl() {
   return apiBaseUrl;
 }
 
-async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
+async function fetchJson<T>(path: string, init?: RequestInit, accessToken = ''): Promise<T> {
+  const headers = new Headers(init?.headers ?? {});
+  headers.set('Accept', 'application/json');
+
+  if (accessToken) {
+    headers.set('Authorization', `Bearer ${accessToken}`);
+  }
+
   const response = await fetch(`${getApiBaseUrl()}${path}`, {
     ...init,
-    headers: {
-      Accept: 'application/json',
-      ...(init?.headers ?? {}),
-    },
+    headers,
   });
 
   const payload = await response.json().catch(() => ({}));
@@ -78,14 +82,17 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   return payload as T;
 }
 
-export async function createCheckoutSession(payload: CheckoutSessionPayload): Promise<CheckoutSessionResponse> {
+export async function createCheckoutSession(
+  payload: CheckoutSessionPayload,
+  accessToken = '',
+): Promise<CheckoutSessionResponse> {
   return fetchJson<CheckoutSessionResponse>('/checkout/session', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(payload),
-  });
+  }, accessToken);
 }
 
 export async function createPaymentAttempt(checkoutSessionId: string): Promise<PaymentAttemptResponse> {

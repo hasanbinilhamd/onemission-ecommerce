@@ -17,6 +17,7 @@ export const ROUTES = {
   ACCOUNT_ADDRESSES: '/account/address',
   ACCOUNT_ORDERS: '/account/orders',
   ACCOUNT_ORDER_DETAIL: '/account/orders/:orderNumber',
+  ACCOUNT_CHECKOUT_HISTORY: '/account/checkout-history',
   ACCOUNT_WISHLIST: '/account/wishlist',
   ACCOUNT_PASSWORD: '/account/password',
   ORDERS: '/account/orders',

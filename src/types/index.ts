@@ -178,6 +178,151 @@ export interface ShippingRateRequest {
   weightGrams?: number;
 }
 
+export interface CommerceCheckoutSessionItem {
+  id: string;
+  productId: string;
+  variantId: string;
+  sku: string;
+  productName: string;
+  variantName: string;
+  productImage: string;
+  weight: number;
+  currency: string;
+  quantity: number;
+  qty: number;
+  price: number;
+  subtotal: number;
+}
+
+export interface CommerceCheckoutSessionDetail {
+  id: string;
+  checkoutNumber: string;
+  status: string;
+  customer: {
+    id: string;
+    customerCode: string;
+    customerName: string;
+    email: string;
+    phone: string;
+  };
+  salesChannel: {
+    id: string;
+    channelCode: string;
+    channelName: string;
+  };
+  currency: string;
+  items: CommerceCheckoutSessionItem[];
+  shipping: {
+    recipientName: string;
+    phone: string;
+    originDistrict: string;
+    destinationDistrict: string;
+    courier: string;
+    service: string;
+    description: string;
+    estimatedDelivery: string;
+    shippingCost: number;
+    address: {
+      provinceId: string;
+      province: string;
+      cityId: string;
+      city: string;
+      districtId: string;
+      district: string;
+      postalCode: string;
+      streetAddress: string;
+    };
+  };
+  totals: {
+    subtotal: number;
+    discount: number;
+    shipping: number;
+    shippingCost: number;
+    tax: number;
+    grandTotal: number;
+    currency: string;
+  };
+  processing: {
+    processingKey: string | null;
+    processingStartedAt: string | null;
+  };
+  paymentAttemptId: string;
+  paymentAttempt: {
+    id: string;
+    attemptNumber: string;
+    provider: string;
+    providerReference: string;
+    providerTransactionId: string;
+    snapToken: string;
+    snapRedirectUrl: string;
+    status: string;
+    paymentMethod: string;
+    grossAmount: number;
+    currency: string;
+    expiresAt: string;
+    createdAt: string;
+    updatedAt: string;
+  } | null;
+  expiresAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CommerceCheckoutHistoryItem {
+  id: string;
+  checkoutNumber: string;
+  status: string;
+  customerName: string;
+  customerEmail: string;
+  grandTotal: number;
+  currency: string;
+  itemCount: number;
+  paymentAttemptId: string;
+  paymentAttemptStatus: string;
+  paymentMethod: string;
+  expiresAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CommerceCheckoutHistoryResponse {
+  data: CommerceCheckoutHistoryItem[];
+  pagination: {
+    page: number;
+    limit: number;
+    totalItems: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
+
+export interface CommercePaymentAttemptDetail {
+  id: string;
+  attemptNumber: string;
+  checkoutSessionId: string;
+  provider: string;
+  providerReference: string;
+  providerTransactionId?: string;
+  snapToken?: string;
+  snapRedirectUrl?: string;
+  status: string;
+  grossAmount: number;
+  currency: string;
+  paymentType: string;
+  paymentMethod?: string;
+  issuer: string;
+  acquirer: string;
+  fraudStatus: string;
+  transactionTime?: string | null;
+  settlementTime?: string | null;
+  providerPayload?: unknown;
+  expiresAt?: string;
+  orderId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface OrderItem {
   productId: string;
   variantId?: string;

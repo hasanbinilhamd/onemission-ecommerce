@@ -1,4 +1,9 @@
 import { env } from '../../app/config/env';
+import type {
+  CommerceCheckoutHistoryResponse,
+  CommerceCheckoutSessionDetail,
+  CommercePaymentAttemptDetail,
+} from '../../types';
 
 export interface CheckoutSessionPayload {
   customerId?: string;
@@ -95,6 +100,19 @@ export async function createCheckoutSession(
   }, accessToken);
 }
 
+export async function getCheckoutSessionById(checkoutSessionId: string): Promise<CommerceCheckoutSessionDetail> {
+  return fetchJson<CommerceCheckoutSessionDetail>(`/checkout/session/${encodeURIComponent(checkoutSessionId)}`);
+}
+
+export async function listCheckoutHistory(accessToken = '', page = 1, limit = 20): Promise<CommerceCheckoutHistoryResponse> {
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+  });
+
+  return fetchJson<CommerceCheckoutHistoryResponse>(`/checkout/history?${params.toString()}`, undefined, accessToken);
+}
+
 export async function createPaymentAttempt(checkoutSessionId: string): Promise<PaymentAttemptResponse> {
   return fetchJson<PaymentAttemptResponse>('/payment-attempt', {
     method: 'POST',
@@ -102,6 +120,16 @@ export async function createPaymentAttempt(checkoutSessionId: string): Promise<P
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ checkoutSessionId }),
+  });
+}
+
+export async function getPaymentAttemptById(paymentAttemptId: string): Promise<CommercePaymentAttemptDetail> {
+  return fetchJson<CommercePaymentAttemptDetail>(`/payment-attempt/${encodeURIComponent(paymentAttemptId)}`);
+}
+
+export async function cancelPaymentAttempt(paymentAttemptId: string): Promise<CommercePaymentAttemptDetail> {
+  return fetchJson<CommercePaymentAttemptDetail>(`/payment-attempt/${encodeURIComponent(paymentAttemptId)}/cancel`, {
+    method: 'POST',
   });
 }
 

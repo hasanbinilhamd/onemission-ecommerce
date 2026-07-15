@@ -5,12 +5,13 @@ import { HomePage } from './pages/HomePage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { CartPage } from './pages/CartPage';
 import { CheckoutPage } from './pages/CheckoutPage';
-import { PaymentFailedPage, PaymentPendingPage, PaymentSuccessPage } from './pages/PaymentStatusPages';
+import { PaymentCancelledPage, PaymentExpiredPage, PaymentFailedPage, PaymentPendingPage, PaymentSuccessPage } from './pages/PaymentStatusPages';
 import { AccountPage } from './pages/AccountPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import { MyOrdersPage } from './pages/MyOrdersPage';
+import { CheckoutHistoryPage } from './pages/CheckoutHistoryPage';
 import { OrderDetailPage } from './pages/OrderDetailPage';
 import { TrackOrderPage } from './pages/TrackOrderPage';
 import { ProfilePage } from './pages/ProfilePage';
@@ -135,6 +136,8 @@ function App() {
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/payment/success" element={<PaymentSuccessPage />} />
           <Route path="/payment/pending" element={<PaymentPendingPage />} />
+          <Route path="/payment/expired" element={<PaymentExpiredPage />} />
+          <Route path="/payment/cancelled" element={<PaymentCancelledPage />} />
           <Route path="/payment/failed" element={<PaymentFailedPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
@@ -149,6 +152,7 @@ function App() {
             <Route path="address" element={<AddressesPage />} />
             <Route path="orders" element={<MyOrdersPage />} />
             <Route path="orders/:orderNumber" element={<OrderDetailPage />} />
+            <Route path="checkout-history" element={<CheckoutHistoryPage />} />
             <Route path="wishlist" element={<WishlistPage />} />
             <Route path="password" element={<ChangePasswordPage />} />
           </Route>

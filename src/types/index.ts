@@ -350,7 +350,7 @@ export interface Order {
 }
 
 export type CommerceOrderPaymentStatus = 'CREATED' | 'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED' | 'UNKNOWN' | string;
-export type CommerceOrderFulfillmentStatus = 'READY_FOR_FULFILLMENT' | 'PROCESSING' | 'PACKED' | 'SHIPPED' | 'COMPLETED' | string;
+export type CommerceOrderFulfillmentStatus = 'WAITING_PAYMENT' | 'READY_FOR_FULFILLMENT' | 'PROCESSING' | 'PACKED' | 'SHIPPED' | 'COMPLETED' | 'CANCELLED' | string;
 
 export interface CommerceOrderListItem {
   id: string;
@@ -452,19 +452,37 @@ export interface CommerceOrderTimelineEntry {
   createdAt: string;
 }
 
+export interface CommerceRefundTimelineEntry {
+  status: string;
+  label: string;
+  timestamp: string;
+  notes: string;
+}
+
 export interface CommerceOrderReturnRequest {
   id: string;
   orderId: string;
   customerId: string;
+  requestType: string;
   reason: string;
   description: string;
   status: string;
   rejectReason: string;
   refundStatus: string;
+  refundReference: string;
+  refundAmount: number;
+  refundProvider: string;
+  refundProviderId: string;
   attachments: string[];
   requestedAt: string;
   approvedAt: string | null;
   completedAt: string | null;
+  refundRequestedAt: string | null;
+  refundApprovedAt: string | null;
+  refundProcessingAt: string | null;
+  refundCompletedAt: string | null;
+  rejectedAt: string | null;
+  timeline: CommerceRefundTimelineEntry[];
   createdAt: string;
   updatedAt: string;
 }

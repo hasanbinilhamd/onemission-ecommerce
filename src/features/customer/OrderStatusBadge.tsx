@@ -15,6 +15,8 @@ function normalizeStatusLabel(value: string) {
 
 function getFulfillmentBadgeVariant(status: string) {
   switch (normalizeStatusLabel(String(status || ''))) {
+    case 'WAITING_PAYMENT':
+      return 'warning';
     case 'READY_FOR_FULFILLMENT':
       return 'default';
     case 'PROCESSING':

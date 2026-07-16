@@ -112,6 +112,9 @@ function getReturnStatusLabel(returnRequest: CommerceOrderReturnRequest | null) 
 
   if (returnRequest.refundStatus === 'COMPLETED') return 'Refund Completed';
   if (returnRequest.refundStatus === 'PROCESSING') return 'Refund Processing';
+  if (returnRequest.refundStatus === 'APPROVED') return 'Refund Approved';
+  if (returnRequest.refundStatus === 'REJECTED') return 'Refund Rejected';
+  if (returnRequest.refundStatus === 'REQUESTED') return 'Refund Requested';
   if (returnRequest.status === 'APPROVED') return 'Approved';
   if (returnRequest.status === 'REJECTED') return 'Rejected';
   return 'Pending Review';
@@ -179,6 +182,13 @@ function getCustomerTimelinePresentation(entry: CommerceOrderTimelineEntry): Cus
         noteLines,
         visible: true,
       };
+    case 'FULFILLMENT_CANCELLED':
+      return {
+        title: 'Fulfillment Cancelled',
+        description: 'Fulfillment has been synchronized with the cancelled order.',
+        noteLines,
+        visible: true,
+      };
     case 'REFUNDED':
       return {
         title: 'Refunded',
@@ -189,7 +199,7 @@ function getCustomerTimelinePresentation(entry: CommerceOrderTimelineEntry): Cus
     case 'RETURN_REQUESTED':
       return {
         title: 'Return Requested',
-        description: 'Waiting Seller Review.',
+        description: 'Your return request has been submitted for review.',
         noteLines,
         visible: true,
       };
@@ -201,23 +211,32 @@ function getCustomerTimelinePresentation(entry: CommerceOrderTimelineEntry): Cus
         visible: true,
       };
     case 'RETURN_APPROVED':
+    case 'REFUND_APPROVED':
       return {
-        title: 'Return Approved',
-        description: 'Your return request has been approved.',
+        title: 'Refund Approved',
+        description: 'Your refund request has been approved by HQ.',
         noteLines,
         visible: true,
       };
     case 'RETURN_REJECTED':
+    case 'REFUND_REJECTED':
       return {
-        title: 'Return Rejected',
-        description: 'Your return request has been rejected.',
+        title: 'Refund Rejected',
+        description: 'Your refund request has been rejected by HQ.',
+        noteLines,
+        visible: true,
+      };
+    case 'REFUND_REQUESTED':
+      return {
+        title: 'Refund Requested',
+        description: 'Your refund request is waiting HQ approval.',
         noteLines,
         visible: true,
       };
     case 'REFUND_PROCESSING':
       return {
         title: 'Refund Processing',
-        description: 'Your refund is currently being processed.',
+        description: 'Your refund is currently being processed by Midtrans.',
         noteLines,
         visible: true,
       };
@@ -533,16 +552,40 @@ export function OrderDetailView({
       </div>
 
       {order.returnRequest ? (
-        <SectionCard icon={<Package size={18} />} title="Return Status">
+        <SectionCard icon={<Package size={18} />} title="Refund">
           <DetailRow label="Status" value={getReturnStatusLabel(order.returnRequest)} />
+          <DetailRow label="Request Type" value={order.returnRequest.requestType || 'PRODUCT_RETURN'} />
           <DetailRow label="Reason" value={order.returnRequest.reason || '—'} />
           <DetailRow label="Description" value={order.returnRequest.description || '—'} />
           <DetailRow label="Refund Status" value={order.returnRequest.refundStatus || 'NONE'} />
-          <DetailRow label="Requested At" value={formatDateTime(order.returnRequest.requestedAt)} />
-          <DetailRow label="Approved At" value={formatDateTime(order.returnRequest.approvedAt)} />
-          <DetailRow label="Completed At" value={formatDateTime(order.returnRequest.completedAt)} />
+          <DetailRow label="Refund Amount" value={formatCurrency(order.returnRequest.refundAmount || order.grandTotal, order.currency)} />
+          <DetailRow label="Refund Reference" value={order.returnRequest.refundReference || '—'} />
+          <DetailRow label="Midtrans Refund ID" value={order.returnRequest.refundProviderId || '—'} />
+          <DetailRow label="Requested At" value={formatDateTime(order.returnRequest.refundRequestedAt || order.returnRequest.requestedAt)} />
+          <DetailRow label="Approved At" value={formatDateTime(order.returnRequest.refundApprovedAt || order.returnRequest.approvedAt)} />
+          <DetailRow label="Processing At" value={formatDateTime(order.returnRequest.refundProcessingAt)} />
+          <DetailRow label="Completed At" value={formatDateTime(order.returnRequest.refundCompletedAt || order.returnRequest.completedAt)} />
           {order.returnRequest.rejectReason ? (
             <DetailRow label="Reject Reason" value={order.returnRequest.rejectReason} />
+          ) : null}
+          {order.returnRequest.timeline?.length ? (
+            <div className="grid gap-3 pt-3">
+              {order.returnRequest.timeline.map((entry) => (
+                <div key={`${entry.status}-${entry.timestamp}`} className="rounded-2xl border border-neutral-200 p-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <p className="m-0 text-sm font-semibold text-neutral-950">{entry.label}</p>
+                    <p className="m-0 text-sm text-neutral-500">{formatDateTime(entry.timestamp)}</p>
+                  </div>
+                  {entry.notes ? (
+                    <div className="mt-3 grid gap-1 text-sm leading-6 text-neutral-600">
+                      {String(entry.notes).split('\n').filter(Boolean).map((line, lineIndex) => (
+                        <p key={`${entry.status}-note-${lineIndex}`} className="m-0">{line}</p>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
           ) : null}
           {order.returnRequest.attachments?.length ? (
             <div className="grid gap-3 pt-3 sm:grid-cols-2 lg:grid-cols-3">

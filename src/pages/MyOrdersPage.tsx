@@ -16,11 +16,12 @@ const ORDER_STATUS_FILTERS = [
   { value: 'DELIVERED', label: 'DELIVERED' },
   { value: 'COMPLETED', label: 'COMPLETED' },
   { value: 'CANCELLED', label: 'CANCELLED' },
-  { value: 'RETURN_REQUESTED', label: 'RETURN_REQUESTED' },
-  { value: 'RETURN_APPROVED', label: 'RETURN_APPROVED' },
-  { value: 'RETURN_REJECTED', label: 'RETURN_REJECTED' },
+  { value: 'REFUND_REQUESTED', label: 'REFUND_REQUESTED' },
+  { value: 'REFUND_APPROVED', label: 'REFUND_APPROVED' },
   { value: 'REFUND_PROCESSING', label: 'REFUND_PROCESSING' },
   { value: 'REFUND_COMPLETED', label: 'REFUND_COMPLETED' },
+  { value: 'REFUND_REJECTED', label: 'REFUND_REJECTED' },
+  { value: 'REFUND_FAILED', label: 'REFUND_FAILED' },
 ];
 
 const PAGE_SIZE = 10;
@@ -31,6 +32,11 @@ function normalizeEmail(email: string) {
 
 function getOrderStatusValue(order: CommerceOrderListItem) {
   return String(order.status || order.fulfillmentStatusLabel || order.fulfillmentStatus || '').trim().toUpperCase();
+}
+
+function getRefundStatusValue(order: CommerceOrderListItem) {
+  const refundStatus = String(order.returnRequest?.refundStatus || '').trim().toUpperCase();
+  return refundStatus ? `REFUND_${refundStatus}` : '';
 }
 
 export function MyOrdersPage() {
@@ -98,7 +104,9 @@ export function MyOrdersPage() {
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
       const matchesSearch = !searchTerm.trim() || order.publicOrderNumber.toLowerCase().includes(searchTerm.trim().toLowerCase());
-      const matchesStatus = statusFilter === 'all' || getOrderStatusValue(order) === statusFilter;
+      const matchesStatus = statusFilter === 'all'
+        || getOrderStatusValue(order) === statusFilter
+        || getRefundStatusValue(order) === statusFilter;
       return matchesSearch && matchesStatus;
     });
   }, [orders, searchTerm, statusFilter]);
@@ -212,6 +220,9 @@ export function MyOrdersPage() {
                     <div className="flex flex-wrap gap-2">
                       <OrderPaymentStatusBadge status={order.paymentStatus} />
                       <OrderStatusBadge status={order.status || order.fulfillmentStatusLabel || order.fulfillmentStatus} />
+                      {order.returnRequest?.refundStatus && order.returnRequest.refundStatus !== 'NONE' ? (
+                        <OrderStatusBadge status={`REFUND_${order.returnRequest.refundStatus}`} />
+                      ) : null}
                     </div>
                     <Button type="button" variant="secondary" onClick={() => navigate(orderDetailPath(order.publicOrderNumber))}>
                       View Details

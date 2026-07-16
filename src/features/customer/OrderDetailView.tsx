@@ -113,6 +113,7 @@ function getReturnStatusLabel(returnRequest: CommerceOrderReturnRequest | null) 
   if (returnRequest.refundStatus === 'COMPLETED') return 'Refund Completed';
   if (returnRequest.refundStatus === 'PROCESSING') return 'Refund Processing';
   if (returnRequest.refundStatus === 'APPROVED') return 'Refund Approved';
+  if (returnRequest.refundStatus === 'FAILED') return 'Refund Failed';
   if (returnRequest.refundStatus === 'REJECTED') return 'Refund Rejected';
   if (returnRequest.refundStatus === 'REQUESTED') return 'Refund Requested';
   if (returnRequest.status === 'APPROVED') return 'Approved';
@@ -189,6 +190,13 @@ function getCustomerTimelinePresentation(entry: CommerceOrderTimelineEntry): Cus
         noteLines,
         visible: true,
       };
+    case 'ORDER_RESTORED':
+      return {
+        title: 'Order Restored',
+        description: 'Your order has been restored after the refund request was rejected.',
+        noteLines,
+        visible: true,
+      };
     case 'REFUNDED':
       return {
         title: 'Refunded',
@@ -236,14 +244,21 @@ function getCustomerTimelinePresentation(entry: CommerceOrderTimelineEntry): Cus
     case 'REFUND_PROCESSING':
       return {
         title: 'Refund Processing',
-        description: 'Your refund is currently being processed by Midtrans.',
+        description: 'Your refund is currently being processed by the payment gateway.',
         noteLines,
         visible: true,
       };
     case 'REFUND_COMPLETED':
       return {
         title: 'Refund Completed',
-        description: 'Your refund has been completed successfully.',
+        description: 'The payment gateway has returned your funds successfully.',
+        noteLines,
+        visible: true,
+      };
+    case 'REFUND_FAILED':
+      return {
+        title: 'Refund Failed',
+        description: 'The refund request could not be processed yet. Our team may retry it.',
         noteLines,
         visible: true,
       };
@@ -561,12 +576,28 @@ export function OrderDetailView({
           <DetailRow label="Refund Amount" value={formatCurrency(order.returnRequest.refundAmount || order.grandTotal, order.currency)} />
           <DetailRow label="Refund Reference" value={order.returnRequest.refundReference || '—'} />
           <DetailRow label="Midtrans Refund ID" value={order.returnRequest.refundProviderId || '—'} />
+          <DetailRow label="Failure Reason" value={order.returnRequest.refundFailureReason || '—'} />
           <DetailRow label="Requested At" value={formatDateTime(order.returnRequest.refundRequestedAt || order.returnRequest.requestedAt)} />
           <DetailRow label="Approved At" value={formatDateTime(order.returnRequest.refundApprovedAt || order.returnRequest.approvedAt)} />
           <DetailRow label="Processing At" value={formatDateTime(order.returnRequest.refundProcessingAt)} />
           <DetailRow label="Completed At" value={formatDateTime(order.returnRequest.refundCompletedAt || order.returnRequest.completedAt)} />
           {order.returnRequest.rejectReason ? (
             <DetailRow label="Reject Reason" value={order.returnRequest.rejectReason} />
+          ) : null}
+          {order.returnRequest.refundStatus === 'PROCESSING' ? (
+            <div className="rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-700">
+              Refund is being processed by the payment gateway.
+            </div>
+          ) : null}
+          {order.returnRequest.refundStatus === 'COMPLETED' ? (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+              Funds have been returned successfully.
+            </div>
+          ) : null}
+          {order.returnRequest.refundStatus === 'FAILED' ? (
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              Refund could not be processed yet. Our team may retry it.
+            </div>
           ) : null}
           {order.returnRequest.timeline?.length ? (
             <div className="grid gap-3 pt-3">

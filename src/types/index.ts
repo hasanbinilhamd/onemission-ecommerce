@@ -365,6 +365,7 @@ export interface CommerceOrderListItem {
   fulfillmentStatusLabel: CommerceOrderFulfillmentStatus;
   courier: string;
   totalItems: number;
+  returnRequest?: CommerceOrderReturnRequest | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -464,6 +465,8 @@ export interface CommerceOrderReturnRequest {
   orderId: string;
   customerId: string;
   requestType: string;
+  previousOrderStatus?: string;
+  previousFulfillmentStatus?: string;
   reason: string;
   description: string;
   status: string;
@@ -473,6 +476,8 @@ export interface CommerceOrderReturnRequest {
   refundAmount: number;
   refundProvider: string;
   refundProviderId: string;
+  refundFailureReason?: string;
+  refundMetadata?: unknown;
   attachments: string[];
   requestedAt: string;
   approvedAt: string | null;
@@ -481,6 +486,7 @@ export interface CommerceOrderReturnRequest {
   refundApprovedAt: string | null;
   refundProcessingAt: string | null;
   refundCompletedAt: string | null;
+  lastRefundAttemptAt?: string | null;
   rejectedAt: string | null;
   timeline: CommerceRefundTimelineEntry[];
   createdAt: string;

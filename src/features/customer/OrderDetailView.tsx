@@ -574,9 +574,6 @@ export function OrderDetailView({
           <DetailRow label="Description" value={order.returnRequest.description || '—'} />
           <DetailRow label="Refund Status" value={order.returnRequest.refundStatus || 'NONE'} />
           <DetailRow label="Refund Amount" value={formatCurrency(order.returnRequest.refundAmount || order.grandTotal, order.currency)} />
-          <DetailRow label="Refund Reference" value={order.returnRequest.refundReference || '—'} />
-          <DetailRow label="Midtrans Refund ID" value={order.returnRequest.refundProviderId || '—'} />
-          <DetailRow label="Failure Reason" value={order.returnRequest.refundFailureReason || '—'} />
           <DetailRow label="Requested At" value={formatDateTime(order.returnRequest.refundRequestedAt || order.returnRequest.requestedAt)} />
           <DetailRow label="Approved At" value={formatDateTime(order.returnRequest.refundApprovedAt || order.returnRequest.approvedAt)} />
           <DetailRow label="Processing At" value={formatDateTime(order.returnRequest.refundProcessingAt)} />

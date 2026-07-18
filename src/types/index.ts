@@ -460,6 +460,30 @@ export interface CommerceRefundTimelineEntry {
   notes: string;
 }
 
+export interface CommerceRefundAttempt {
+  id: string;
+  attemptNumber: number;
+  gatewayName: string;
+  status: string;
+  refundKey: string;
+  midtransRefundId: string;
+  transactionId: string;
+  httpStatus: number | null;
+  statusCode: string;
+  statusMessage: string;
+  requestBody?: unknown;
+  responseBody?: unknown;
+  responseAt: string | null;
+  failureSource: string;
+  failureReason: string;
+  failureCode: string;
+  failureDisplayMessage: string;
+  retryAvailable: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CommerceOrderReturnRequest {
   id: string;
   orderId: string;
@@ -473,10 +497,16 @@ export interface CommerceOrderReturnRequest {
   rejectReason: string;
   refundStatus: string;
   refundReference: string;
+  refundKey?: string;
   refundAmount: number;
   refundProvider: string;
   refundProviderId: string;
   refundFailureReason?: string;
+  refundFailureSource?: string;
+  failureDisplayMessage?: string;
+  retryAvailable?: boolean;
+  retryCount?: number;
+  refundAttempts?: CommerceRefundAttempt[];
   refundMetadata?: unknown;
   attachments: string[];
   requestedAt: string;

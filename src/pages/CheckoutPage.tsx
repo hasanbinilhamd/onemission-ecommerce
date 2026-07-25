@@ -253,7 +253,12 @@ function getCompletionBadge() {
 
 function CheckoutPageContent() {
   const navigate = useNavigate();
-  const { user, profile, isLoading: isAuthLoading } = useAuthenticatedCustomer();
+  const {
+    user,
+    profile,
+    isLoading: isAuthLoading,
+    getValidAccessToken,
+  } = useAuthenticatedCustomer();
   const {
     cart,
     cartItems,
@@ -937,6 +942,7 @@ function CheckoutPageContent() {
 
       setStatusMessage('Preparing your secure payment session...');
 
+      const checkoutAccessToken = user ? await getValidAccessToken() : null;
       const checkoutSession = await createCheckoutSession({
         customer: {
           customerName: `${contactInformation.firstName} ${contactInformation.lastName}`.trim(),
@@ -972,7 +978,7 @@ function CheckoutPageContent() {
           postalCode: shippingAddress.postalCode,
           streetAddress: shippingAddress.streetAddress,
         },
-      });
+      }, checkoutAccessToken || '');
 
       window.sessionStorage.setItem('onemission-checkout-session-id', checkoutSession.id);
 
@@ -1026,7 +1032,10 @@ function CheckoutPageContent() {
         onClose: () => {
           setIsSnapFocusMode(false);
           setIsSubmittingPayment(false);
-          setStatusMessage('Payment window closed. You can continue later from the same checkout details.');
+          const params = new URLSearchParams();
+          params.set('payment_attempt_id', paymentAttempt.id);
+          params.set('checkout_session_id', checkoutSession.id);
+          navigate(`/payment/pending?${params.toString()}`);
         },
       });
     } catch (error) {

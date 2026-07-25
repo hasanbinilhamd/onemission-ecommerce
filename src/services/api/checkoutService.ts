@@ -1,4 +1,9 @@
 import { env } from '../../app/config/env';
+import type {
+  CommerceCheckoutHistoryResponse,
+  CommerceCheckoutSessionDetail,
+  CommercePaymentAttemptDetail,
+} from '../../types';
 
 export interface CheckoutSessionPayload {
   customerId?: string;
@@ -60,13 +65,17 @@ function getApiBaseUrl() {
   return apiBaseUrl;
 }
 
-async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
+async function fetchJson<T>(path: string, init?: RequestInit, accessToken = ''): Promise<T> {
+  const headers = new Headers(init?.headers ?? {});
+  headers.set('Accept', 'application/json');
+
+  if (accessToken) {
+    headers.set('Authorization', `Bearer ${accessToken}`);
+  }
+
   const response = await fetch(`${getApiBaseUrl()}${path}`, {
     ...init,
-    headers: {
-      Accept: 'application/json',
-      ...(init?.headers ?? {}),
-    },
+    headers,
   });
 
   const payload = await response.json().catch(() => ({}));
@@ -78,14 +87,30 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   return payload as T;
 }
 
-export async function createCheckoutSession(payload: CheckoutSessionPayload): Promise<CheckoutSessionResponse> {
+export async function createCheckoutSession(
+  payload: CheckoutSessionPayload,
+  accessToken = '',
+): Promise<CheckoutSessionResponse> {
   return fetchJson<CheckoutSessionResponse>('/checkout/session', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(payload),
+  }, accessToken);
+}
+
+export async function getCheckoutSessionById(checkoutSessionId: string): Promise<CommerceCheckoutSessionDetail> {
+  return fetchJson<CommerceCheckoutSessionDetail>(`/checkout/session/${encodeURIComponent(checkoutSessionId)}`);
+}
+
+export async function listCheckoutHistory(accessToken = '', page = 1, limit = 20): Promise<CommerceCheckoutHistoryResponse> {
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
   });
+
+  return fetchJson<CommerceCheckoutHistoryResponse>(`/checkout/history?${params.toString()}`, undefined, accessToken);
 }
 
 export async function createPaymentAttempt(checkoutSessionId: string): Promise<PaymentAttemptResponse> {
@@ -95,6 +120,16 @@ export async function createPaymentAttempt(checkoutSessionId: string): Promise<P
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ checkoutSessionId }),
+  });
+}
+
+export async function getPaymentAttemptById(paymentAttemptId: string): Promise<CommercePaymentAttemptDetail> {
+  return fetchJson<CommercePaymentAttemptDetail>(`/payment-attempt/${encodeURIComponent(paymentAttemptId)}`);
+}
+
+export async function cancelPaymentAttempt(paymentAttemptId: string): Promise<CommercePaymentAttemptDetail> {
+  return fetchJson<CommercePaymentAttemptDetail>(`/payment-attempt/${encodeURIComponent(paymentAttemptId)}/cancel`, {
+    method: 'POST',
   });
 }
 

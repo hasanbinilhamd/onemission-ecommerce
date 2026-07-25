@@ -70,7 +70,10 @@ export function OrderDetailPage() {
     setIsMutatingOrder(true);
     try {
       const accessToken = await getValidAccessToken();
-      const updatedOrder = await cancelCustomerOrder(order.id, reason, accessToken || '');
+      const updatedOrder = await cancelCustomerOrder(order.id, reason, {
+        accessToken: accessToken || '',
+        email: order.customerEmail,
+      });
       setOrder(updatedOrder);
       setActionFeedback({ tone: 'success', message: 'Order cancelled successfully.' });
     } catch (error) {
@@ -86,7 +89,10 @@ export function OrderDetailPage() {
     setIsMutatingOrder(true);
     try {
       const accessToken = await getValidAccessToken();
-      const updatedOrder = await createReturnRequest(order.id, input, accessToken || '');
+      const updatedOrder = await createReturnRequest(order.id, {
+        ...input,
+        email: order.customerEmail,
+      }, accessToken || '');
       setOrder(updatedOrder);
       setActionFeedback({ tone: 'success', message: 'Return request submitted successfully.' });
     } catch (error) {

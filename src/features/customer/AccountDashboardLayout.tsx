@@ -1,4 +1,4 @@
-import { Grid2x2, KeyRound, LogOut, MapPinned, Menu, Package2, UserRound, Heart } from 'lucide-react';
+import { Clock3, Grid2x2, KeyRound, LogOut, MapPinned, Menu, Package2, UserRound, Heart } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../app/config/routes';
@@ -13,6 +13,7 @@ const accountNavigationItems = [
   { label: 'My Profile', icon: UserRound, to: ROUTES.ACCOUNT_PROFILE },
   { label: 'Address Book', icon: MapPinned, to: ROUTES.ACCOUNT_ADDRESSES },
   { label: 'My Orders', icon: Package2, to: ROUTES.ACCOUNT_ORDERS },
+  { label: 'Checkout History', icon: Clock3, to: ROUTES.ACCOUNT_CHECKOUT_HISTORY },
   { label: 'Wishlist', icon: Heart, to: ROUTES.ACCOUNT_WISHLIST },
   { label: 'Change Password', icon: KeyRound, to: ROUTES.ACCOUNT_PASSWORD },
 ];

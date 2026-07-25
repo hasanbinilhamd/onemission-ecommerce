@@ -58,7 +58,6 @@ const COLLECTION_REVEAL_SCROLL_RANGE = 220;
 const COLLECTION_OVERLAP = 'max(0px, -10vh)';
 const VIDEO_SECTION_SOURCE = '/videos/brand-video.mp4';
 const VIDEO_SECTION_POSTER = '/videos/brand-video-poster.jpg';
-const VIDEO_SCENE_ENTRY_OFFSET_PX = 88;
 
 const GRAIN_SVG =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E";
@@ -348,11 +347,8 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
     typeof window !== 'undefined' ? window.innerWidth < 640 : false,
   );
   const [collectionRevealProgress, setCollectionRevealProgress] = useState(0);
-  const [hasVideoError, setHasVideoError] = useState(false);
   const heroSceneRef = useRef<HTMLElement | null>(null);
   const collectionSceneRef = useRef<HTMLElement | null>(null);
-  const videoSceneRef = useRef<HTMLElement | null>(null);
-  const videoSceneContentRef = useRef<HTMLDivElement | null>(null);
   const heroGestureRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number | null>(null);
   const dragStateRef = useRef({
@@ -385,31 +381,11 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
         });
 
         const viewportHeight = window.innerHeight || 1;
-        const videoSceneTop = videoSceneRef.current?.getBoundingClientRect().top ?? viewportHeight;
-        const sceneReplacementProgress = clamp((viewportHeight - videoSceneTop) / viewportHeight, 0, 1);
-        const sceneShift = `${-sceneReplacementProgress * viewportHeight}px`;
-        const sceneOpacity = String(1 - sceneReplacementProgress * 0.06);
-        const videoSceneOpacity = String(clamp(sceneReplacementProgress * 1.1, 0, 1));
-        const videoSceneTranslateY = `${(1 - sceneReplacementProgress) * VIDEO_SCENE_ENTRY_OFFSET_PX}px`;
-        const videoSceneContentOpacity = String(clamp((sceneReplacementProgress - 0.05) / 0.95, 0, 1));
+        const collectionSceneTop = collectionSceneRef.current?.getBoundingClientRect().top ?? viewportHeight;
+        const synchronizedHeroShift = clamp(collectionSceneTop, -viewportHeight, 0);
 
         if (heroSceneRef.current) {
-          heroSceneRef.current.style.setProperty('--scene-shift-y', sceneShift);
-          heroSceneRef.current.style.setProperty('--scene-opacity', sceneOpacity);
-        }
-
-        if (collectionSceneRef.current) {
-          collectionSceneRef.current.style.setProperty('--scene-shift-y', sceneShift);
-          collectionSceneRef.current.style.setProperty('--scene-opacity', sceneOpacity);
-        }
-
-        if (videoSceneRef.current) {
-          videoSceneRef.current.style.setProperty('--video-scene-opacity', videoSceneOpacity);
-        }
-
-        if (videoSceneContentRef.current) {
-          videoSceneContentRef.current.style.setProperty('--video-scene-translate-y', videoSceneTranslateY);
-          videoSceneContentRef.current.style.setProperty('--video-scene-content-opacity', videoSceneContentOpacity);
+          heroSceneRef.current.style.setProperty('--scene-shift-y', `${synchronizedHeroShift}px`);
         }
 
         rafRef.current = null;
@@ -566,8 +542,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
           height: '100vh',
           overflow: 'hidden',
           transform: 'translate3d(0, var(--scene-shift-y, 0px), 0)',
-          opacity: 'var(--scene-opacity, 1)',
-          willChange: 'transform, opacity',
+          willChange: 'transform',
         }}
       >
         <div className="relative w-full h-full" style={{ overflow: 'hidden' }}>
@@ -765,9 +740,8 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
           backgroundColor: 'transparent',
           boxShadow: '0 -18px 48px rgba(0,0,0,0.16)',
           overflow: 'hidden',
-          transform: 'translate3d(0, var(--scene-shift-y, 0px), 0)',
-          opacity: 'var(--scene-opacity, 1)',
-          willChange: 'transform, opacity, border-radius',
+          transform: 'translate3d(0,0,0)',
+          willChange: 'border-radius',
         }}
       >
         <CatalogLayer
@@ -777,119 +751,31 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
       </section>
 
       <section
-        ref={videoSceneRef}
-        aria-label="Brand video scene"
+        aria-label="Brand video section"
         style={{
           position: 'relative',
-          zIndex: 70,
           minHeight: '100vh',
-          backgroundColor: '#04060A',
-          opacity: 'var(--video-scene-opacity, 0)',
-          willChange: 'opacity',
+          width: '100%',
           overflow: 'hidden',
+          backgroundColor: '#000000',
         }}
       >
-        <div
-          ref={videoSceneContentRef}
+        <video
+          src={VIDEO_SECTION_SOURCE}
+          poster={VIDEO_SECTION_POSTER}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          controls={false}
           style={{
-            minHeight: '100vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '24px',
-            transform: 'translate3d(0, var(--video-scene-translate-y, 88px), 0)',
-            opacity: 'var(--video-scene-content-opacity, 0)',
-            willChange: 'transform, opacity',
+            width: '100%',
+            height: '100vh',
+            objectFit: 'cover',
+            display: 'block',
           }}
-        >
-          <div
-            style={{
-              width: '100%',
-              maxWidth: '1200px',
-              display: 'grid',
-              gap: '20px',
-              textAlign: 'center',
-            }}
-          >
-            <div style={{ display: 'grid', gap: '8px' }}>
-              <p
-                style={{
-                  margin: 0,
-                  color: 'rgba(255,255,255,0.6)',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  letterSpacing: '0.16em',
-                  textTransform: 'uppercase',
-                }}
-              >
-                Brand Video
-              </p>
-              <h2
-                style={{
-                  margin: 0,
-                  color: '#FFFFFF',
-                  fontSize: 'clamp(32px, 6vw, 64px)',
-                  lineHeight: 1.05,
-                  letterSpacing: '-0.04em',
-                }}
-              >
-                A cinematic layer for the ONEMISSION story.
-              </h2>
-            </div>
-
-            <div
-              style={{
-                position: 'relative',
-                width: '100%',
-                aspectRatio: '16 / 9',
-                borderRadius: '32px',
-                overflow: 'hidden',
-                background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)',
-                border: '1px solid rgba(255,255,255,0.12)',
-                boxShadow: '0 30px 120px rgba(0,0,0,0.35)',
-              }}
-            >
-              <video
-                src={VIDEO_SECTION_SOURCE}
-                poster={VIDEO_SECTION_POSTER}
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="auto"
-                onError={() => setHasVideoError(true)}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  display: 'block',
-                }}
-              />
-
-              {hasVideoError ? (
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    display: 'grid',
-                    placeItems: 'center',
-                    padding: '24px',
-                    background: 'linear-gradient(180deg, rgba(4,6,10,0.74) 0%, rgba(4,6,10,0.9) 100%)',
-                  }}
-                >
-                  <div style={{ display: 'grid', gap: '8px', maxWidth: '420px' }}>
-                    <p style={{ margin: 0, color: '#FFFFFF', fontSize: '18px', fontWeight: 600 }}>
-                      Add your video to continue this scene.
-                    </p>
-                    <p style={{ margin: 0, color: 'rgba(255,255,255,0.64)', fontSize: '14px', lineHeight: 1.7 }}>
-                      Replace the placeholder source at <strong>{VIDEO_SECTION_SOURCE}</strong> with your production-ready brand film.
-                    </p>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </div>
+        />
       </section>
     </div>
   );

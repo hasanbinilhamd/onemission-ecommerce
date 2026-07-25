@@ -34,6 +34,7 @@ export const typography = {
   fontFamily: {
     sans: "'Inter', sans-serif",
     display: "'Anton', sans-serif",
+    chakraPetch: "'Chakra Petch', sans-serif",
   },
   fontSize: {
     xs: '0.75rem',

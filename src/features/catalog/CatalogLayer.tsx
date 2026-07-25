@@ -309,7 +309,7 @@ export function CatalogLayer({ revealProgress = 0, onProductSelect }: CatalogLay
     <section
       id="onemission-vision"
       aria-label="Collection"
-      className="flex flex-col items-center justify-center gap-5 sm:gap-16"
+      className="flex flex-col items-center justify-center gap-5 sm:gap-14"
       style={{
         minHeight: '100vh',
         backgroundColor: 'rgba(255,255,255,0.5)',
@@ -555,33 +555,50 @@ export function CatalogLayer({ revealProgress = 0, onProductSelect }: CatalogLay
           </>
         )}
       </div> */}
-      <p
-        className="w-3/4 bold text-center uppercase tracking-widest mb-2 sm:mb-3 text-base sm:text-4xl"
+      <div className="flex flex-col items-center justify-center">
+        <p
+          className="w-3/4 bold text-center tracking-widest text-3xl sm:text-5xl"
+          style={{
+            fontFamily: "'Chakra Petch', sans-serif",
+            color: '#0A0A0A',
+            opacity: 0.95,
+            letterSpacing: '0.02em',
+            fontWeight: 700,
+          }}
+        >
+          We are building
+        </p>
+        <p
+          className="w-3/4 bold text-center tracking-widest mb-2 sm:mb-3 text-3xl sm:text-5xl"
+          style={{
+            fontFamily: "'Chakra Petch', sans-serif",
+            color: '#0A0A0A',
+            opacity: 0.95,
+            letterSpacing: '0.02em',
+            fontWeight: 700,
+          }}
+        >
+          a global movement that empowers Muslims to live actively while staying true to their values.
+        </p>
+      </div>
+
+      {/* <p
+        className="w-3/4 bold text-center tracking-widest mb-2 sm:mb-3 text-2xl sm:text-4xl"
         style={{
+          fontFamily: "'Chakra Petch', sans-serif",
           color: '#0A0A0A',
           opacity: 0.95,
           letterSpacing: '0.02em',
           fontWeight: 700,
         }}
       >
-        We are building a generation of Muslims who proudly live their values.
-      </p>
+        Together, we are proving that faith and excellence belong on every field, every court, and every stage.
+      </p> */}
 
-      <p
-        className="w-3/4 bold text-center uppercase tracking-widest mb-2 sm:mb-3 text-base sm:text-4xl"
+      {/* <p
+        className="w-3/4 bold text-center uppercase tracking-widest mb-2 sm:mb-3 text-2xl sm:text-4xl"
         style={{
-          color: '#0A0A0A',
-          opacity: 0.95,
-          letterSpacing: '0.02em',
-          fontWeight: 700,
-        }}
-      >
-        We refuse to choose between excellence and faith—because we believe true greatness is built on both.
-      </p>
-
-      <p
-        className="w-3/4 bold text-center uppercase tracking-widest mb-2 sm:mb-3 text-base sm:text-4xl"
-        style={{
+          fontFamily: "'Chakra Petch', sans-serif",
           color: '#0A0A0A',
           opacity: 0.95,
           letterSpacing: '0.02em',
@@ -589,7 +606,7 @@ export function CatalogLayer({ revealProgress = 0, onProductSelect }: CatalogLay
         }}
       >
         One Mission is not just what we wear. It is how we live, compete, and leave a legacy.
-      </p>
+      </p> */}
 
       <FilterDrawer
         open={filterOpen}

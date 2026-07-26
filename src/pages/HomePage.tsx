@@ -56,8 +56,8 @@ const DURATION = 650;
 const GRADIENT_FADE_DURATION = 520;
 const COLLECTION_REVEAL_SCROLL_RANGE = 220;
 const COLLECTION_OVERLAP = 'max(0px, -10vh)';
-const VIDEO_SECTION_SOURCE = '/videos/brand-video.mp4';
-const VIDEO_SECTION_POSTER = '/videos/brand-video-poster.jpg';
+const VIDEO_SECTION_SOURCE = 'https://ik.imagekit.io/fkoy34ckk/onemission-dev/WhatsApp%20Video%202026-07-26%20at%2016.17.17.mp4?updatedAt=1785057842262';
+const VIDEO_SECTION_POSTER = 'https://ik.imagekit.io/fkoy34ckk/onemission-dev/Screenshot%202026-07-26%20163038.png?updatedAt=1785058280647';
 
 const GRAIN_SVG =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E";

@@ -1,12 +1,32 @@
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
-import useEmblaCarousel from 'embla-carousel-react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 import { PRODUCT_STORY_ITEMS, type ProductStoryItem } from './productStoryData';
 
 const STORY_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+const POINTER_DRAG_THRESHOLD_PX = 6;
+
+type DragState = {
+  pointerId: number;
+  startX: number;
+  startScrollLeft: number;
+  hasDragged: boolean;
+};
 
 interface ProductStorySectionProps {
   items?: readonly ProductStoryItem[];
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
 }
 
 function ProductStoryMedia({ item, isActive }: { item: ProductStoryItem; isActive: boolean }) {
@@ -21,10 +41,11 @@ function ProductStoryMedia({ item, isActive }: { item: ProductStoryItem; isActiv
       if (playPromise && typeof playPromise.catch === 'function') {
         playPromise.catch(() => undefined);
       }
-      return;
+      return undefined;
     }
 
     videoElement.pause();
+    return undefined;
   }, [isActive]);
 
   if (item.mediaType === 'video') {
@@ -69,56 +90,183 @@ export function ProductStorySection({ items = PRODUCT_STORY_ITEMS }: ProductStor
     return [...items].sort((left, right) => (left.displayOrder ?? 0) - (right.displayOrder ?? 0));
   }, [items]);
 
-  const [emblaRef, emblaApi] = useEmblaCarousel({
-    align: 'start',
-    containScroll: 'trimSnaps',
-    dragFree: false,
-    loop: false,
-    skipSnaps: false,
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const slideRefs = useRef<Array<HTMLElement | null>>([]);
+  const dragStateRef = useRef<DragState>({
+    pointerId: -1,
+    startX: 0,
+    startScrollLeft: 0,
+    hasDragged: false,
   });
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [canScrollPrev, setCanScrollPrev] = useState(false);
   const [canScrollNext, setCanScrollNext] = useState(orderedItems.length > 1);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const updateControls = useCallback(() => {
-    if (!emblaApi) return;
-    setSelectedIndex(emblaApi.selectedScrollSnap());
-    setCanScrollPrev(emblaApi.canScrollPrev());
-    setCanScrollNext(emblaApi.canScrollNext());
-  }, [emblaApi]);
+  const getNearestIndex = useCallback((scrollLeft: number) => {
+    let nextIndex = 0;
+    let smallestDistance = Number.POSITIVE_INFINITY;
+
+    slideRefs.current.forEach((slide, index) => {
+      if (!slide) return;
+      const distance = Math.abs(slide.offsetLeft - scrollLeft);
+      if (distance < smallestDistance) {
+        smallestDistance = distance;
+        nextIndex = index;
+      }
+    });
+
+    return nextIndex;
+  }, []);
+
+  const syncCarouselState = useCallback(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    const maxScrollLeft = Math.max(viewport.scrollWidth - viewport.clientWidth, 0);
+    const currentScrollLeft = viewport.scrollLeft;
+
+    setSelectedIndex(getNearestIndex(currentScrollLeft));
+    setCanScrollPrev(currentScrollLeft > 4);
+    setCanScrollNext(currentScrollLeft < maxScrollLeft - 4);
+  }, [getNearestIndex]);
+
+  const scrollToIndex = useCallback((index: number) => {
+    const viewport = viewportRef.current;
+    const slide = slideRefs.current[index];
+    if (!viewport || !slide) return;
+
+    viewport.scrollTo({
+      left: slide.offsetLeft,
+      behavior: 'smooth',
+    });
+  }, []);
+
+  const snapToNearestSlide = useCallback(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    const nextIndex = getNearestIndex(viewport.scrollLeft);
+    scrollToIndex(nextIndex);
+  }, [getNearestIndex, scrollToIndex]);
 
   useEffect(() => {
-    if (!emblaApi) return;
+    slideRefs.current = slideRefs.current.slice(0, orderedItems.length);
+  }, [orderedItems.length]);
 
-    updateControls();
-    emblaApi.on('reInit', updateControls);
-    emblaApi.on('select', updateControls);
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return undefined;
+
+    let scrollTimeoutId = 0;
+
+    const handleScroll = () => {
+      syncCarouselState();
+      window.clearTimeout(scrollTimeoutId);
+      scrollTimeoutId = window.setTimeout(() => {
+        if (!dragStateRef.current.hasDragged) {
+          snapToNearestSlide();
+        }
+      }, 120);
+    };
+
+    handleScroll();
+    viewport.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll);
 
     return () => {
-      emblaApi.off('reInit', updateControls);
-      emblaApi.off('select', updateControls);
+      viewport.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+      window.clearTimeout(scrollTimeoutId);
     };
-  }, [emblaApi, updateControls]);
+  }, [snapToNearestSlide, syncCarouselState]);
 
   const handlePrevious = useCallback(() => {
-    emblaApi?.scrollPrev();
-  }, [emblaApi]);
+    scrollToIndex(clamp(selectedIndex - 1, 0, orderedItems.length - 1));
+  }, [orderedItems.length, scrollToIndex, selectedIndex]);
 
   const handleNext = useCallback(() => {
-    emblaApi?.scrollNext();
-  }, [emblaApi]);
+    scrollToIndex(clamp(selectedIndex + 1, 0, orderedItems.length - 1));
+  }, [orderedItems.length, scrollToIndex, selectedIndex]);
 
   const handleKeyDown = useCallback((event: KeyboardEvent<HTMLElement>) => {
     if (event.key === 'ArrowLeft') {
       event.preventDefault();
-      emblaApi?.scrollPrev();
+      scrollToIndex(clamp(selectedIndex - 1, 0, orderedItems.length - 1));
     }
 
     if (event.key === 'ArrowRight') {
       event.preventDefault();
-      emblaApi?.scrollNext();
+      scrollToIndex(clamp(selectedIndex + 1, 0, orderedItems.length - 1));
     }
-  }, [emblaApi]);
+  }, [orderedItems.length, scrollToIndex, selectedIndex]);
+
+  const releasePointerDrag = useCallback((event: ReactPointerEvent<HTMLDivElement>, shouldSnap: boolean) => {
+    const viewport = viewportRef.current;
+    if (dragStateRef.current.pointerId !== event.pointerId || !viewport) return;
+
+    try {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    } catch {
+      // Ignore browsers that already released pointer capture.
+    }
+
+    const dragged = dragStateRef.current.hasDragged;
+    dragStateRef.current = {
+      pointerId: -1,
+      startX: 0,
+      startScrollLeft: 0,
+      hasDragged: false,
+    };
+    setIsDragging(false);
+
+    if (shouldSnap && dragged) {
+      snapToNearestSlide();
+    }
+  }, [snapToNearestSlide]);
+
+  const handlePointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== 'mouse' || event.button !== 0) return;
+
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    dragStateRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startScrollLeft: viewport.scrollLeft,
+      hasDragged: false,
+    };
+
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setIsDragging(true);
+  }, []);
+
+  const handlePointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    const viewport = viewportRef.current;
+    if (dragStateRef.current.pointerId !== event.pointerId || !viewport) return;
+
+    const deltaX = event.clientX - dragStateRef.current.startX;
+    if (!dragStateRef.current.hasDragged && Math.abs(deltaX) >= POINTER_DRAG_THRESHOLD_PX) {
+      dragStateRef.current.hasDragged = true;
+    }
+
+    viewport.scrollLeft = dragStateRef.current.startScrollLeft - deltaX;
+  }, []);
+
+  const handlePointerUp = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    releasePointerDrag(event, true);
+  }, [releasePointerDrag]);
+
+  const handlePointerCancel = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    releasePointerDrag(event, false);
+  }, [releasePointerDrag]);
+
+  const handleClickCapture = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    if (!dragStateRef.current.hasDragged) return;
+    event.preventDefault();
+    event.stopPropagation();
+  }, []);
 
   const buttonStyle = useCallback((enabled: boolean): CSSProperties => ({
     width: '48px',
@@ -161,13 +309,23 @@ export function ProductStorySection({ items = PRODUCT_STORY_ITEMS }: ProductStor
         }}
       >
         <div
-          ref={emblaRef}
+          ref={viewportRef}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerCancel}
+          onClickCapture={handleClickCapture}
+          className="overflow-x-auto touch-pan-y"
           style={{
-            overflow: 'hidden',
+            cursor: isDragging ? 'grabbing' : 'grab',
+            scrollBehavior: 'smooth',
+            scrollSnapType: 'x mandatory',
+            WebkitOverflowScrolling: 'touch',
+            userSelect: isDragging ? 'none' : 'auto',
           }}
         >
           <div
-            className="flex touch-pan-y"
+            className="flex"
             style={{
               marginLeft: 'calc(clamp(16px, 2vw, 28px) * -1)',
             }}
@@ -178,9 +336,14 @@ export function ProductStorySection({ items = PRODUCT_STORY_ITEMS }: ProductStor
               return (
                 <article
                   key={item.id}
+                  ref={(node) => {
+                    slideRefs.current[index] = node;
+                  }}
                   className="min-w-0 flex-[0_0_100%] md:flex-[0_0_58%] xl:flex-[0_0_44%]"
                   style={{
                     paddingLeft: 'clamp(16px, 2vw, 28px)',
+                    scrollSnapAlign: 'start',
+                    scrollSnapStop: 'always',
                   }}
                 >
                   <div

@@ -23,6 +23,7 @@ type DragState = {
 
 interface ProductStorySectionProps {
   items?: readonly ProductStoryItem[];
+  backgroundImage?: string;
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -34,7 +35,7 @@ function ProductStoryMedia({ item, isActive }: { item: ProductStoryItem; isActiv
 
   useEffect(() => {
     const videoElement = videoRef.current;
-    if (!videoElement) return;
+    if (!videoElement) return undefined;
 
     if (isActive) {
       const playPromise = videoElement.play();
@@ -63,7 +64,8 @@ function ProductStoryMedia({ item, isActive }: { item: ProductStoryItem; isActiv
         style={{
           width: '100%',
           height: '100%',
-          objectFit: 'cover',
+          objectFit: 'contain',
+          objectPosition: 'center',
           display: 'block',
         }}
       />
@@ -78,14 +80,18 @@ function ProductStoryMedia({ item, isActive }: { item: ProductStoryItem; isActiv
       style={{
         width: '100%',
         height: '100%',
-        objectFit: 'cover',
+        objectFit: 'contain',
+        objectPosition: 'center',
         display: 'block',
       }}
     />
   );
 }
 
-export function ProductStorySection({ items = PRODUCT_STORY_ITEMS }: ProductStorySectionProps) {
+export function ProductStorySection({
+  items = PRODUCT_STORY_ITEMS,
+  backgroundImage,
+}: ProductStorySectionProps) {
   const orderedItems = useMemo(() => {
     return [...items].sort((left, right) => (left.displayOrder ?? 0) - (right.displayOrder ?? 0));
   }, [items]);
@@ -272,13 +278,13 @@ export function ProductStorySection({ items = PRODUCT_STORY_ITEMS }: ProductStor
     width: '48px',
     height: '48px',
     borderRadius: '999px',
-    border: '1px solid rgba(15,23,42,0.08)',
+    border: '1px solid rgba(255,255,255,0.18)',
     backgroundColor: 'rgba(255,255,255,0.88)',
     color: enabled ? '#0F172A' : 'rgba(15,23,42,0.32)',
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '0 12px 30px rgba(15,23,42,0.08)',
+    boxShadow: '0 12px 30px rgba(15,23,42,0.10)',
     cursor: enabled ? 'pointer' : 'not-allowed',
     transition: `transform 220ms ${STORY_EASE}, opacity 220ms ${STORY_EASE}, background-color 220ms ${STORY_EASE}`,
     opacity: enabled ? 1 : 0.7,
@@ -294,12 +300,30 @@ export function ProductStorySection({ items = PRODUCT_STORY_ITEMS }: ProductStor
       aria-roledescription="carousel"
       style={{
         position: 'relative',
-        background: 'linear-gradient(180deg, #F4F4F6 0%, #FFFFFF 100%)',
+        backgroundImage,
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
         padding: 'clamp(72px, 10vw, 120px) 0 clamp(88px, 10vw, 128px)',
         outline: 'none',
         overflow: 'hidden',
       }}
     >
+      <style>
+        {`
+          .product-story-viewport {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+
+          .product-story-viewport::-webkit-scrollbar {
+            display: none;
+            width: 0;
+            height: 0;
+          }
+        `}
+      </style>
+
       <div
         style={{
           width: 'min(100%, 1600px)',
@@ -309,19 +333,55 @@ export function ProductStorySection({ items = PRODUCT_STORY_ITEMS }: ProductStor
         }}
       >
         <div
+          style={{
+            display: 'grid',
+            gap: '10px',
+            marginBottom: 'clamp(28px, 5vw, 44px)',
+            maxWidth: '720px',
+          }}
+        >
+          <p
+            style={{
+              margin: 0,
+              color: 'rgba(255,255,255,0.78)',
+              fontSize: '12px',
+              fontWeight: 600,
+              letterSpacing: '0.22em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Product Story
+          </p>
+          <h2
+            style={{
+              margin: 0,
+              color: '#FFFFFF',
+              fontSize: 'clamp(36px, 6vw, 72px)',
+              lineHeight: 0.98,
+              letterSpacing: '-0.05em',
+              fontWeight: 600,
+            }}
+          >
+            Crafted for Performance. Designed with Purpose.
+          </h2>
+        </div>
+
+        <div
           ref={viewportRef}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerCancel}
           onClickCapture={handleClickCapture}
-          className="overflow-x-auto touch-pan-y"
+          className="product-story-viewport overflow-x-auto"
           style={{
             cursor: isDragging ? 'grabbing' : 'grab',
             scrollBehavior: 'smooth',
             scrollSnapType: 'x mandatory',
             WebkitOverflowScrolling: 'touch',
             userSelect: isDragging ? 'none' : 'auto',
+            overflowY: 'hidden',
+            touchAction: 'auto',
           }}
         >
           <div
@@ -351,14 +411,14 @@ export function ProductStorySection({ items = PRODUCT_STORY_ITEMS }: ProductStor
                       height: '100%',
                       borderRadius: '32px',
                       backgroundColor: '#FFFFFF',
-                      padding: 'clamp(18px, 2vw, 24px)',
+                      padding: 'clamp(26px, 3vw, 34px)',
                       boxShadow: isActive
-                        ? '0 28px 80px rgba(15,23,42,0.12)'
-                        : '0 18px 48px rgba(15,23,42,0.08)',
+                        ? '0 18px 42px rgba(15,23,42,0.08)'
+                        : '0 10px 28px rgba(15,23,42,0.05)',
                       transform: isActive
                         ? 'translate3d(0, 0, 0) scale(1)'
                         : 'translate3d(0, 12px, 0) scale(0.976)',
-                      opacity: isActive ? 1 : 0.78,
+                      opacity: isActive ? 1 : 0.82,
                       transition: `transform 520ms ${STORY_EASE}, opacity 520ms ${STORY_EASE}, box-shadow 520ms ${STORY_EASE}`,
                       willChange: 'transform, opacity',
                     }}
@@ -367,10 +427,10 @@ export function ProductStorySection({ items = PRODUCT_STORY_ITEMS }: ProductStor
                       style={{
                         width: '100%',
                         aspectRatio: '4 / 5',
-                        borderRadius: '28px',
-                        overflow: 'hidden',
-                        backgroundColor: '#E5E7EB',
-                        boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.18)',
+                        display: 'grid',
+                        placeItems: 'center',
+                        padding: 'clamp(18px, 3vw, 30px)',
+                        boxSizing: 'border-box',
                       }}
                     >
                       <ProductStoryMedia item={item} isActive={isActive} />
@@ -378,32 +438,20 @@ export function ProductStorySection({ items = PRODUCT_STORY_ITEMS }: ProductStor
 
                     <div
                       style={{
-                        paddingTop: 'clamp(18px, 2.5vw, 24px)',
+                        paddingTop: 'clamp(8px, 1.8vw, 14px)',
                         display: 'grid',
                         gap: '12px',
-                        minHeight: '160px',
+                        minHeight: '110px',
                         alignContent: 'start',
                       }}
                     >
-                      <h2
-                        style={{
-                          margin: 0,
-                          color: '#0F172A',
-                          fontSize: 'clamp(28px, 4vw, 42px)',
-                          lineHeight: 1.04,
-                          letterSpacing: '-0.04em',
-                          fontWeight: 600,
-                        }}
-                      >
-                        {item.title}
-                      </h2>
                       <p
                         style={{
                           margin: 0,
-                          color: 'rgba(15,23,42,0.76)',
+                          color: 'rgba(15,23,42,0.78)',
                           fontSize: 'clamp(15px, 1.6vw, 18px)',
                           lineHeight: 1.7,
-                          maxWidth: '32ch',
+                          maxWidth: '34ch',
                         }}
                       >
                         {item.description}

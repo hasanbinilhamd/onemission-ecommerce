@@ -779,7 +779,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
         />
       </section>
 
-      <ProductStorySection />
+      <ProductStorySection backgroundImage={HERO_GRADIENTS[activeIndex]} />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, type KeyboardE
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { CatalogLayer } from '../features/catalog';
 import { HERO_THEMES, createHeroGradient } from '../features/hero/theme';
+import { ProductStorySection } from '../features/story';
 
 type HeroMediaType = 'image' | 'video';
 
@@ -777,6 +778,8 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
           }}
         />
       </section>
+
+      <ProductStorySection />
     </div>
   );
 }

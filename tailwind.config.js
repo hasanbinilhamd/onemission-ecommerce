@@ -5,6 +5,7 @@ export default {
     extend: {
       fontFamily: {
         "chakra-petch": ["'Chakra Petch'", "sans-serif"],
+        "sf-pro-display": ["'SF-Pro-Display'", "sans-serif"],
       },
     },
   },

@@ -312,7 +312,7 @@ export function CatalogLayer({ revealProgress = 0, onProductSelect }: CatalogLay
       className="flex flex-col items-center justify-center gap-5 sm:gap-14"
       style={{
         minHeight: '100vh',
-        backgroundColor: 'rgba(255,255,255,0.8)',
+        backgroundColor: 'rgba(215,215,215,0.5)',
         backdropFilter: 'blur(25px)',
         WebkitBackdropFilter: 'blur(25px)',
       }}
@@ -557,28 +557,66 @@ export function CatalogLayer({ revealProgress = 0, onProductSelect }: CatalogLay
       </div> */}
       <div className="flex flex-col items-center justify-center">
         <p
-          className="w-3/4 bold text-center tracking-widest text-3xl sm:text-5xl"
+          className="w-full bold text-center tracking-widest text-3xl sm:text-4xl md:text-7xl"
           style={{
             // fontFamily: "'Chakra Petch', sans-serif",
-            color: '#0A0A0A',
+            // color: '#0A0A0A',
+            fontFamily: "'SF-Pro-Display', sans-serif",
+            fontWeight: 400,
+            color: '#FFF',
+            textShadow: '0px 0px 8px rgba(0, 0, 0, 0.5)',
             opacity: 0.95,
-            letterSpacing: '0.02em',
-            fontWeight: 700,
+            letterSpacing: '-0.01em',
           }}
         >
-          We are building
+          We are building a global movement
         </p>
         <p
-          className="w-3/4 bold text-center tracking-widest mb-2 sm:mb-3 text-3xl sm:text-5xl"
+          className="w-full bold text-center tracking-widest text-3xl sm:text-4xl md:text-7xl"
           style={{
             // fontFamily: "'Chakra Petch', sans-serif",
-            color: '#0A0A0A',
+            // color: '#0A0A0A',
+            fontFamily: "'SF-Pro-Display', sans-serif",
+            fontWeight: 400,
+            color: '#FFF',
+            textShadow: '0px 0px 8px rgba(0, 0, 0, 0.5)',
             opacity: 0.95,
-            letterSpacing: '0.02em',
-            fontWeight: 700,
+            letterSpacing: '-0.01em',
           }}
         >
-          a global movement that empowers Muslims to live actively while staying true to their values.
+          that empowers Muslims to live actively
+        </p>
+        <p
+          className="w-full bold text-center tracking-widest mb-2 sm:mb-3 text-3xl sm:text-4xl md:text-7xl"
+          style={{
+            // fontFamily: "'Chakra Petch', sans-serif",
+            // color: '#0A0A0A',
+            fontFamily: "'SF-Pro-Display', sans-serif",
+            fontWeight: 400,
+            color: '#FFF',
+            textShadow: '0px 0px 8px rgba(0, 0, 0, 0.5)',
+            opacity: 0.95,
+            letterSpacing: '-0.01em',
+          }}
+        >
+          while staying true to their <span style={{ fontWeight: 700 }}>values</span>.
+        </p>
+
+        <p
+          className="w-full bold text-center tracking-widest text-2xl sm:text-3xl md:text-5xl"
+          style={{
+            // fontFamily: "'Chakra Petch', sans-serif",
+            // color: '#0A0A0A',
+            marginTop: '50px',
+            fontFamily: "'SF-Pro-Display', sans-serif",
+            fontWeight: 400,
+            color: '#FFF',
+            textShadow: '0px 0px 8px rgba(0, 0, 0, 0.3)',
+            opacity: 0.95,
+            letterSpacing: '-0.01em',
+          }}
+        >
+          the story begins in Bandung, Indonesia.
         </p>
       </div>
 

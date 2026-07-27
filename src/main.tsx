@@ -5,6 +5,7 @@ import App from './App.tsx';
 import { CustomerAuthProvider, WishlistProvider } from './features/customer';
 import { CartProvider, CheckoutProvider, SearchProvider } from './stores';
 import './index.css';
+import './assets/styles/fonts.css'
 
 createRoot(document.getElementById('root')!).render(
   // <StrictMode>

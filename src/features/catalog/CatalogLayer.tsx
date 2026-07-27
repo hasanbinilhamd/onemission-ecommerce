@@ -312,7 +312,7 @@ export function CatalogLayer({ revealProgress = 0, onProductSelect }: CatalogLay
       className="flex flex-col items-center justify-center gap-5 sm:gap-14"
       style={{
         minHeight: '100vh',
-        backgroundColor: 'rgba(255,255,255,0.5)',
+        backgroundColor: 'rgba(255,255,255,0.8)',
         backdropFilter: 'blur(25px)',
         WebkitBackdropFilter: 'blur(25px)',
       }}
@@ -559,7 +559,7 @@ export function CatalogLayer({ revealProgress = 0, onProductSelect }: CatalogLay
         <p
           className="w-3/4 bold text-center tracking-widest text-3xl sm:text-5xl"
           style={{
-            fontFamily: "'Chakra Petch', sans-serif",
+            // fontFamily: "'Chakra Petch', sans-serif",
             color: '#0A0A0A',
             opacity: 0.95,
             letterSpacing: '0.02em',
@@ -571,7 +571,7 @@ export function CatalogLayer({ revealProgress = 0, onProductSelect }: CatalogLay
         <p
           className="w-3/4 bold text-center tracking-widest mb-2 sm:mb-3 text-3xl sm:text-5xl"
           style={{
-            fontFamily: "'Chakra Petch', sans-serif",
+            // fontFamily: "'Chakra Petch', sans-serif",
             color: '#0A0A0A',
             opacity: 0.95,
             letterSpacing: '0.02em',

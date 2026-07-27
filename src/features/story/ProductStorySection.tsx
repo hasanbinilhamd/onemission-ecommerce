@@ -62,10 +62,11 @@ function ProductStoryMedia({ item, isActive }: { item: ProductStoryItem; isActiv
         controls={false}
         disablePictureInPicture
         style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'contain',
-          objectPosition: 'center',
+          maxWidth: '100%',
+          maxHeight: '100%',
+          width: 'auto',
+          height: 'auto',
+          objectFit: 'cover',
           display: 'block',
         }}
       />
@@ -78,10 +79,11 @@ function ProductStoryMedia({ item, isActive }: { item: ProductStoryItem; isActiv
       alt={item.alt || item.title}
       draggable={false}
       style={{
-        width: '100%',
-        height: '100%',
+        maxWidth: '100%',
+        maxHeight: '100%',
+        width: 'auto',
+        height: 'auto',
         objectFit: 'contain',
-        objectPosition: 'center',
         display: 'block',
       }}
     />
@@ -328,7 +330,7 @@ export function ProductStorySection({
         style={{
           width: 'min(100%, 1600px)',
           margin: '0 auto',
-          padding: '0 clamp(20px, 4vw, 48px)',
+          // padding: '0 clamp(20px, 4vw, 48px)',
           boxSizing: 'border-box',
         }}
       >
@@ -338,6 +340,7 @@ export function ProductStorySection({
             gap: '10px',
             marginBottom: 'clamp(28px, 5vw, 44px)',
             maxWidth: '720px',
+            paddingLeft: 'clamp(20px, 4vw, 48px)',
           }}
         >
           <p
@@ -348,6 +351,7 @@ export function ProductStorySection({
               fontWeight: 600,
               letterSpacing: '0.22em',
               textTransform: 'uppercase',
+              fontFamily: "'Chakra Petch', sans-serif",
             }}
           >
             Product Story
@@ -362,7 +366,7 @@ export function ProductStorySection({
               fontWeight: 600,
             }}
           >
-            Crafted for Performance. Designed with Purpose.
+            Designed with Purpose.
           </h2>
         </div>
 
@@ -382,6 +386,7 @@ export function ProductStorySection({
             userSelect: isDragging ? 'none' : 'auto',
             overflowY: 'hidden',
             touchAction: 'auto',
+            padding: '0px clamp(20px, 4vw, 48px)',
           }}
         >
           <div
@@ -401,6 +406,7 @@ export function ProductStorySection({
                   }}
                   className="min-w-0 flex-[0_0_100%] md:flex-[0_0_58%] xl:flex-[0_0_44%]"
                   style={{
+                    height: 'clamp(480px, 68vh, 720px)',
                     paddingLeft: 'clamp(16px, 2vw, 28px)',
                     scrollSnapAlign: 'start',
                     scrollSnapStop: 'always',
@@ -409,16 +415,14 @@ export function ProductStorySection({
                   <div
                     style={{
                       height: '100%',
-                      borderRadius: '32px',
-                      backgroundColor: '#FFFFFF',
-                      padding: 'clamp(26px, 3vw, 34px)',
-                      boxShadow: isActive
-                        ? '0 18px 42px rgba(15,23,42,0.08)'
-                        : '0 10px 28px rgba(15,23,42,0.05)',
-                      transform: isActive
-                        ? 'translate3d(0, 0, 0) scale(1)'
-                        : 'translate3d(0, 12px, 0) scale(0.976)',
-                      opacity: isActive ? 1 : 0.82,
+                      // backgroundColor: '#FFFFFF',
+                      // boxShadow: isActive
+                      //   ? '0 18px 42px rgba(15,23,42,0.08)'
+                      //   : '0 10px 28px rgba(15,23,42,0.05)',
+                      // transform: isActive
+                      //   ? 'translate3d(0, 0, 0) scale(1)'
+                      //   : 'translate3d(0, 12px, 0) scale(0.976)',
+                      // opacity: isActive ? 1 : 0.82,
                       transition: `transform 520ms ${STORY_EASE}, opacity 520ms ${STORY_EASE}, box-shadow 520ms ${STORY_EASE}`,
                       willChange: 'transform, opacity',
                     }}
@@ -426,10 +430,14 @@ export function ProductStorySection({
                     <div
                       style={{
                         width: '100%',
-                        aspectRatio: '4 / 5',
-                        display: 'grid',
-                        placeItems: 'center',
-                        padding: 'clamp(18px, 3vw, 30px)',
+                        height: '65%',
+                        aspectRatio: '1 / 1',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        overflow: 'hidden',
+                        borderRadius: '24px',
+                        backgroundColor: '#FFFFFF',
                         boxSizing: 'border-box',
                       }}
                     >
@@ -450,7 +458,7 @@ export function ProductStorySection({
                           margin: 0,
                           color: 'rgba(15,23,42,0.78)',
                           fontSize: 'clamp(15px, 1.6vw, 18px)',
-                          lineHeight: 1.7,
+                          lineHeight: 1.4,
                           maxWidth: '34ch',
                         }}
                       >
@@ -469,7 +477,7 @@ export function ProductStorySection({
             display: 'flex',
             justifyContent: 'flex-end',
             gap: '12px',
-            paddingTop: 'clamp(24px, 3vw, 32px)',
+            padding: '24px clamp(16px, 2vw, 24px)',
           }}
         >
           <button

@@ -755,7 +755,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
         aria-label="Brand video section"
         style={{
           position: 'relative',
-          minHeight: '100vh',
+          minHeight: isMobile ? 'auto' : '100vh',
           width: '100%',
           overflow: 'hidden',
           backgroundColor: '#000000',
@@ -772,8 +772,8 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
           controls={false}
           style={{
             width: '100%',
-            height: '100vh',
-            objectFit: 'cover',
+            height: isMobile ? 'auto' : '100vh',
+            objectFit: isMobile ? 'contain' : 'cover',
             display: 'block',
           }}
         />

@@ -612,7 +612,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
             <img
               src="https://ik.imagekit.io/edyl3oplm/Onemission/logos/AMAN_ONEMISSION.png?updatedAt=1782542636942"
               alt="ONEMISSION"
-              className="h-8 md:h-12 w-auto"
+              className="h-8 md:h-14 w-auto"
             />
           </div>
 
@@ -707,9 +707,9 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
             </div>
           </div>
 
-          <a
+          {/* <a
             href="#"
-            // onClick={handleDiscoverClick}
+            onClick={handleDiscoverClick}
             className="absolute bottom-6 right-4 sm:bottom-20 sm:right-10 flex items-center"
             style={{
               zIndex: 60,
@@ -748,8 +748,8 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
             }}
           >
             SHOP NOW
-            {/* <ArrowRight className="w-5 h-5 sm:w-8 sm:h-8" strokeWidth={2.25} /> */}
-          </a>
+            <ArrowRight className="w-5 h-5 sm:w-8 sm:h-8" strokeWidth={2.25} />
+          </a> */}
         </div>
       </section>
 

@@ -253,7 +253,7 @@ export function CollectionPageCatalog({ onProductSelect }: CollectionPageCatalog
             color: '#111827',
           }}
         >
-          Explore the full ONEMISSION collection.
+          The ONEMISSION collection.
         </h1>
       </div>
 

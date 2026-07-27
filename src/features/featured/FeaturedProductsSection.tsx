@@ -175,6 +175,7 @@ export function FeaturedProductsSection({
             style={{
               margin: 0,
               fontSize: '12px',
+              fontFamily: "'Chakra-petch', sans-serif",
               fontWeight: 600,
               letterSpacing: '0.22em',
               textTransform: 'uppercase',
@@ -195,7 +196,7 @@ export function FeaturedProductsSection({
               color: FEATURED_SECTION_TEXT,
             }}
           >
-            Designed for movement. Built with purpose.
+            Honor Your Values. Elevate Your Performance.
           </h2>
         </div>
 

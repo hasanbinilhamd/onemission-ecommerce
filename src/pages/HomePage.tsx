@@ -573,20 +573,28 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
             className="absolute inset-x-0 flex items-center justify-center pointer-events-none select-none"
             style={{
               zIndex: 2,
-              top: '18%',
-              fontFamily: "'Anton', sans-serif",
-              fontSize: 'clamp(40px, 17vw, 380px)',
-              fontWeight: 900,
+              top: isMobile ? '10%' : '18%',
+              fontFamily: "'SF-Pro-Display', sans-serif",
+              fontSize: isMobile ? 'clamp(120px, 34vw, 150px)' : 'clamp(40px, 17vw, 380px)',
+              fontWeight: 400,
               color: '#ffffff',
               opacity: 1,
-              lineHeight: 1,
-              textTransform: 'uppercase',
-              letterSpacing: '-0.02em',
+              lineHeight: isMobile ? 0.8 : 1,
+              textTransform: 'lowercase',
+              letterSpacing: '-0.04em',
               whiteSpace: 'nowrap',
               padding: '0 10px',
             }}
           >
-            VALUES MATTER
+            {isMobile ? (
+              <>
+                values
+                <br />
+                matter
+              </>
+            ) : (
+              'VALUES MATTER'
+            )}
           </div>
 
           <HeroCarouselImages activeIndex={activeIndex} isMobile={isMobile} />
@@ -658,7 +666,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
                 className="w-12 h-12 rounded-full flex items-center justify-center"
                 style={{
                   backgroundColor: 'transparent',
-                  border: '2px solid #ffffff',
+                  // border: '2px solid #ffffff',
                   color: '#ffffff',
                   transition: 'transform 150ms ease, background-color 150ms ease',
                 }}
@@ -680,7 +688,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
                 className="w-12 h-12 rounded-full flex items-center justify-center"
                 style={{
                   backgroundColor: 'transparent',
-                  border: '2px solid #ffffff',
+                  // border: '2px solid #ffffff',
                   color: '#ffffff',
                   transition: 'transform 150ms ease, background-color 150ms ease',
                 }}
@@ -698,23 +706,38 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
             </div>
           </div>
 
-          {/* <a
+          <a
             href="#"
-            onClick={handleDiscoverClick}
+            // onClick={handleDiscoverClick}
             className="absolute bottom-6 right-4 sm:bottom-20 sm:right-10 flex items-center"
             style={{
               zIndex: 60,
-              fontFamily: "'Anton', sans-serif",
-              fontSize: 'clamp(20px, 4vw, 56px)',
-              fontWeight: 400,
+              fontFamily: "'Chakra Petch', sans-serif",
+              fontSize: 'clamp(24px, 3vw, 40px)',
+              fontWeight: 500,
               color: '#ffffff',
               opacity: 0.95,
-              letterSpacing: '-0.02em',
+              letterSpacing: '-0.04em',
               lineHeight: 1,
               textTransform: 'uppercase',
               textDecoration: 'none',
               transition: 'opacity 200ms ease',
+              border: '2px solid #ffffff',
+              borderRadius: '0.5rem',
+              padding: '0.5rem 1rem',
               gap: '0.5rem',
+
+              background: 'rgba(255, 255, 255, 0.2)',
+              backdropFilter: 'none',
+              WebkitBackdropFilter: 'none',
+
+              borderTop: '2px solid rgba(255,255,255,0.5)',
+              borderBottom: '2px solid rgba(255,255,255,0.5)',
+              borderLeft: '0',
+              borderRight: '0',
+
+              boxShadow:
+                '0 10px 15px -3px rgba(0,0,0,0.2), 0 4px 6px -4px rgba(0,0,0,0.2)',
             }}
             onMouseEnter={(event) => {
               event.currentTarget.style.opacity = '1';
@@ -723,9 +746,9 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
               event.currentTarget.style.opacity = '0.95';
             }}
           >
-            DISCOVER IT
-            <ArrowRight className="w-5 h-5 sm:w-8 sm:h-8" strokeWidth={2.25} />
-          </a> */}
+            SHOP NOW
+            {/* <ArrowRight className="w-5 h-5 sm:w-8 sm:h-8" strokeWidth={2.25} /> */}
+          </a>
         </div>
       </section>
 

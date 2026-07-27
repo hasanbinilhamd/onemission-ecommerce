@@ -360,10 +360,11 @@ export function ProductStorySection({
             style={{
               margin: 0,
               color: '#FFFFFF',
+              fontFamily: "'SF-Pro-Display', sans-serif",
               fontSize: 'clamp(36px, 6vw, 72px)',
               lineHeight: 0.98,
-              letterSpacing: '-0.05em',
-              fontWeight: 600,
+              letterSpacing: '-0.01em',
+              fontWeight: 500,
             }}
           >
             Designed with Purpose.

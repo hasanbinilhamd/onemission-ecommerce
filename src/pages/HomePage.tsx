@@ -4,6 +4,7 @@ import { CatalogLayer } from '../features/catalog';
 import { HERO_THEMES, createHeroGradient } from '../features/hero/theme';
 import { ProductStorySection } from '../features/story';
 import { FeaturedProductsSection } from '../features/featured';
+import { HomepageFooter } from '../features/footer';
 
 type HeroMediaType = 'image' | 'video';
 
@@ -805,6 +806,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
 
       <ProductStorySection backgroundImage={HERO_GRADIENTS[activeIndex]} />
       <FeaturedProductsSection onProductSelect={onProductSelect} />
+      <HomepageFooter />
     </div>
   );
 }

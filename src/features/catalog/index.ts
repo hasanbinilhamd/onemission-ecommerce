@@ -6,4 +6,5 @@ export { CatalogDrawer } from './CatalogDrawer';
 export { CatalogLayer } from './CatalogLayer';
 export { ProductCard } from './ProductCard';
 export { FilterDrawer } from './FilterDrawer';
+export { CollectionPageCatalog } from './CollectionPageCatalog';
 export type { FilterState } from './FilterDrawer';

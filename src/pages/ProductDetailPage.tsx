@@ -243,6 +243,7 @@ function ProductDetailContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const fromCatalog = location.state?.fromCatalog === true;
+  const fromCollection = location.state?.fromCollection === true;
 
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
@@ -370,12 +371,17 @@ function ProductDetailContent() {
       return;
     }
 
+    if (fromCollection) {
+      navigate('/collection');
+      return;
+    }
+
     navigate('/');
-  }, [fromCatalog, navigate]);
+  }, [fromCatalog, fromCollection, navigate]);
 
   const handleRelatedClick = useCallback((nextProduct: Product) => {
-    navigate(`/product/${nextProduct.slug}`, { state: { fromCatalog } });
-  }, [fromCatalog, navigate]);
+    navigate(`/product/${nextProduct.slug}`, { state: { fromCatalog, fromCollection } });
+  }, [fromCatalog, fromCollection, navigate]);
 
   const decrement = useCallback(() => setQty((current) => Math.max(1, current - 1)), []);
   const increment = useCallback(() => {
@@ -418,7 +424,7 @@ function ProductDetailContent() {
   if (errorMessage) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#fff', display: 'flex', flexDirection: 'column' }}>
-        <TopBackNavigation label={fromCatalog ? 'Back to Collection' : 'Back'} onBack={handleBack} />
+        <TopBackNavigation label={fromCatalog || fromCollection ? 'Back to Collection' : 'Back'} onBack={handleBack} />
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <EmptyState
             title="Unable to load product"
@@ -433,7 +439,7 @@ function ProductDetailContent() {
   if (!product) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#fff', display: 'flex', flexDirection: 'column' }}>
-        <TopBackNavigation label={fromCatalog ? 'Back to Collection' : 'Back'} onBack={handleBack} />
+        <TopBackNavigation label={fromCatalog || fromCollection ? 'Back to Collection' : 'Back'} onBack={handleBack} />
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <EmptyState title="Product not found" description="This product may have been removed or the link is incorrect." />
         </div>
@@ -480,7 +486,7 @@ function ProductDetailContent() {
           onMouseLeave={(event) => { event.currentTarget.style.color = colors.muted; }}
         >
           <ArrowLeft size={16} strokeWidth={2} />
-          {fromCatalog ? 'Back to Collection' : 'Back'}
+          {fromCatalog || fromCollection ? 'Back to Collection' : 'Back'}
         </button>
 
         <p className="hidden sm:block" style={{ fontSize: '12px', color: colors.muted, flex: 1, textAlign: 'center' }}>

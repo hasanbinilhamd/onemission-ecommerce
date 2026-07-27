@@ -5,6 +5,7 @@
 export const ROUTES = {
   HOME: '/',
   PRODUCT: '/product/:slug',
+  COLLECTION: '/collection',
   CART: '/cart',
   CHECKOUT: '/checkout',
   LOGIN: '/login',

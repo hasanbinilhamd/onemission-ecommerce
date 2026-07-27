@@ -8,6 +8,13 @@ import { ProductCard } from '../catalog';
 import { productService } from '../../services/product';
 import { FEATURED_PRODUCTS, type FeaturedProduct } from './featuredProducts';
 
+const FEATURED_PRODUCTS_LIMIT = 4;
+const FEATURED_SECTION_BACKGROUND = '#E5E4E2';
+const FEATURED_SECTION_TEXT = '#111827';
+const FEATURED_SECTION_MUTED = 'rgba(17,24,39,0.66)';
+const FEATURED_SECTION_BORDER = 'rgba(17,24,39,0.24)';
+const FEATURED_SECTION_BUTTON_HOVER = 'rgba(17,24,39,0.06)';
+
 interface FeaturedProductsSectionProps {
   onProductSelect: (slug: string) => void;
   items?: readonly FeaturedProduct[];
@@ -50,7 +57,7 @@ export function FeaturedProductsSection({
     return items
       .filter((item) => item.enabled)
       .sort((left, right) => left.displayOrder - right.displayOrder)
-      .slice(0, 8);
+      .slice(0, FEATURED_PRODUCTS_LIMIT);
   }, [items]);
 
   useEffect(() => {
@@ -127,8 +134,8 @@ export function FeaturedProductsSection({
       aria-label="Featured products"
       style={{
         position: 'relative',
-        backgroundColor: '#05070B',
-        color: '#FFFFFF',
+        backgroundColor: FEATURED_SECTION_BACKGROUND,
+        color: FEATURED_SECTION_TEXT,
         padding: 'clamp(72px, 10vw, 120px) 0 clamp(80px, 10vw, 128px)',
         overflow: 'hidden',
       }}
@@ -171,7 +178,7 @@ export function FeaturedProductsSection({
               fontWeight: 600,
               letterSpacing: '0.22em',
               textTransform: 'uppercase',
-              color: 'rgba(255,255,255,0.76)',
+              color: FEATURED_SECTION_MUTED,
             }}
           >
             Featured Products
@@ -185,6 +192,7 @@ export function FeaturedProductsSection({
               letterSpacing: '-0.05em',
               fontWeight: 400,
               maxWidth: '800px',
+              color: FEATURED_SECTION_TEXT,
             }}
           >
             Designed for movement. Built with purpose.
@@ -193,7 +201,7 @@ export function FeaturedProductsSection({
 
         {isLoading ? (
           <div className="grid grid-cols-2 lg:grid-cols-4" style={{ display: 'grid', gap: '24px 18px' }}>
-            {Array.from({ length: 4 }).map((_, index) => <ProductCardSkeleton key={index} />)}
+            {Array.from({ length: FEATURED_PRODUCTS_LIMIT }).map((_, index) => <ProductCardSkeleton key={index} />)}
           </div>
         ) : null}
 
@@ -249,9 +257,9 @@ export function FeaturedProductsSection({
                   minWidth: '180px',
                   padding: '14px 28px',
                   borderRadius: '999px',
-                  border: '1px solid rgba(255,255,255,0.48)',
+                  border: `1px solid ${FEATURED_SECTION_BORDER}`,
                   backgroundColor: 'transparent',
-                  color: '#FFFFFF',
+                  color: FEATURED_SECTION_TEXT,
                   fontSize: '14px',
                   fontWeight: 500,
                   letterSpacing: '0.04em',
@@ -260,13 +268,13 @@ export function FeaturedProductsSection({
                 }}
                 onMouseEnter={(event) => {
                   event.currentTarget.style.transform = 'translate3d(0, -2px, 0)';
-                  event.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)';
-                  event.currentTarget.style.borderColor = 'rgba(255,255,255,0.72)';
+                  event.currentTarget.style.backgroundColor = FEATURED_SECTION_BUTTON_HOVER;
+                  event.currentTarget.style.borderColor = 'rgba(17,24,39,0.42)';
                 }}
                 onMouseLeave={(event) => {
                   event.currentTarget.style.transform = 'translate3d(0, 0, 0)';
                   event.currentTarget.style.backgroundColor = 'transparent';
-                  event.currentTarget.style.borderColor = 'rgba(255,255,255,0.48)';
+                  event.currentTarget.style.borderColor = FEATURED_SECTION_BORDER;
                 }}
               >
                 See More

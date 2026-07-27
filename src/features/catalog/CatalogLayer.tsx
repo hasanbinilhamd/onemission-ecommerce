@@ -312,7 +312,7 @@ export function CatalogLayer({ revealProgress = 0, onProductSelect }: CatalogLay
       className="flex flex-col items-center justify-center gap-5 sm:gap-14"
       style={{
         minHeight: '100vh',
-        backgroundColor: 'rgba(215,215,215,0.5)',
+        backgroundColor: 'rgba(225,225,225,0.5)',
         backdropFilter: 'blur(25px)',
         WebkitBackdropFilter: 'blur(25px)',
       }}

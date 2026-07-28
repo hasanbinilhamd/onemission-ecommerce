@@ -9,7 +9,7 @@ import { productService } from '../../services/product';
 import { FEATURED_PRODUCTS, type FeaturedProduct } from './featuredProducts';
 
 const FEATURED_PRODUCTS_LIMIT = 4;
-const FEATURED_SECTION_BACKGROUND = '#E5E4E2';
+const FEATURED_SECTION_BACKGROUND = '#FFFFFF';
 const FEATURED_SECTION_TEXT = '#111827';
 const FEATURED_SECTION_MUTED = 'rgba(17,24,39,0.66)';
 const FEATURED_SECTION_BORDER = 'rgba(17,24,39,0.24)';
@@ -239,7 +239,7 @@ export function FeaturedProductsSection({
                     scrollSnapStop: 'always',
                   }}
                 >
-                  <ProductCard product={product} onClick={() => onProductSelect(product.slug)} />
+                  <ProductCard product={product} onClick={() => onProductSelect(product.slug)} appearance="featured" />
                 </div>
               ))}
             </div>

@@ -279,7 +279,7 @@ export function ProductStorySection(props: ProductStorySectionProps) {
     height: '48px',
     borderRadius: '999px',
     border: '1px solid rgba(17,24,39,0.14)',
-    backgroundColor: 'rgba(255,255,255,0.88)',
+    backgroundColor: 'rgba(229,228,226,0.92)',
     color: enabled ? '#0F172A' : 'rgba(15,23,42,0.32)',
     display: 'inline-flex',
     alignItems: 'center',
@@ -300,7 +300,7 @@ export function ProductStorySection(props: ProductStorySectionProps) {
       aria-roledescription="carousel"
       style={{
         position: 'relative',
-        background: '#E5E4E2',
+        background: '#FFFFFF',
         padding: 'clamp(72px, 10vw, 120px) 0 clamp(88px, 10vw, 128px)',
         outline: 'none',
         overflow: 'hidden',
@@ -340,7 +340,7 @@ export function ProductStorySection(props: ProductStorySectionProps) {
           <p
             style={{
               margin: 0,
-              color: 'rgba(17,24,39,0.64)',
+              color: 'rgba(17,24,39,0.55)',
               fontSize: '12px',
               fontWeight: 600,
               letterSpacing: '0.22em',
@@ -432,7 +432,7 @@ export function ProductStorySection(props: ProductStorySectionProps) {
                         alignItems: 'center',
                         overflow: 'hidden',
                         borderRadius: '24px',
-                        backgroundColor: '#FFFFFF',
+                        backgroundColor: '#E5E4E2',
                         boxSizing: 'border-box',
                       }}
                     >
@@ -451,7 +451,7 @@ export function ProductStorySection(props: ProductStorySectionProps) {
                       <p
                         style={{
                           margin: 0,
-                          color: 'rgba(17,24,39,0.75)',
+                          color: 'rgba(17,24,39,0.72)',
                           fontSize: 'clamp(15px, 1.6vw, 18px)',
                           lineHeight: 1.4,
                           maxWidth: '34ch',
@@ -484,11 +484,11 @@ export function ProductStorySection(props: ProductStorySectionProps) {
             onMouseEnter={(event) => {
               if (!canScrollPrev) return;
               event.currentTarget.style.transform = 'translate3d(0, -2px, 0) scale(1.02)';
-              event.currentTarget.style.backgroundColor = '#FFFFFF';
+              event.currentTarget.style.backgroundColor = '#F0EFEC';
             }}
             onMouseLeave={(event) => {
               event.currentTarget.style.transform = 'translate3d(0, 0, 0) scale(1)';
-              event.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.88)';
+              event.currentTarget.style.backgroundColor = 'rgba(229,228,226,0.92)';
             }}
           >
             <ArrowLeft size={20} strokeWidth={2.1} />
@@ -502,11 +502,11 @@ export function ProductStorySection(props: ProductStorySectionProps) {
             onMouseEnter={(event) => {
               if (!canScrollNext) return;
               event.currentTarget.style.transform = 'translate3d(0, -2px, 0) scale(1.02)';
-              event.currentTarget.style.backgroundColor = '#FFFFFF';
+              event.currentTarget.style.backgroundColor = '#F0EFEC';
             }}
             onMouseLeave={(event) => {
               event.currentTarget.style.transform = 'translate3d(0, 0, 0) scale(1)';
-              event.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.88)';
+              event.currentTarget.style.backgroundColor = 'rgba(229,228,226,0.92)';
             }}
           >
             <ArrowRight size={20} strokeWidth={2.1} />

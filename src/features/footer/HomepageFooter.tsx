@@ -9,11 +9,6 @@ import {
 } from 'react';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '../../app/config/routes';
-import {
-  HERO_GRADIENT_BOTTOM,
-  HERO_GRADIENT_MIDDLE,
-  HERO_GRADIENT_TOP,
-} from '../hero/theme';
 
 type FooterLinkItem = {
   label: string;
@@ -25,12 +20,13 @@ type FooterCommunityItem = FooterLinkItem & {
   icon: typeof Instagram;
 };
 
-const FOOTER_GRADIENT = `linear-gradient(180deg, ${HERO_GRADIENT_BOTTOM} 0%, ${HERO_GRADIENT_MIDDLE} 52%, ${HERO_GRADIENT_TOP} 100%)`;
-const FOOTER_TEXT = '#F8F6F2';
-const FOOTER_MUTED = 'rgba(248,246,242,0.72)';
-const FOOTER_SUBTLE = 'rgba(248,246,242,0.52)';
-const FOOTER_BORDER = 'rgba(248,246,242,0.22)';
-const FOOTER_HOVER = 'rgba(248,246,242,0.08)';
+const FOOTER_BACKGROUND = '#0A0A0A';
+const FOOTER_TEXT = '#FFFFFF';
+const FOOTER_MUTED = 'rgba(255,255,255,0.78)';
+const FOOTER_DESCRIPTION = 'rgba(255,255,255,0.55)';
+const FOOTER_SUBTLE = 'rgba(255,255,255,0.42)';
+const FOOTER_BORDER = 'rgba(255,255,255,0.12)';
+const FOOTER_HOVER = 'rgba(255,255,255,0.08)';
 const FOOTER_LOGO = 'https://ik.imagekit.io/edyl3oplm/Onemission/logos/AMAN_ONEMISSION.png?updatedAt=1782542636942';
 const FOOTER_NEWSLETTER_SUCCESS = 'Thank you. You are now connected to ONEMISSION updates.';
 const FOOTER_NEWSLETTER_ERROR = 'Please enter a valid email address.';
@@ -166,10 +162,18 @@ export function HomepageFooter() {
       style={{
         position: 'relative',
         overflow: 'hidden',
-        backgroundImage: FOOTER_GRADIENT,
+        backgroundColor: FOOTER_BACKGROUND,
         color: FOOTER_TEXT,
       }}
     >
+      <style>
+        {`
+          .homepage-footer-newsletter-input::placeholder {
+            color: rgba(255,255,255,0.45);
+            opacity: 1;
+          }
+        `}
+      </style>
       <div
         style={{
           position: 'relative',
@@ -201,7 +205,7 @@ export function HomepageFooter() {
                 style={{
                   margin: 0,
                   maxWidth: '420px',
-                  color: FOOTER_MUTED,
+                  color: FOOTER_DESCRIPTION,
                   fontSize: 'clamp(16px, 1.8vw, 20px)',
                   lineHeight: 1.7,
                   letterSpacing: '-0.01em',
@@ -233,7 +237,7 @@ export function HomepageFooter() {
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '10px',
-                        color: FOOTER_MUTED,
+                        color: FOOTER_DESCRIPTION,
                         fontSize: '14px',
                         lineHeight: 1.6,
                         textDecoration: 'none',
@@ -281,7 +285,7 @@ export function HomepageFooter() {
               <p
                 style={{
                   margin: 0,
-                  color: FOOTER_MUTED,
+                  color: FOOTER_DESCRIPTION,
                   fontSize: '15px',
                   lineHeight: 1.75,
                   maxWidth: '32ch',
@@ -309,13 +313,14 @@ export function HomepageFooter() {
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   placeholder="you@example.com"
+                  className="homepage-footer-newsletter-input"
                   style={{
                     width: '100%',
                     minHeight: '52px',
                     padding: '0 18px',
                     borderRadius: '16px',
                     border: `1px solid ${FOOTER_BORDER}`,
-                    backgroundColor: 'rgba(255,255,255,0.08)',
+                    backgroundColor: 'rgba(255,255,255,0.05)',
                     color: FOOTER_TEXT,
                     fontSize: '15px',
                     outline: 'none',
@@ -409,7 +414,7 @@ export function HomepageFooter() {
             width: '100%',
             textAlign: 'center',
             pointerEvents: 'none',
-            color: 'rgba(248,246,242,0.06)',
+            color: 'rgba(255,255,255,0.04)',
             fontFamily: "'SF-Pro-Display', sans-serif",
             fontSize: 'clamp(84px, 18vw, 280px)',
             lineHeight: 0.86,

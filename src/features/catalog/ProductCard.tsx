@@ -27,20 +27,22 @@ interface ProductCardProps {
   product: Product;
   onClick: (product: Product) => void;
   isNew?: boolean;
-  appearance?: 'default' | 'collection';
+  appearance?: 'default' | 'collection' | 'featured';
 }
 
 export const ProductCard = memo(function ProductCard({
   product,
   onClick,
   isNew = false,
-  appearance: _appearance = 'default',
+  appearance = 'default',
 }: ProductCardProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuthenticatedCustomer();
   const { isWishlisted, toggleItem } = useWishlist();
   const wishlisted = isWishlisted(product.id);
+
+  const imageSurfaceBackground = appearance === 'featured' ? '#E5E4E2' : '#FFFFFF';
 
   const handleWishlistClick = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -88,7 +90,7 @@ export const ProductCard = memo(function ProductCard({
             paddingBottom: '133%',
             overflow: 'hidden',
             borderRadius: '6px',
-            backgroundColor: '#FFFFFF',
+            backgroundColor: imageSurfaceBackground,
             marginBottom: '10px',
           }}
         >

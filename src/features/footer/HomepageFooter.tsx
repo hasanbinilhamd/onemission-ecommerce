@@ -325,7 +325,7 @@ export function HomepageFooter() {
                 }}
               >
                 {/* Values Matter. Built for movement. Guided by purpose. */}
-                Let's Bring Back The Value, Because Muslim Values Matter.
+                So, Let's Bring Back The Value, Because Muslim Values Matter. Barakallahu fiikum.
               </p>
             </div>
 

@@ -46,8 +46,8 @@ const SUPPORT_LINKS: readonly FooterLinkItem[] = [
   { label: 'FAQ', href: 'mailto:hello@onemissionclo.com?subject=FAQ', isExternal: true },
   { label: 'Track Order', href: ROUTES.TRACK_ORDER, isExternal: false },
   { label: 'Returns', href: 'mailto:hello@onemissionclo.com?subject=Returns', isExternal: true },
-  { label: 'Privacy Policy', href: 'mailto:hello@onemissionclo.com?subject=Privacy%20Policy', isExternal: true },
-  { label: 'Terms & Conditions', href: 'mailto:hello@onemissionclo.com?subject=Terms%20and%20Conditions', isExternal: true },
+  { label: 'Privacy Policy', href: ROUTES.PRIVACY },
+  { label: 'Terms & Conditions', href: ROUTES.TERMS },
 ] as const;
 
 const COMMUNITY_LINKS: readonly FooterCommunityItem[] = [

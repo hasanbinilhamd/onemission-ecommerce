@@ -6,6 +6,8 @@ export const ROUTES = {
   HOME: '/',
   PRODUCT: '/product/:slug',
   COLLECTION: '/collection',
+  TERMS: '/terms',
+  PRIVACY: '/privacy',
   CART: '/cart',
   CHECKOUT: '/checkout',
   LOGIN: '/login',

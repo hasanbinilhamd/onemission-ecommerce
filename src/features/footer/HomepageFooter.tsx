@@ -414,14 +414,29 @@ export function HomepageFooter() {
             width: '100%',
             textAlign: 'center',
             pointerEvents: 'none',
+
             color: 'rgba(255,255,255,0.04)',
+
             fontFamily: "'SF-Pro-Display', sans-serif",
-            fontSize: 'clamp(84px, 18vw, 280px)',
-            lineHeight: 0.86,
-            letterSpacing: '-0.08em',
+
+            // Responsive
+            fontSize: 'clamp(56px, 14vw, 280px)',
+
+            lineHeight: 0.9,
+
+            letterSpacing: 'clamp(-2px, -0.35vw, -18px)',
+
             fontWeight: 500,
+
             textTransform: 'uppercase',
+
             userSelect: 'none',
+
+            whiteSpace: 'nowrap',
+
+            paddingInline: 'clamp(12px, 4vw, 48px)',
+
+            boxSizing: 'border-box',
           }}
         >
           ONEMISSION

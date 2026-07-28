@@ -41,6 +41,7 @@ const ALLOWED_PUBLIC_PATTERNS = [
   /^payment-attempt\/[^/]+$/,
   /^payment-attempt\/[^/]+\/cancel$/,
   /^payment-attempt\/[^/]+\/snap$/,
+  /^newsletter\/subscribe$/,
 ];
 
 function getUpstreamBaseUrl() {
@@ -120,6 +121,15 @@ export default async function handler(req, res) {
     }
     if (req.headers['content-type']) {
       headers['Content-Type'] = req.headers['content-type'];
+    }
+    if (req.headers['user-agent']) {
+      headers['User-Agent'] = req.headers['user-agent'];
+    }
+    if (req.headers['x-forwarded-for']) {
+      headers['X-Forwarded-For'] = req.headers['x-forwarded-for'];
+    }
+    if (req.headers['x-real-ip']) {
+      headers['X-Real-IP'] = req.headers['x-real-ip'];
     }
 
     const upstreamResponse = await fetch(upstreamUrl.toString(), {

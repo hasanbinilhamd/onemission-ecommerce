@@ -1,6 +1,7 @@
-import { Instagram, Music2, Youtube } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Instagram, Loader2, Music2, Youtube } from 'lucide-react';
 import {
   useCallback,
+  useEffect,
   useMemo,
   useState,
   type CSSProperties,
@@ -9,6 +10,7 @@ import {
 } from 'react';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '../../app/config/routes';
+import { NewsletterSubscribeError, subscribeNewsletter } from '../../services/api/newsletterService';
 
 type FooterLinkItem = {
   label: string;
@@ -20,6 +22,13 @@ type FooterCommunityItem = FooterLinkItem & {
   icon: typeof Instagram;
 };
 
+type NewsletterToastState = {
+  type: 'success' | 'error';
+  title: string;
+  message: string;
+  details?: string[];
+} | null;
+
 const FOOTER_BACKGROUND = '#0A0A0A';
 const FOOTER_TEXT = '#FFFFFF';
 const FOOTER_MUTED = 'rgba(255,255,255,0.78)';
@@ -28,8 +37,15 @@ const FOOTER_SUBTLE = 'rgba(255,255,255,0.42)';
 const FOOTER_BORDER = 'rgba(255,255,255,0.12)';
 const FOOTER_HOVER = 'rgba(255,255,255,0.08)';
 const FOOTER_LOGO = 'https://ik.imagekit.io/edyl3oplm/Onemission/logos/AMAN_ONEMISSION.png?updatedAt=1782542636942';
-const FOOTER_NEWSLETTER_SUCCESS = 'Thank you. You are now connected to ONEMISSION updates.';
-const FOOTER_NEWSLETTER_ERROR = 'Please enter a valid email address.';
+const FOOTER_NEWSLETTER_SUCCESS_TITLE = 'Welcome to ONEMISSION.';
+const FOOTER_NEWSLETTER_SUCCESS_DESCRIPTION = 'Thank you for joining our movement.';
+const FOOTER_NEWSLETTER_SUCCESS_POINTS = [
+  'New collections',
+  'Product launches',
+  'Stories',
+  'Exclusive releases',
+  'Community events',
+] as const;
 
 const NAVIGATION_LINKS: readonly FooterLinkItem[] = [
   { label: 'Home', href: ROUTES.HOME },
@@ -40,7 +56,7 @@ const NAVIGATION_LINKS: readonly FooterLinkItem[] = [
 
 const SUPPORT_LINKS: readonly FooterLinkItem[] = [
   { label: 'FAQ', href: 'mailto:hello@onemissionclo.com?subject=FAQ', isExternal: true },
-  { label: 'Track Order', href: ROUTES.TRACK_ORDER, isExternal: false },
+  { label: 'Track Order', href: ROUTES.TRACK_ORDER },
   { label: 'Returns', href: 'mailto:hello@onemissionclo.com?subject=Returns', isExternal: true },
   { label: 'Privacy Policy', href: ROUTES.PRIVACY },
   { label: 'Terms & Conditions', href: ROUTES.TERMS },
@@ -133,28 +149,124 @@ function FooterColumn({ title, children }: { title: string; children: ReactNode 
   );
 }
 
+function NewsletterToast({ toastState }: { toastState: NewsletterToastState }) {
+  if (!toastState) return null;
+
+  const isSuccess = toastState.type === 'success';
+  const Icon = isSuccess ? CheckCircle2 : AlertCircle;
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        right: '20px',
+        bottom: '20px',
+        zIndex: 120,
+        width: 'min(100vw - 40px, 360px)',
+        borderRadius: '24px',
+        backgroundColor: '#FFFFFF',
+        color: '#111827',
+        border: '1px solid rgba(17,24,39,0.08)',
+        boxShadow: '0 24px 56px rgba(17,24,39,0.16)',
+        padding: '18px 18px 16px',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+        <div
+          style={{
+            flexShrink: 0,
+            width: '36px',
+            height: '36px',
+            borderRadius: '999px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: isSuccess ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)',
+            color: isSuccess ? '#059669' : '#DC2626',
+          }}
+        >
+          <Icon size={18} strokeWidth={2.2} />
+        </div>
+        <div style={{ minWidth: 0, display: 'grid', gap: '6px' }}>
+          <p style={{ margin: 0, fontSize: '15px', fontWeight: 600 }}>{toastState.title}</p>
+          <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.7, color: 'rgba(17,24,39,0.74)' }}>{toastState.message}</p>
+          {Array.isArray(toastState.details) && toastState.details.length > 0 ? (
+            <ul style={{ margin: 0, paddingLeft: '18px', display: 'grid', gap: '4px', color: 'rgba(17,24,39,0.72)', fontSize: '13px', lineHeight: 1.6 }}>
+              {toastState.details.map((detail) => (
+                <li key={detail}>{detail}</li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function normalizeNewsletterEmail(value: string): string {
+  return String(value || '').trim().toLowerCase();
+}
+
+function isValidNewsletterEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 export function HomepageFooter() {
   const [email, setEmail] = useState('');
-  const [statusMessage, setStatusMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toastState, setToastState] = useState<NewsletterToastState>(null);
 
   const newsletterDescription = useMemo(() => (
     'Receive product launches, stories, and exclusive updates.'
   ), []);
 
-  const handleSubmit = useCallback((event: FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    if (!toastState) return undefined;
+    const timeoutId = window.setTimeout(() => {
+      setToastState(null);
+    }, 5200);
+    return () => window.clearTimeout(timeoutId);
+  }, [toastState]);
+
+  const handleSubmit = useCallback(async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmitting) return;
 
-    const normalizedEmail = email.trim();
-    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
-
-    if (!isValidEmail) {
-      setStatusMessage(FOOTER_NEWSLETTER_ERROR);
+    const normalizedEmail = normalizeNewsletterEmail(email);
+    if (!normalizedEmail || normalizedEmail.length > 255 || !isValidNewsletterEmail(normalizedEmail)) {
+      setToastState({
+        type: 'error',
+        title: 'Subscription unavailable.',
+        message: 'Please enter a valid email address.',
+      });
       return;
     }
 
-    setStatusMessage(FOOTER_NEWSLETTER_SUCCESS);
-    setEmail('');
-  }, [email]);
+    setIsSubmitting(true);
+    try {
+      await subscribeNewsletter(normalizedEmail);
+      setToastState({
+        type: 'success',
+        title: FOOTER_NEWSLETTER_SUCCESS_TITLE,
+        message: FOOTER_NEWSLETTER_SUCCESS_DESCRIPTION,
+        details: [...FOOTER_NEWSLETTER_SUCCESS_POINTS],
+      });
+      setEmail('');
+    } catch (error) {
+      const message = error instanceof NewsletterSubscribeError
+        ? error.message
+        : 'Something went wrong. Please try again later.';
+      setToastState({
+        type: 'error',
+        title: message === 'You are already part of the ONEMISSION community.'
+          ? 'Already subscribed.'
+          : 'Subscription unavailable.',
+        message,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [email, isSubmitting]);
 
   return (
     <footer
@@ -174,6 +286,7 @@ export function HomepageFooter() {
           }
         `}
       </style>
+      <NewsletterToast toastState={toastState} />
       <div
         style={{
           position: 'relative',
@@ -337,11 +450,13 @@ export function HomepageFooter() {
                     event.currentTarget.style.boxShadow = 'none';
                     event.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)';
                   }}
+                  disabled={isSubmitting}
                 />
               </label>
 
               <button
                 type="submit"
+                disabled={isSubmitting}
                 style={{
                   minHeight: '52px',
                   padding: '0 20px',
@@ -352,10 +467,16 @@ export function HomepageFooter() {
                   fontSize: '14px',
                   fontWeight: 500,
                   letterSpacing: '0.04em',
-                  cursor: 'pointer',
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
                   transition: 'transform 180ms ease, background-color 180ms ease, border-color 180ms ease',
+                  opacity: isSubmitting ? 0.72 : 1,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
                 }}
                 onMouseEnter={(event) => {
+                  if (isSubmitting) return;
                   event.currentTarget.style.transform = 'translate3d(0, -2px, 0)';
                   event.currentTarget.style.backgroundColor = FOOTER_HOVER;
                   event.currentTarget.style.borderColor = 'rgba(248,246,242,0.38)';
@@ -366,22 +487,10 @@ export function HomepageFooter() {
                   event.currentTarget.style.borderColor = FOOTER_BORDER;
                 }}
               >
-                Subscribe
+                {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : null}
+                <span>{isSubmitting ? 'Subscribing…' : 'Subscribe'}</span>
               </button>
             </form>
-
-            {statusMessage ? (
-              <p
-                style={{
-                  margin: 0,
-                  color: FOOTER_MUTED,
-                  fontSize: '13px',
-                  lineHeight: 1.7,
-                }}
-              >
-                {statusMessage}
-              </p>
-            ) : null}
           </div>
         </div>
 

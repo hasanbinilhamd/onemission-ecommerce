@@ -64,7 +64,7 @@ const SUPPORT_LINKS: readonly FooterLinkItem[] = [
 
 const COMMUNITY_LINKS: readonly FooterCommunityItem[] = [
   { label: 'Instagram', href: 'https://www.instagram.com/onemissionclo/', isExternal: true, icon: Instagram },
-  { label: 'TikTok', href: 'https://www.tiktok.com/@onemissionclo', isExternal: true, icon: Music2 },
+  { label: 'TikTok', href: 'https://www.tiktok.com/@hasanbinilhamd', isExternal: true, icon: Music2 },
   { label: 'YouTube', href: 'https://www.youtube.com/@onemissionworld', isExternal: true, icon: Youtube },
 ] as const;
 

@@ -25,12 +25,19 @@ type Direction = 'next' | 'prev';
 
 const IMAGES: readonly ImageItem[] = [
   {
-    mediaType: 'image',
+    mediaType: 'video',
     media: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/OKOWW.png?updatedAt=1782468174527',
     poster: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/OKOWW.png?updatedAt=1782468174527',
     panel: '#1F2128',
     theme: HERO_THEMES[0],
   },
+  // {
+  //   mediaType: 'image',
+  //   media: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/OKOWW.png?updatedAt=1782468174527',
+  //   poster: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/OKOWW.png?updatedAt=1782468174527',
+  //   panel: '#1F2128',
+  //   theme: HERO_THEMES[0],
+  // },
   {
     mediaType: 'image',
     media: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/WEEE.png?updatedAt=1782468174345',

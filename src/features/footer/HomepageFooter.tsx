@@ -514,7 +514,7 @@ export function HomepageFooter() {
           </div>
         </div>
 
-        <div
+        {/* <div
           aria-hidden="true"
           style={{
             position: 'absolute',
@@ -550,7 +550,7 @@ export function HomepageFooter() {
           }}
         >
           ONEMISSION
-        </div>
+        </div> */}
       </div>
     </footer>
   );

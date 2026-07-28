@@ -26,7 +26,7 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { FloatingNavigation, MiniCartDrawer } from './features/cart';
 import { AccountDashboardLayout } from './features/customer';
 import { SearchOverlay } from './features/search';
-import { NavigationThemeProvider } from './features/navigation';
+import { NavigationThemeProvider, RouteScrollRestoration } from './features/navigation';
 
 type HomeExperienceSnapshot = {
   scrollY: number;
@@ -128,6 +128,7 @@ function App() {
   return (
     <NavigationThemeProvider theme={isHome ? 'light' : 'dark'}>
       <>
+        <RouteScrollRestoration />
         <Routes>
           <Route
             path="/"

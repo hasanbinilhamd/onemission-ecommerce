@@ -45,10 +45,11 @@ export function TopBackNavigation({
         display: 'flex',
         alignItems: 'center',
         padding: '0 16px',
-        backgroundColor: 'rgba(255,255,255,0.92)',
+        backgroundColor: colors.surfaceBackground,
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
-        borderBottom: '1px solid #F3F4F6',
+        borderBottom: `1px solid ${colors.surfaceBorder}`,
+        boxShadow: colors.surfaceShadow,
       }}
       className="sm:px-8"
     >

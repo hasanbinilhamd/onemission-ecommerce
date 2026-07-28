@@ -136,7 +136,7 @@ export function FeaturedProductsSection({
         position: 'relative',
         backgroundColor: FEATURED_SECTION_BACKGROUND,
         color: FEATURED_SECTION_TEXT,
-        padding: 'clamp(72px, 10vw, 120px) 0 clamp(80px, 10vw, 128px)',
+        padding: '0 0 clamp(80px, 10vw, 128px)',
         overflow: 'hidden',
       }}
     >

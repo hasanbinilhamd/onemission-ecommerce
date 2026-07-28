@@ -39,12 +39,12 @@ const NAVIGATION_LINKS: readonly FooterLinkItem[] = [
   { label: 'Home', href: ROUTES.HOME },
   { label: 'Collection', href: ROUTES.COLLECTION },
   { label: 'About', href: `${ROUTES.HOME}#onemission-vision` },
-  { label: 'Contact', href: 'mailto:hello@onemissionclo.com', isExternal: true },
+  { label: 'Contact', href: 'http://wa.me/6285798097779', isExternal: true },
 ] as const;
 
 const SUPPORT_LINKS: readonly FooterLinkItem[] = [
   { label: 'FAQ', href: 'mailto:hello@onemissionclo.com?subject=FAQ', isExternal: true },
-  { label: 'Shipping', href: 'mailto:hello@onemissionclo.com?subject=Shipping', isExternal: true },
+  { label: 'Track Order', href: ROUTES.TRACK_ORDER, isExternal: false },
   { label: 'Returns', href: 'mailto:hello@onemissionclo.com?subject=Returns', isExternal: true },
   { label: 'Privacy Policy', href: 'mailto:hello@onemissionclo.com?subject=Privacy%20Policy', isExternal: true },
   { label: 'Terms & Conditions', href: 'mailto:hello@onemissionclo.com?subject=Terms%20and%20Conditions', isExternal: true },

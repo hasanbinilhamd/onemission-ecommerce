@@ -472,7 +472,6 @@ export function ProductStorySection(props: ProductStorySectionProps) {
             display: 'flex',
             justifyContent: 'flex-end',
             gap: '12px',
-            paddingTop: '24px',
           }}
         >
           <button

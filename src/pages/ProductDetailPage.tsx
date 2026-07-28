@@ -238,6 +238,48 @@ if (typeof document !== 'undefined') {
   }
 }
 
+function ProductInformationFallback({ message = 'Information coming soon.' }: { message?: string }) {
+  return <p>{message}</p>;
+}
+
+function SizeGuideContent({ imageUrl }: { imageUrl?: string }) {
+  const [hasImageError, setHasImageError] = useState(false);
+
+  useEffect(() => {
+    setHasImageError(false);
+  }, [imageUrl]);
+
+  if (!imageUrl || hasImageError) {
+    return <p>Size guide coming soon.</p>;
+  }
+
+  return (
+    <div
+      style={{
+        width: '100%',
+        borderRadius: '10px',
+        overflow: 'hidden',
+        backgroundColor: '#F7F7F5',
+        padding: '12px',
+        boxSizing: 'border-box',
+      }}
+    >
+      <img
+        src={imageUrl}
+        alt="Size guide"
+        onError={() => setHasImageError(true)}
+        style={{
+          width: '100%',
+          height: 'auto',
+          objectFit: 'contain',
+          display: 'block',
+          borderRadius: '8px',
+        }}
+      />
+    </div>
+  );
+}
+
 function ProductDetailContent() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -628,19 +670,39 @@ function ProductDetailContent() {
 
         <div style={{ marginTop: '56px', borderTop: '1px solid #F3F4F6', maxWidth: '720px' }}>
           <AccordionSection title="Description">
-            <p>{product.longDescription ?? product.description ?? 'No description available.'}</p>
+            {product.longDescription?.trim() ? (
+              <p>{product.longDescription}</p>
+            ) : (
+              <ProductInformationFallback />
+            )}
           </AccordionSection>
 
           <AccordionSection title="Materials">
-            <p>{product.materials ?? 'Material information will be added soon.'}</p>
+            {product.materials?.trim() ? (
+              <p>{product.materials}</p>
+            ) : (
+              <ProductInformationFallback />
+            )}
           </AccordionSection>
 
           <AccordionSection title="Care Instructions">
-            <p>{product.care ?? 'Care information will be added soon.'}</p>
+            {product.care?.trim() ? (
+              <p>{product.care}</p>
+            ) : (
+              <ProductInformationFallback />
+            )}
           </AccordionSection>
 
           <AccordionSection title="Shipping Information">
-            <p>{product.shipping ?? 'Shipping information will be added soon.'}</p>
+            {product.shipping?.trim() ? (
+              <p>{product.shipping}</p>
+            ) : (
+              <ProductInformationFallback />
+            )}
+          </AccordionSection>
+
+          <AccordionSection title="Size Guide">
+            <SizeGuideContent imageUrl={product.sizeGuideImageUrl} />
           </AccordionSection>
         </div>
 

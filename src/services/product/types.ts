@@ -98,6 +98,10 @@ export interface CommerceProductDetailApiDto {
   name: string;
   shortDescription: string;
   description: string;
+  materials: string;
+  careInstructions: string;
+  shippingInformation: string;
+  sizeGuideImageUrl: string;
   thumbnail: string;
   gallery: string[];
   category: {

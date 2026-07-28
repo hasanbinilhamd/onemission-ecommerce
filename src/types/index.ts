@@ -48,6 +48,7 @@ export interface Product {
   materials?: string;
   care?: string;
   shipping?: string;
+  sizeGuideImageUrl?: string;
   stockStatus?: 'IN_STOCK' | 'OUT_OF_STOCK';
   featured?: boolean;
   newArrival?: boolean;

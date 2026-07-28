@@ -587,7 +587,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
               fontSize: isMobile ? 'clamp(120px, 37vw, 170px)' : 'clamp(70px, 19vw, 380px)',
               fontWeight: 400,
               color: '#ffffff',
-              opacity: 0.5,
+              opacity: 0.6,
               lineHeight: isMobile ? 0.8 : 1,
               textTransform: 'lowercase',
               letterSpacing: '-0.08em',

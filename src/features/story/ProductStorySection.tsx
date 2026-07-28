@@ -90,10 +90,8 @@ function ProductStoryMedia({ item, isActive }: { item: ProductStoryItem; isActiv
   );
 }
 
-export function ProductStorySection({
-  items = PRODUCT_STORY_ITEMS,
-  backgroundImage,
-}: ProductStorySectionProps) {
+export function ProductStorySection(props: ProductStorySectionProps) {
+  const { items = PRODUCT_STORY_ITEMS } = props;
   const orderedItems = useMemo(() => {
     return [...items].sort((left, right) => (left.displayOrder ?? 0) - (right.displayOrder ?? 0));
   }, [items]);
@@ -280,7 +278,7 @@ export function ProductStorySection({
     width: '48px',
     height: '48px',
     borderRadius: '999px',
-    border: '1px solid rgba(255,255,255,0.18)',
+    border: '1px solid rgba(17,24,39,0.14)',
     backgroundColor: 'rgba(255,255,255,0.88)',
     color: enabled ? '#0F172A' : 'rgba(15,23,42,0.32)',
     display: 'inline-flex',
@@ -302,10 +300,7 @@ export function ProductStorySection({
       aria-roledescription="carousel"
       style={{
         position: 'relative',
-        backgroundImage,
-        backgroundRepeat: 'no-repeat',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        background: '#E5E4E2',
         padding: 'clamp(72px, 10vw, 120px) 0 clamp(88px, 10vw, 128px)',
         outline: 'none',
         overflow: 'hidden',
@@ -330,7 +325,7 @@ export function ProductStorySection({
         style={{
           width: 'min(100%, 1600px)',
           margin: '0 auto',
-          // padding: '0 clamp(20px, 4vw, 48px)',
+          padding: '0 clamp(20px, 4vw, 48px)',
           boxSizing: 'border-box',
         }}
       >
@@ -340,13 +335,12 @@ export function ProductStorySection({
             gap: '10px',
             marginBottom: 'clamp(28px, 5vw, 44px)',
             maxWidth: '720px',
-            paddingLeft: 'clamp(20px, 4vw, 48px)',
           }}
         >
           <p
             style={{
               margin: 0,
-              color: 'rgba(255,255,255,0.78)',
+              color: 'rgba(17,24,39,0.64)',
               fontSize: '12px',
               fontWeight: 600,
               letterSpacing: '0.22em',
@@ -359,7 +353,7 @@ export function ProductStorySection({
           <h2
             style={{
               margin: 0,
-              color: '#FFFFFF',
+              color: '#111827',
               fontFamily: "'SF-Pro-Display', sans-serif",
               fontSize: 'clamp(36px, 6vw, 72px)',
               lineHeight: 0.98,
@@ -387,13 +381,13 @@ export function ProductStorySection({
             userSelect: isDragging ? 'none' : 'auto',
             overflowY: 'hidden',
             touchAction: 'auto',
-            padding: '0px clamp(20px, 4vw, 48px)',
           }}
         >
           <div
             className="flex"
             style={{
               marginLeft: 'calc(clamp(16px, 2vw, 28px) * -1)',
+              paddingRight: 'clamp(20px, 4vw, 48px)',
             }}
           >
             {orderedItems.map((item, index) => {
@@ -457,7 +451,7 @@ export function ProductStorySection({
                       <p
                         style={{
                           margin: 0,
-                          color: 'rgba(15,23,42,0.78)',
+                          color: 'rgba(17,24,39,0.75)',
                           fontSize: 'clamp(15px, 1.6vw, 18px)',
                           lineHeight: 1.4,
                           maxWidth: '34ch',
@@ -478,7 +472,7 @@ export function ProductStorySection({
             display: 'flex',
             justifyContent: 'flex-end',
             gap: '12px',
-            padding: '24px clamp(16px, 2vw, 24px)',
+            paddingTop: '24px',
           }}
         >
           <button

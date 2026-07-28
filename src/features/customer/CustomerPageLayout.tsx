@@ -39,11 +39,11 @@ export function CustomerPageHeader({
     <div className="mb-8">
       {showBackToHome ? <TopBackNavigation label="Back to Home" fallbackTo={ROUTES.HOME} /> : null}
 
-      <Link to={ROUTES.HOME} aria-label="Back to ONEMISSION Commerce homepage" className="inline-flex items-center">
+      {/* <Link to={ROUTES.HOME} aria-label="Back to ONEMISSION Commerce homepage" className="inline-flex items-center">
         <img src={COMMERCE_LOGO_URL} alt="ONEMISSION" className="h-8 w-auto sm:h-10" />
-      </Link>
+      </Link> */}
 
-      <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="max-w-[720px]">
           <p style={{ margin: '0 0 8px', fontSize: '12px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9CA3AF', fontWeight: 600 }}>
             {sectionLabel}

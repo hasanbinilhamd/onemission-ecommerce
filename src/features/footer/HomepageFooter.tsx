@@ -57,7 +57,7 @@ const NAVIGATION_LINKS: readonly FooterLinkItem[] = [
 const SUPPORT_LINKS: readonly FooterLinkItem[] = [
   { label: 'FAQ', href: 'mailto:hello@onemissionclo.com?subject=FAQ', isExternal: true },
   { label: 'Track Order', href: ROUTES.TRACK_ORDER },
-  { label: 'Returns', href: 'mailto:hello@onemissionclo.com?subject=Returns', isExternal: true },
+  // { label: 'Returns', href: 'mailto:hello@onemissionclo.com?subject=Returns', isExternal: true },
   { label: 'Privacy Policy', href: ROUTES.PRIVACY },
   { label: 'Terms & Conditions', href: ROUTES.TERMS },
 ] as const;
@@ -65,7 +65,7 @@ const SUPPORT_LINKS: readonly FooterLinkItem[] = [
 const COMMUNITY_LINKS: readonly FooterCommunityItem[] = [
   { label: 'Instagram', href: 'https://www.instagram.com/onemissionclo/', isExternal: true, icon: Instagram },
   { label: 'TikTok', href: 'https://www.tiktok.com/@onemissionclo', isExternal: true, icon: Music2 },
-  { label: 'YouTube', href: 'https://www.youtube.com/@onemissionclo', isExternal: true, icon: Youtube },
+  { label: 'YouTube', href: 'https://www.youtube.com/@onemissionworld', isExternal: true, icon: Youtube },
 ] as const;
 
 function FooterLink({ item }: { item: FooterLinkItem }) {
@@ -324,7 +324,8 @@ export function HomepageFooter() {
                   letterSpacing: '-0.01em',
                 }}
               >
-                Values Matter. Built for movement. Guided by purpose.
+                {/* Values Matter. Built for movement. Guided by purpose. */}
+                Let's Bring Back The Value, Because Muslim Values Matter.
               </p>
             </div>
 
@@ -502,14 +503,14 @@ export function HomepageFooter() {
             <p style={{ margin: 0, color: FOOTER_MUTED, fontSize: '13px', lineHeight: 1.7 }}>
               © 2026 ONEMISSION.
             </p>
-            <p style={{ margin: 0, color: FOOTER_SUBTLE, fontSize: '13px', lineHeight: 1.7 }}>
+            {/* <p style={{ margin: 0, color: FOOTER_SUBTLE, fontSize: '13px', lineHeight: 1.7 }}>
               Built with purpose.
-            </p>
+            </p> */}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-            <span style={{ color: FOOTER_MUTED, fontSize: '13px', lineHeight: 1.7 }}>Indonesia</span>
-            <span style={{ color: FOOTER_SUBTLE, fontSize: '13px', lineHeight: 1.7 }}>English</span>
+            {/* <span style={{ color: FOOTER_MUTED, fontSize: '13px', lineHeight: 1.7 }}>Indonesia</span> */}
+            <span style={{ color: FOOTER_SUBTLE, fontSize: '13px', lineHeight: 1.7 }}>Built with purpose.</span>
           </div>
         </div>
 
@@ -529,7 +530,7 @@ export function HomepageFooter() {
             fontFamily: "'SF-Pro-Display', sans-serif",
 
             // Responsive
-            fontSize: 'clamp(56px, 14vw, 280px)',
+            fontSize: 'clamp(56px, 11vw, 260px)',
 
             lineHeight: 0.9,
 

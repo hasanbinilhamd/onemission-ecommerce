@@ -41,7 +41,7 @@ export function TopBackNavigation({
         left: 0,
         right: 0,
         zIndex: 40,
-        height: '56px',
+        height: '80px',
         display: 'flex',
         alignItems: 'center',
         padding: '0 16px',

@@ -26,7 +26,7 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { FloatingNavigation, MiniCartDrawer } from './features/cart';
 import { AccountDashboardLayout } from './features/customer';
 import { SearchOverlay } from './features/search';
-import { NavigationThemeProvider, RouteScrollRestoration } from './features/navigation';
+import { NavigationThemeProvider, RouteScrollRestoration, type NavigationTheme } from './features/navigation';
 
 type HomeExperienceSnapshot = {
   scrollY: number;
@@ -76,11 +76,24 @@ function LegacyOrderRedirect() {
   return <Navigate to={`/account/orders/${encodeURIComponent(orderNumber)}`} replace />;
 }
 
+function resolveHomepageNavigationTheme(): NavigationTheme {
+  if (typeof window === 'undefined') {
+    return 'light';
+  }
+
+  return window.scrollY < Math.max((window.innerHeight || 0) - 80, 120)
+    ? 'light'
+    : 'dark';
+}
+
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const previousPathRef = useRef(location.pathname);
   const [heroIndex, setHeroIndex] = useState(() => readHomeExperienceSnapshot()?.heroIndex ?? 0);
+  const [navigationTheme, setNavigationTheme] = useState<NavigationTheme>(() => (
+    location.pathname === '/' ? resolveHomepageNavigationTheme() : 'dark'
+  ));
 
   const isHome = location.pathname === '/';
 
@@ -108,6 +121,29 @@ function App() {
     previousPathRef.current = location.pathname;
   }, [isHome, location.pathname, location.state]);
 
+  useEffect(() => {
+    if (!isHome) {
+      setNavigationTheme('dark');
+      return undefined;
+    }
+
+    const updateNavigationTheme = () => {
+      setNavigationTheme((currentTheme) => {
+        const nextTheme = resolveHomepageNavigationTheme();
+        return currentTheme === nextTheme ? currentTheme : nextTheme;
+      });
+    };
+
+    updateNavigationTheme();
+    window.addEventListener('scroll', updateNavigationTheme, { passive: true });
+    window.addEventListener('resize', updateNavigationTheme);
+
+    return () => {
+      window.removeEventListener('scroll', updateNavigationTheme);
+      window.removeEventListener('resize', updateNavigationTheme);
+    };
+  }, [isHome]);
+
   const handleProductSelect = useCallback((slug: string) => {
     persistHomeExperienceSnapshot({
       scrollY: window.scrollY,
@@ -126,7 +162,7 @@ function App() {
   ), [handleProductSelect, heroIndex]);
 
   return (
-    <NavigationThemeProvider theme={isHome ? 'light' : 'dark'}>
+    <NavigationThemeProvider theme={navigationTheme}>
       <>
         <RouteScrollRestoration />
         <Routes>

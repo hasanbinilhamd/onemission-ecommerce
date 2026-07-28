@@ -3,7 +3,7 @@ import { HomepageFooter } from '../footer';
 import { TopBackNavigation } from '../navigation';
 import { ROUTES } from '../../app/config/routes';
 
-const LEGAL_BACKGROUND = '#E5E4E2';
+const LEGAL_BACKGROUND = '#FFFFFF';
 const LEGAL_TEXT = '#111827';
 const LEGAL_MUTED = 'rgba(17,24,39,0.72)';
 const LEGAL_BORDER = 'rgba(17,24,39,0.12)';

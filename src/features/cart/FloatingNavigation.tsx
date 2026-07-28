@@ -6,7 +6,7 @@ import { SearchTrigger } from '../search';
 
 export function FloatingNavigation() {
   const { totalItems, openMiniCart, isMiniCartVisible } = useCartStore();
-  const { colors } = useNavigationTheme();
+  const { theme, colors } = useNavigationTheme();
 
   if (isMiniCartVisible) return null;
 
@@ -20,6 +20,12 @@ export function FloatingNavigation() {
         display: 'flex',
         alignItems: 'center',
         gap: '4px',
+        padding: theme === 'dark' ? '6px 8px' : 0,
+        borderRadius: '9999px',
+        backgroundColor: colors.surfaceBackground,
+        border: theme === 'dark' ? `1px solid ${colors.surfaceBorder}` : '1px solid transparent',
+        boxShadow: colors.surfaceShadow,
+        transition: 'background-color 220ms ease, border-color 220ms ease, box-shadow 220ms ease, padding 220ms ease',
       }}
       className="sm:right-8"
     >

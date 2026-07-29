@@ -323,7 +323,7 @@ export function ProductStorySection(props: ProductStorySectionProps) {
       style={{
         position: 'relative',
         background: '#FFFFFF',
-        padding: 'clamp(72px, 10vw, 120px) 0 clamp(56px, 7vw, 80px)',
+        padding: 'clamp(72px, 10vw, 120px) 0 clamp(16px, 3vw, 40px)',
         outline: 'none',
         overflow: 'hidden',
       }}

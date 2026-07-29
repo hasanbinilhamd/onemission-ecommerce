@@ -569,7 +569,8 @@ export function CatalogLayer({ revealProgress = 0, onProductSelect }: CatalogLay
             letterSpacing: '-0.01em',
           }}
         >
-          We are building a global movement
+          <span className="block sm:inline">We are building </span>
+          <span className="block sm:inline">a global movement</span>
         </p>
         <p
           className="w-full bold text-center tracking-widest text-3xl sm:text-4xl md:text-7xl"
@@ -584,7 +585,8 @@ export function CatalogLayer({ revealProgress = 0, onProductSelect }: CatalogLay
             letterSpacing: '-0.01em',
           }}
         >
-          that empowers Muslims to live actively
+          <span className="block sm:inline">that empowers </span>
+          <span className="block sm:inline">Muslims to live actively</span>
         </p>
         <p
           className="w-full bold text-center tracking-widest mb-2 sm:mb-3 text-3xl sm:text-4xl md:text-7xl"
@@ -599,7 +601,8 @@ export function CatalogLayer({ revealProgress = 0, onProductSelect }: CatalogLay
             letterSpacing: '-0.01em',
           }}
         >
-          while staying true to their <span style={{ fontWeight: 700 }}>values</span>.
+          <span className="block sm:inline">while staying true </span>
+          <span className="block sm:inline">to their <span style={{ fontWeight: 700 }}>values</span>.</span>
         </p>
 
         <p

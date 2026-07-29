@@ -606,7 +606,7 @@ export function CatalogLayer({ revealProgress = 0, onProductSelect }: CatalogLay
         </p>
 
         <p
-          className="w-full bold text-center tracking-widest text-2xl sm:text-3xl md:text-5xl"
+          className="w-full bold text-center tracking-widest text-lg sm:text-2xl md:text-4xl"
           style={{
             // fontFamily: "'Chakra Petch', sans-serif",
             // color: '#0A0A0A',
@@ -619,7 +619,8 @@ export function CatalogLayer({ revealProgress = 0, onProductSelect }: CatalogLay
             letterSpacing: '-0.01em',
           }}
         >
-          the story begins in Bandung, Indonesia.
+          <span className="block sm:inline">the story begins in Bandung,</span>
+          <span className="block sm:inline">Indonesia.</span>
         </p>
       </div>
 

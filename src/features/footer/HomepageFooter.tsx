@@ -305,7 +305,7 @@ export function HomepageFooter() {
           style={{ gap: 'clamp(48px, 6vw, 88px)' }}
         >
           <div style={{ display: 'grid', gap: 'clamp(32px, 4vw, 48px)' }}>
-            <div style={{ display: 'grid', gap: '24px' }}>
+            <div style={{ display: 'grid'}}>
               <img
                 src={FOOTER_LOGO}
                 alt="ONEMISSION"
@@ -496,16 +496,13 @@ export function HomepageFooter() {
         </div>
 
         <div
-          className="flex flex-col gap-5 border-t pt-6 sm:flex-row sm:items-end sm:justify-between"
+          className="flex flex-col border-t pt-6 sm:flex-row sm:items-end justify-between"
           style={{ borderColor: FOOTER_BORDER }}
         >
           <div style={{ display: 'grid', gap: '6px' }}>
             <p style={{ margin: 0, color: FOOTER_MUTED, fontSize: '13px', lineHeight: 1.7 }}>
               © 2026 ONEMISSION.
             </p>
-            {/* <p style={{ margin: 0, color: FOOTER_SUBTLE, fontSize: '13px', lineHeight: 1.7 }}>
-              Built with purpose.
-            </p> */}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>

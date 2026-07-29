@@ -157,7 +157,7 @@ function roleStyle(role: Role, isMobile: boolean): React.CSSProperties {
         left: '50%',
         height: isMobile ? '60%' : '92%',
         bottom: isMobile ? '22%' : 0,
-        transform: `translateX(-50%) scale(${isMobile ? 1.25 : 1.68})`,
+        transform: `translateX(-50%) scale(${isMobile ? 1.16 : 1.56})`,
         filter: 'blur(0px)',
         opacity: 1,
         zIndex: 20,

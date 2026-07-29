@@ -2,18 +2,24 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, type KeyboardE
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { CatalogLayer } from '../features/catalog';
 import { HERO_THEMES, createHeroGradient } from '../features/hero/theme';
-import { ProductStorySection } from '../features/story';
+import { ProductStorySection, PRODUCT_STORY_ITEMS, type ProductStoryItem } from '../features/story';
 import { FeaturedProductsSection } from '../features/featured';
 import { HomepageFooter } from '../features/footer';
+import {
+  websiteService,
+  type WebsiteBrandVideo,
+  type WebsiteHeroItem as WebsiteHeroCmsItem,
+  type WebsiteProductStoryItem as WebsiteProductStoryCmsItem,
+} from '../services/api/websiteService';
 
 type HeroMediaType = 'image' | 'video';
 
-type ImageItem = {
+type HeroCarouselItem = {
   mediaType: HeroMediaType;
-  media: string;
+  desktopUrl: string;
+  mobileUrl: string;
   poster: string;
   blurMedia?: string;
-  panel: string;
   theme: {
     title: string;
     accentColor: string;
@@ -23,73 +29,124 @@ type ImageItem = {
 type Role = 'center' | 'left' | 'right' | 'back';
 type Direction = 'next' | 'prev';
 
-const IMAGES: readonly ImageItem[] = [
+const DEFAULT_WEBSITE_HERO_ITEMS: WebsiteHeroCmsItem[] = [
   {
-    mediaType: 'video',
-    media: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/OKOWW.png?updatedAt=1782468174527',
-    poster: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/OKOWW.png?updatedAt=1782468174527',
-    panel: '#1F2128',
-    theme: HERO_THEMES[0],
-  },
-  // {
-  //   mediaType: 'image',
-  //   media: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/OKOWW.png?updatedAt=1782468174527',
-  //   poster: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/OKOWW.png?updatedAt=1782468174527',
-  //   panel: '#1F2128',
-  //   theme: HERO_THEMES[0],
-  // },
-  {
+    id: 'default-hero-1',
     mediaType: 'image',
-    media: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/WEEE.png?updatedAt=1782468174345',
-    poster: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/WEEE.png?updatedAt=1782468174345',
-    panel: '#4F5D75',
-    theme: HERO_THEMES[1],
+    desktopUrl: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/OKOWW.png?updatedAt=1782468174527',
+    mobileUrl: '',
+    displayOrder: 1,
+    active: true,
   },
   {
+    id: 'default-hero-2',
     mediaType: 'image',
-    media: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/kmkmksss.png?updatedAt=1782468173729',
-    poster: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/kmkmksss.png?updatedAt=1782468173729',
-    panel: '#76837A',
-    theme: HERO_THEMES[2],
+    desktopUrl: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/WEEE.png?updatedAt=1782468174345',
+    mobileUrl: '',
+    displayOrder: 2,
+    active: true,
   },
   {
+    id: 'default-hero-3',
     mediaType: 'image',
-    media: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/QW.png?updatedAt=1782468169304',
-    poster: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/QW.png?updatedAt=1782468169304',
-    panel: '#7B7487',
-    theme: HERO_THEMES[3],
+    desktopUrl: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/kmkmksss.png?updatedAt=1782468173729',
+    mobileUrl: '',
+    displayOrder: 3,
+    active: true,
   },
-] as const;
+  {
+    id: 'default-hero-4',
+    mediaType: 'image',
+    desktopUrl: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/QW.png?updatedAt=1782468169304',
+    mobileUrl: '',
+    displayOrder: 4,
+    active: true,
+  },
+];
+
+const DEFAULT_BRAND_VIDEO: WebsiteBrandVideo = {
+  id: 'default-brand-video',
+  videoUrl: 'https://ik.imagekit.io/fkoy34ckk/onemission-dev/WhatsApp%20Video%202026-07-26%20at%2016.17.17.mp4?updatedAt=1785057842262',
+  posterUrl: 'https://ik.imagekit.io/fkoy34ckk/onemission-dev/Screenshot%202026-07-26%20163038.png?updatedAt=1785058280647',
+  active: true,
+};
+
+const DEFAULT_WEBSITE_PRODUCT_STORY_ITEMS: WebsiteProductStoryCmsItem[] = PRODUCT_STORY_ITEMS.map((item) => ({
+  id: item.id,
+  mediaType: item.mediaType,
+  mediaUrl: item.mediaUrl,
+  description: item.description,
+  displayOrder: item.displayOrder ?? 0,
+  active: true,
+}));
 
 const EASE = 'cubic-bezier(0.4, 0, 0.2, 1)';
 const DURATION = 650;
 const GRADIENT_FADE_DURATION = 520;
 const COLLECTION_REVEAL_SCROLL_RANGE = 220;
 const COLLECTION_OVERLAP = 'max(0px, -10vh)';
-const VIDEO_SECTION_SOURCE = 'https://ik.imagekit.io/fkoy34ckk/onemission-dev/WhatsApp%20Video%202026-07-26%20at%2016.17.17.mp4?updatedAt=1785057842262';
-const VIDEO_SECTION_POSTER = 'https://ik.imagekit.io/fkoy34ckk/onemission-dev/Screenshot%202026-07-26%20163038.png?updatedAt=1785058280647';
 
 const GRAIN_SVG =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E";
 
-const HERO_GRADIENTS = IMAGES.map((item) => createHeroGradient(item.theme.accentColor));
+const HERO_GRADIENTS = HERO_THEMES.map((item) => createHeroGradient(item.accentColor));
 
-function getHeroPoster(item: ImageItem): string {
-  return item.poster || item.blurMedia || item.media;
+function mapHeroItems(items: readonly WebsiteHeroCmsItem[]): HeroCarouselItem[] {
+  return [...items]
+    .sort((left, right) => left.displayOrder - right.displayOrder || left.id.localeCompare(right.id))
+    .map((item, index) => ({
+      mediaType: item.mediaType,
+      desktopUrl: item.desktopUrl,
+      mobileUrl: item.mobileUrl || '',
+      poster: item.desktopUrl,
+      theme: HERO_THEMES[index % HERO_THEMES.length],
+    }));
 }
 
-function getHeroBlurMedia(item: ImageItem): string {
-  return item.blurMedia || getHeroPoster(item);
+function mapProductStoryItems(items: readonly WebsiteProductStoryCmsItem[]): ProductStoryItem[] {
+  return [...items]
+    .sort((left, right) => left.displayOrder - right.displayOrder || left.id.localeCompare(right.id))
+    .map((item) => ({
+      id: item.id,
+      title: item.description,
+      description: item.description,
+      mediaType: item.mediaType,
+      mediaUrl: item.mediaUrl,
+      alt: item.description,
+      displayOrder: item.displayOrder,
+    }));
+}
+
+function resolveHeroMediaSource(item: HeroCarouselItem, isMobile: boolean): string {
+  const mobileUrl = String(item.mobileUrl || '').trim();
+  if (isMobile && mobileUrl) {
+    return mobileUrl;
+  }
+
+  return item.desktopUrl;
+}
+
+function getHeroPoster(item: HeroCarouselItem, isMobile: boolean): string {
+  return item.poster || item.blurMedia || resolveHeroMediaSource(item, isMobile);
+}
+
+function getHeroBlurMedia(item: HeroCarouselItem, isMobile: boolean): string {
+  return item.blurMedia || getHeroPoster(item, isMobile);
 }
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-function getRole(index: number, activeIndex: number): Role {
-  if (index === activeIndex) return 'center';
-  if (index === (activeIndex + 3) % 4) return 'left';
-  if (index === (activeIndex + 1) % 4) return 'right';
+function getRole(index: number, activeIndex: number, totalItems: number): Role {
+  if (totalItems <= 1) {
+    return index === activeIndex ? 'center' : 'back';
+  }
+
+  const relativeIndex = (index - activeIndex + totalItems) % totalItems;
+  if (relativeIndex === 0) return 'center';
+  if (relativeIndex === 1) return 'right';
+  if (relativeIndex === totalItems - 1) return 'left';
   return 'back';
 }
 
@@ -138,14 +195,21 @@ function roleStyle(role: Role, isMobile: boolean): React.CSSProperties {
   }
 }
 
-const HeroGradientBackground = memo(function HeroGradientBackground({ activeIndex }: { activeIndex: number }) {
+const HeroGradientBackground = memo(function HeroGradientBackground({
+  activeIndex,
+  gradients,
+}: {
+  activeIndex: number;
+  gradients: readonly string[];
+}) {
+  const fallbackGradient = gradients[0] || HERO_GRADIENTS[0];
   const [visibleLayer, setVisibleLayer] = useState<0 | 1>(0);
   const [layerGradients, setLayerGradients] = useState<[string, string]>([
-    HERO_GRADIENTS[0],
-    HERO_GRADIENTS[0],
+    fallbackGradient,
+    fallbackGradient,
   ]);
   const visibleLayerRef = useRef<0 | 1>(0);
-  const layerGradientsRef = useRef<[string, string]>([HERO_GRADIENTS[0], HERO_GRADIENTS[0]]);
+  const layerGradientsRef = useRef<[string, string]>([fallbackGradient, fallbackGradient]);
   const transitionTokenRef = useRef(0);
 
   useEffect(() => {
@@ -157,7 +221,7 @@ const HeroGradientBackground = memo(function HeroGradientBackground({ activeInde
   }, [layerGradients]);
 
   useEffect(() => {
-    const nextGradient = HERO_GRADIENTS[activeIndex];
+    const nextGradient = gradients[activeIndex] || fallbackGradient;
     const currentVisibleLayer = visibleLayerRef.current;
     const currentVisibleGradient = layerGradientsRef.current[currentVisibleLayer];
 
@@ -182,7 +246,7 @@ const HeroGradientBackground = memo(function HeroGradientBackground({ activeInde
     });
 
     return () => cancelAnimationFrame(raf);
-  }, [activeIndex]);
+  }, [activeIndex, fallbackGradient, gradients]);
 
   const baseLayerStyle: React.CSSProperties = useMemo(() => ({
     position: 'absolute',
@@ -221,38 +285,58 @@ const HeroGradientBackground = memo(function HeroGradientBackground({ activeInde
   );
 });
 
-const HeroCarouselImages = memo(function HeroCarouselImages({ activeIndex, isMobile }: { activeIndex: number; isMobile: boolean }) {
+const HeroCarouselImages = memo(function HeroCarouselImages({
+  items,
+  activeIndex,
+  isMobile,
+}: {
+  items: readonly HeroCarouselItem[];
+  activeIndex: number;
+  isMobile: boolean;
+}) {
   const [failedVideoMedia, setFailedVideoMedia] = useState<Record<string, boolean>>({});
   const activeVideoRef = useRef<HTMLVideoElement | null>(null);
   const preloadedMediaRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    const preloadIndexes = [
+    if (items.length === 0) {
+      return;
+    }
+
+    const preloadIndexes = Array.from(new Set([
       activeIndex,
-      (activeIndex + 1) % IMAGES.length,
-    ];
+      (activeIndex + 1) % items.length,
+    ]));
 
     preloadIndexes.forEach((index) => {
-      const mediaItem = IMAGES[index];
-      const poster = getHeroPoster(mediaItem);
+      const mediaItem = items[index];
+      if (!mediaItem) return;
 
-      if (poster && !preloadedMediaRef.current.has(poster)) {
+      const poster = getHeroPoster(mediaItem, isMobile);
+      const blurMedia = getHeroBlurMedia(mediaItem, isMobile);
+      const mediaSource = resolveHeroMediaSource(mediaItem, isMobile);
+
+      [poster, blurMedia].forEach((assetUrl) => {
+        if (!assetUrl || preloadedMediaRef.current.has(assetUrl)) {
+          return;
+        }
+
         const image = new Image();
-        image.src = poster;
-        preloadedMediaRef.current.add(poster);
-      }
+        image.src = assetUrl;
+        preloadedMediaRef.current.add(assetUrl);
+      });
 
-      if (mediaItem.mediaType === 'video' && !preloadedMediaRef.current.has(mediaItem.media)) {
+      if (mediaItem.mediaType === 'video' && mediaSource && !preloadedMediaRef.current.has(mediaSource)) {
         const video = document.createElement('video');
         video.preload = 'auto';
         video.muted = true;
         video.playsInline = true;
-        video.src = mediaItem.media;
+        video.src = mediaSource;
         video.load();
-        preloadedMediaRef.current.add(mediaItem.media);
+        preloadedMediaRef.current.add(mediaSource);
       }
     });
-  }, [activeIndex]);
+  }, [activeIndex, isMobile, items]);
 
   useEffect(() => {
     const activeVideo = activeVideoRef.current;
@@ -273,14 +357,15 @@ const HeroCarouselImages = memo(function HeroCarouselImages({ activeIndex, isMob
 
   return (
     <div className="absolute inset-0" style={{ zIndex: 3 }}>
-      {IMAGES.map((imageItem, index) => {
-        const role = getRole(index, activeIndex);
+      {items.map((imageItem, index) => {
+        const role = getRole(index, activeIndex, items.length);
         const style = roleStyle(role, isMobile);
-        const poster = getHeroPoster(imageItem);
-        const mediaKey = `${imageItem.media}-${index}`;
+        const mediaSource = resolveHeroMediaSource(imageItem, isMobile);
+        const poster = getHeroPoster(imageItem, isMobile);
+        const mediaKey = `${imageItem.desktopUrl}-${imageItem.mobileUrl}-${index}`;
         const shouldRenderVideo = role === 'center'
           && imageItem.mediaType === 'video'
-          && !failedVideoMedia[imageItem.media];
+          && !failedVideoMedia[mediaSource];
 
         return (
           <div
@@ -302,7 +387,7 @@ const HeroCarouselImages = memo(function HeroCarouselImages({ activeIndex, isMob
             {shouldRenderVideo ? (
               <video
                 ref={role === 'center' ? activeVideoRef : null}
-                src={imageItem.media}
+                src={mediaSource}
                 poster={poster}
                 autoPlay
                 muted
@@ -314,7 +399,7 @@ const HeroCarouselImages = memo(function HeroCarouselImages({ activeIndex, isMob
                 onError={() => {
                   setFailedVideoMedia((current) => ({
                     ...current,
-                    [imageItem.media]: true,
+                    [mediaSource]: true,
                   }));
                 }}
                 style={{
@@ -327,7 +412,7 @@ const HeroCarouselImages = memo(function HeroCarouselImages({ activeIndex, isMob
               />
             ) : (
               <img
-                src={role === 'center' ? poster : getHeroBlurMedia(imageItem)}
+                src={role === 'center' ? poster : getHeroBlurMedia(imageItem, isMobile)}
                 alt=""
                 draggable={false}
                 style={{
@@ -357,6 +442,19 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
     typeof window !== 'undefined' ? window.innerWidth < 640 : false,
   );
   const [collectionRevealProgress, setCollectionRevealProgress] = useState(0);
+  const [heroCmsItems, setHeroCmsItems] = useState<WebsiteHeroCmsItem[]>(DEFAULT_WEBSITE_HERO_ITEMS);
+  const [brandVideo, setBrandVideo] = useState<WebsiteBrandVideo | null>(DEFAULT_BRAND_VIDEO);
+  const [productStoryCmsItems, setProductStoryCmsItems] = useState<WebsiteProductStoryCmsItem[]>(DEFAULT_WEBSITE_PRODUCT_STORY_ITEMS);
+  const heroItems = useMemo(() => mapHeroItems(heroCmsItems), [heroCmsItems]);
+  const productStoryItems = useMemo(() => mapProductStoryItems(productStoryCmsItems), [productStoryCmsItems]);
+  const heroGradients = useMemo(() => {
+    if (heroItems.length === 0) {
+      return [HERO_GRADIENTS[0]];
+    }
+
+    return heroItems.map((item) => createHeroGradient(item.theme.accentColor));
+  }, [heroItems]);
+  const resolvedActiveIndex = heroItems.length > 0 ? activeIndex % heroItems.length : 0;
   const heroSceneRef = useRef<HTMLElement | null>(null);
   const collectionSceneRef = useRef<HTMLElement | null>(null);
   const heroGestureRef = useRef<HTMLDivElement | null>(null);
@@ -376,6 +474,41 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadWebsiteContent = async () => {
+      try {
+        const response = await websiteService.getHomepageContent();
+        if (isCancelled) {
+          return;
+        }
+
+        setHeroCmsItems(Array.isArray(response.heroItems) ? response.heroItems : []);
+        setBrandVideo(response.brandVideo ?? null);
+        setProductStoryCmsItems(Array.isArray(response.productStoryItems) ? response.productStoryItems : []);
+      } catch {
+        // Keep the existing fallback content when the CMS request is unavailable.
+      }
+    };
+
+    void loadWebsiteContent();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (heroItems.length === 0) {
+      return;
+    }
+
+    if (activeIndex >= heroItems.length) {
+      onActiveIndexChange(0);
+    }
+  }, [activeIndex, heroItems.length, onActiveIndexChange]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -416,15 +549,15 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
   }, []);
 
   const rotateHero = useCallback((direction: Direction) => {
-    if (isAnimating) return;
+    if (isAnimating || heroItems.length <= 1) return;
 
     setIsAnimating(true);
     const nextIndex = direction === 'next'
-      ? (activeIndex + 1) % IMAGES.length
-      : (activeIndex + IMAGES.length - 1) % IMAGES.length;
+      ? (resolvedActiveIndex + 1) % heroItems.length
+      : (resolvedActiveIndex + heroItems.length - 1) % heroItems.length;
     onActiveIndexChange(nextIndex);
     window.setTimeout(() => setIsAnimating(false), DURATION);
-  }, [activeIndex, isAnimating, onActiveIndexChange]);
+  }, [heroItems.length, isAnimating, onActiveIndexChange, resolvedActiveIndex]);
 
   const resetGestureState = useCallback(() => {
     dragStateRef.current = {
@@ -556,7 +689,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
         }}
       >
         <div className="relative w-full h-full" style={{ overflow: 'hidden' }}>
-          <HeroGradientBackground activeIndex={activeIndex} />
+          <HeroGradientBackground activeIndex={resolvedActiveIndex} gradients={heroGradients} />
 
           <div
             aria-hidden="true"
@@ -606,7 +739,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
             )}
           </div>
 
-          <HeroCarouselImages activeIndex={activeIndex} isMobile={isMobile} />
+          <HeroCarouselImages items={heroItems} activeIndex={resolvedActiveIndex} isMobile={isMobile} />
 
           <div
             className="absolute top-6 left-4 sm:left-8"
@@ -783,35 +916,37 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
         />
       </section>
 
-      <section
-        aria-label="Brand video section"
-        style={{
-          position: 'relative',
-          minHeight: isMobile ? 'auto' : '100vh',
-          width: '100%',
-          overflow: 'hidden',
-          backgroundColor: '#000000',
-        }}
-      >
-        <video
-          src={VIDEO_SECTION_SOURCE}
-          poster={VIDEO_SECTION_POSTER}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          controls={false}
+      {brandVideo ? (
+        <section
+          aria-label="Brand video section"
           style={{
+            position: 'relative',
+            minHeight: isMobile ? 'auto' : '100vh',
             width: '100%',
-            height: isMobile ? 'auto' : '100vh',
-            objectFit: isMobile ? 'contain' : 'cover',
-            display: 'block',
+            overflow: 'hidden',
+            backgroundColor: '#000000',
           }}
-        />
-      </section>
+        >
+          <video
+            src={brandVideo.videoUrl}
+            poster={brandVideo.posterUrl}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            controls={false}
+            style={{
+              width: '100%',
+              height: isMobile ? 'auto' : '100vh',
+              objectFit: isMobile ? 'contain' : 'cover',
+              display: 'block',
+            }}
+          />
+        </section>
+      ) : null}
 
-      <ProductStorySection backgroundImage={HERO_GRADIENTS[activeIndex]} />
+      <ProductStorySection items={productStoryItems} backgroundImage={heroGradients[resolvedActiveIndex]} />
       <FeaturedProductsSection onProductSelect={onProductSelect} />
       <HomepageFooter />
     </div>

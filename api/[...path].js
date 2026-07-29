@@ -42,6 +42,10 @@ const ALLOWED_PUBLIC_PATTERNS = [
   /^payment-attempt\/[^/]+\/cancel$/,
   /^payment-attempt\/[^/]+\/snap$/,
   /^newsletter\/subscribe$/,
+  /^website$/,
+  /^website\/hero$/,
+  /^website\/brand-video$/,
+  /^website\/product-story$/,
 ];
 
 function getUpstreamBaseUrl() {

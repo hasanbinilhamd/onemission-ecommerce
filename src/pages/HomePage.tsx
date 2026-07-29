@@ -33,7 +33,7 @@ const DEFAULT_WEBSITE_HERO_ITEMS: WebsiteHeroCmsItem[] = [
   {
     id: 'default-hero-1',
     mediaType: 'image',
-    desktopUrl: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/OKOWW.png?updatedAt=1782468174527',
+    desktopUrl: '',
     mobileUrl: '',
     displayOrder: 1,
     active: true,
@@ -41,7 +41,7 @@ const DEFAULT_WEBSITE_HERO_ITEMS: WebsiteHeroCmsItem[] = [
   {
     id: 'default-hero-2',
     mediaType: 'image',
-    desktopUrl: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/WEEE.png?updatedAt=1782468174345',
+    desktopUrl: '',
     mobileUrl: '',
     displayOrder: 2,
     active: true,
@@ -49,7 +49,7 @@ const DEFAULT_WEBSITE_HERO_ITEMS: WebsiteHeroCmsItem[] = [
   {
     id: 'default-hero-3',
     mediaType: 'image',
-    desktopUrl: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/kmkmksss.png?updatedAt=1782468173729',
+    desktopUrl: '',
     mobileUrl: '',
     displayOrder: 3,
     active: true,
@@ -57,7 +57,7 @@ const DEFAULT_WEBSITE_HERO_ITEMS: WebsiteHeroCmsItem[] = [
   {
     id: 'default-hero-4',
     mediaType: 'image',
-    desktopUrl: 'https://ik.imagekit.io/edyl3oplm/Onemission/Model/QW.png?updatedAt=1782468169304',
+    desktopUrl: '',
     mobileUrl: '',
     displayOrder: 4,
     active: true,
@@ -66,8 +66,8 @@ const DEFAULT_WEBSITE_HERO_ITEMS: WebsiteHeroCmsItem[] = [
 
 const DEFAULT_BRAND_VIDEO: WebsiteBrandVideo = {
   id: 'default-brand-video',
-  videoUrl: 'https://ik.imagekit.io/fkoy34ckk/onemission-dev/WhatsApp%20Video%202026-07-26%20at%2016.17.17.mp4?updatedAt=1785057842262',
-  posterUrl: 'https://ik.imagekit.io/fkoy34ckk/onemission-dev/Screenshot%202026-07-26%20163038.png?updatedAt=1785058280647',
+  videoUrl: '',
+  posterUrl: '',
   active: true,
 };
 

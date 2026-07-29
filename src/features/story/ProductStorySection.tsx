@@ -74,6 +74,13 @@ function ProductStoryMedia({ item, isActive }: { item: ProductStoryItem; isActiv
   const mediaInstanceKey = `${item.id}:${mediaType}:${mediaUrl}`;
   const shouldRenderVideo = mediaType === 'video' && isValidAssetUrl(mediaUrl);
   const shouldRenderImage = mediaType === 'image' && isValidAssetUrl(mediaUrl);
+  const sharedMediaStyle: CSSProperties = {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    objectPosition: 'center center',
+    display: 'block',
+  };
 
   useEffect(() => {
     setHasMediaError(false);
@@ -113,14 +120,7 @@ function ProductStoryMedia({ item, isActive }: { item: ProductStoryItem; isActiv
         controls={false}
         disablePictureInPicture
         onError={() => setHasMediaError(true)}
-        style={{
-          maxWidth: '100%',
-          maxHeight: '100%',
-          width: 'auto',
-          height: 'auto',
-          objectFit: 'cover',
-          display: 'block',
-        }}
+        style={sharedMediaStyle}
       />
     );
   }
@@ -132,14 +132,7 @@ function ProductStoryMedia({ item, isActive }: { item: ProductStoryItem; isActiv
       alt={item.alt || item.title}
       draggable={false}
       onError={() => setHasMediaError(true)}
-      style={{
-        maxWidth: '100%',
-        maxHeight: '100%',
-        width: 'auto',
-        height: 'auto',
-        objectFit: 'contain',
-        display: 'block',
-      }}
+      style={sharedMediaStyle}
     />
   );
 }

@@ -361,7 +361,7 @@ export function ProductStorySection(props: ProductStorySectionProps) {
               fontWeight: 500,
             }}
           >
-            Designed with Purpose.
+            Designed with <span style={{ fontWeight: 700 }}>Purpose</span>.
           </h2>
         </div>
 

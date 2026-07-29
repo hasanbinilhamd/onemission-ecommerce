@@ -1,4 +1,3 @@
-import { ArrowLeft, ArrowRight } from 'lucide-react';
 import {
   useCallback,
   useEffect,
@@ -152,8 +151,6 @@ export function ProductStorySection(props: ProductStorySectionProps) {
     hasDragged: false,
   });
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [canScrollPrev, setCanScrollPrev] = useState(false);
-  const [canScrollNext, setCanScrollNext] = useState(orderedItems.length > 1);
   const [isDragging, setIsDragging] = useState(false);
 
   const getNearestIndex = useCallback((scrollLeft: number) => {
@@ -176,12 +173,8 @@ export function ProductStorySection(props: ProductStorySectionProps) {
     const viewport = viewportRef.current;
     if (!viewport) return;
 
-    const maxScrollLeft = Math.max(viewport.scrollWidth - viewport.clientWidth, 0);
     const currentScrollLeft = viewport.scrollLeft;
-
     setSelectedIndex(getNearestIndex(currentScrollLeft));
-    setCanScrollPrev(currentScrollLeft > 4);
-    setCanScrollNext(currentScrollLeft < maxScrollLeft - 4);
   }, [getNearestIndex]);
 
   const scrollToIndex = useCallback((index: number) => {
@@ -234,12 +227,12 @@ export function ProductStorySection(props: ProductStorySectionProps) {
     };
   }, [snapToNearestSlide, syncCarouselState]);
 
-  const handlePrevious = useCallback(() => {
-    scrollToIndex(clamp(selectedIndex - 1, 0, orderedItems.length - 1));
-  }, [orderedItems.length, scrollToIndex, selectedIndex]);
+  const handleCardClick = useCallback((index: number) => {
+    if (index === selectedIndex) {
+      return;
+    }
 
-  const handleNext = useCallback(() => {
-    scrollToIndex(clamp(selectedIndex + 1, 0, orderedItems.length - 1));
+    scrollToIndex(clamp(index, 0, orderedItems.length - 1));
   }, [orderedItems.length, scrollToIndex, selectedIndex]);
 
   const handleKeyDown = useCallback((event: KeyboardEvent<HTMLElement>) => {
@@ -321,24 +314,6 @@ export function ProductStorySection(props: ProductStorySectionProps) {
     event.stopPropagation();
   }, []);
 
-  const buttonStyle = useCallback((enabled: boolean): CSSProperties => ({
-    width: '48px',
-    height: '48px',
-    borderRadius: '999px',
-    border: '1px solid rgba(17,24,39,0.14)',
-    backgroundColor: 'rgba(229,228,226,0.92)',
-    color: enabled ? '#0F172A' : 'rgba(15,23,42,0.32)',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '0 12px 30px rgba(15,23,42,0.10)',
-    cursor: enabled ? 'pointer' : 'not-allowed',
-    transition: `transform 220ms ${STORY_EASE}, opacity 220ms ${STORY_EASE}, background-color 220ms ${STORY_EASE}`,
-    opacity: enabled ? 1 : 0.7,
-    backdropFilter: 'blur(18px)',
-    WebkitBackdropFilter: 'blur(18px)',
-  }), []);
-
   return (
     <section
       tabIndex={0}
@@ -348,7 +323,7 @@ export function ProductStorySection(props: ProductStorySectionProps) {
       style={{
         position: 'relative',
         background: '#FFFFFF',
-        padding: 'clamp(72px, 10vw, 120px) 0 clamp(88px, 10vw, 128px)',
+        padding: 'clamp(72px, 10vw, 120px) 0 clamp(56px, 7vw, 80px)',
         outline: 'none',
         overflow: 'hidden',
       }}
@@ -446,12 +421,14 @@ export function ProductStorySection(props: ProductStorySectionProps) {
                   ref={(node) => {
                     slideRefs.current[index] = node;
                   }}
-                  className="min-w-0 flex-[0_0_100%] md:flex-[0_0_58%] xl:flex-[0_0_44%]"
+                  onClick={() => handleCardClick(index)}
+                  className="min-w-0 flex-[0_0_78%] md:flex-[0_0_58%] xl:flex-[0_0_44%]"
                   style={{
                     height: 'clamp(480px, 68vh, 720px)',
                     paddingLeft: 'clamp(16px, 2vw, 28px)',
                     scrollSnapAlign: 'start',
                     scrollSnapStop: 'always',
+                    cursor: isActive ? 'default' : 'pointer',
                   }}
                 >
                   <div
@@ -514,50 +491,6 @@ export function ProductStorySection(props: ProductStorySectionProps) {
           </div>
         </div>
 
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            gap: '12px',
-          }}
-        >
-          <button
-            type="button"
-            aria-label="Previous story"
-            onClick={handlePrevious}
-            disabled={!canScrollPrev}
-            style={buttonStyle(canScrollPrev)}
-            onMouseEnter={(event) => {
-              if (!canScrollPrev) return;
-              event.currentTarget.style.transform = 'translate3d(0, -2px, 0) scale(1.02)';
-              event.currentTarget.style.backgroundColor = '#F0EFEC';
-            }}
-            onMouseLeave={(event) => {
-              event.currentTarget.style.transform = 'translate3d(0, 0, 0) scale(1)';
-              event.currentTarget.style.backgroundColor = 'rgba(229,228,226,0.92)';
-            }}
-          >
-            <ArrowLeft size={20} strokeWidth={2.1} />
-          </button>
-          <button
-            type="button"
-            aria-label="Next story"
-            onClick={handleNext}
-            disabled={!canScrollNext}
-            style={buttonStyle(canScrollNext)}
-            onMouseEnter={(event) => {
-              if (!canScrollNext) return;
-              event.currentTarget.style.transform = 'translate3d(0, -2px, 0) scale(1.02)';
-              event.currentTarget.style.backgroundColor = '#F0EFEC';
-            }}
-            onMouseLeave={(event) => {
-              event.currentTarget.style.transform = 'translate3d(0, 0, 0) scale(1)';
-              event.currentTarget.style.backgroundColor = 'rgba(229,228,226,0.92)';
-            }}
-          >
-            <ArrowRight size={20} strokeWidth={2.1} />
-          </button>
-        </div>
       </div>
     </section>
   );

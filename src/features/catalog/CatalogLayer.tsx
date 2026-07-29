@@ -566,7 +566,7 @@ export function CatalogLayer({ revealProgress = 0, onProductSelect }: CatalogLay
             color: '#FFF',
             textShadow: '0px 0px 8px rgba(0, 0, 0, 0.5)',
             opacity: 0.95,
-            letterSpacing: '-0.01em',
+            letterSpacing: '-0.04em',
           }}
         >
           <span className="block sm:inline">We are building </span>
@@ -582,7 +582,7 @@ export function CatalogLayer({ revealProgress = 0, onProductSelect }: CatalogLay
             color: '#FFF',
             textShadow: '0px 0px 8px rgba(0, 0, 0, 0.5)',
             opacity: 0.95,
-            letterSpacing: '-0.01em',
+            letterSpacing: '-0.04em',
           }}
         >
           <span className="block sm:inline">that empowers </span>
@@ -598,7 +598,7 @@ export function CatalogLayer({ revealProgress = 0, onProductSelect }: CatalogLay
             color: '#FFF',
             textShadow: '0px 0px 8px rgba(0, 0, 0, 0.5)',
             opacity: 0.95,
-            letterSpacing: '-0.01em',
+            letterSpacing: '-0.04em',
           }}
         >
           <span className="block sm:inline">while staying true </span>

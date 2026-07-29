@@ -64,7 +64,7 @@ export function LegalPageLayout({
                 fontFamily: "'SF-Pro-Display', sans-serif",
                 fontSize: 'clamp(38px, 6vw, 72px)',
                 lineHeight: 0.96,
-                letterSpacing: '-0.05em',
+                letterSpacing: '-0.04em',
                 fontWeight: 400,
                 color: LEGAL_TEXT,
               }}

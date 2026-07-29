@@ -190,13 +190,13 @@ export function FeaturedProductsSection({
               fontFamily: "'SF-Pro-Display', sans-serif",
               fontSize: 'clamp(34px, 5vw, 68px)',
               lineHeight: 0.98,
-              letterSpacing: '-0.05em',
+              letterSpacing: '-0.04em',
               fontWeight: 400,
               maxWidth: '800px',
               color: FEATURED_SECTION_TEXT,
             }}
           >
-            Honor Your Values. Elevate Your Performance.
+            Purpose Meets <span style={{ fontWeight: 700 }}>Performance</span>.
           </h2>
         </div>
 

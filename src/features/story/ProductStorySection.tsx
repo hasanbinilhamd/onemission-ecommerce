@@ -357,7 +357,7 @@ export function ProductStorySection(props: ProductStorySectionProps) {
               fontFamily: "'SF-Pro-Display', sans-serif",
               fontSize: 'clamp(36px, 6vw, 72px)',
               lineHeight: 0.98,
-              letterSpacing: '-0.01em',
+              letterSpacing: '-0.04em',
               fontWeight: 500,
             }}
           >

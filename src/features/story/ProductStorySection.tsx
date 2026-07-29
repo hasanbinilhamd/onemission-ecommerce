@@ -30,12 +30,58 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
+function isValidAssetUrl(value: string): boolean {
+  const normalized = String(value || '').trim();
+  if (!normalized) {
+    return false;
+  }
+
+  try {
+    const parsed = new URL(normalized);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function ProductStoryMediaPlaceholder() {
+  return (
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px',
+        textAlign: 'center',
+        color: 'rgba(17,24,39,0.55)',
+        fontSize: '14px',
+        fontWeight: 500,
+      }}
+    >
+      Media not available
+    </div>
+  );
+}
+
 function ProductStoryMedia({ item, isActive }: { item: ProductStoryItem; isActive: boolean }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [hasMediaError, setHasMediaError] = useState(false);
+  const mediaType = String(item.mediaType || '').trim().toLowerCase() === 'video' ? 'video' : 'image';
+  const mediaUrl = String(item.mediaUrl || '').trim();
+  const posterUrl = String(item.posterUrl || '').trim();
+  const mediaInstanceKey = `${item.id}:${mediaType}:${mediaUrl}`;
+  const shouldRenderVideo = mediaType === 'video' && isValidAssetUrl(mediaUrl);
+  const shouldRenderImage = mediaType === 'image' && isValidAssetUrl(mediaUrl);
+
+  useEffect(() => {
+    setHasMediaError(false);
+  }, [mediaInstanceKey]);
 
   useEffect(() => {
     const videoElement = videoRef.current;
-    if (!videoElement) return undefined;
+    if (!videoElement || !shouldRenderVideo || hasMediaError) return undefined;
 
     if (isActive) {
       const playPromise = videoElement.play();
@@ -47,20 +93,26 @@ function ProductStoryMedia({ item, isActive }: { item: ProductStoryItem; isActiv
 
     videoElement.pause();
     return undefined;
-  }, [isActive]);
+  }, [hasMediaError, isActive, shouldRenderVideo]);
 
-  if (item.mediaType === 'video') {
+  if (hasMediaError || (!shouldRenderVideo && !shouldRenderImage)) {
+    return <ProductStoryMediaPlaceholder />;
+  }
+
+  if (shouldRenderVideo) {
     return (
       <video
+        key={mediaInstanceKey}
         ref={videoRef}
-        src={item.mediaUrl}
-        poster={item.posterUrl}
+        src={mediaUrl}
+        poster={isValidAssetUrl(posterUrl) ? posterUrl : undefined}
         muted
         loop
         playsInline
         preload={isActive ? 'auto' : 'metadata'}
         controls={false}
         disablePictureInPicture
+        onError={() => setHasMediaError(true)}
         style={{
           maxWidth: '100%',
           maxHeight: '100%',
@@ -75,9 +127,11 @@ function ProductStoryMedia({ item, isActive }: { item: ProductStoryItem; isActiv
 
   return (
     <img
-      src={item.mediaUrl}
+      key={mediaInstanceKey}
+      src={mediaUrl}
       alt={item.alt || item.title}
       draggable={false}
+      onError={() => setHasMediaError(true)}
       style={{
         maxWidth: '100%',
         maxHeight: '100%',

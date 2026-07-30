@@ -1,4 +1,8 @@
+import { initializeCache } from '../lib/cache.js';
+
 const DEFAULT_HQ_UPSTREAM_URL = 'https://onemission-world.vercel.app/api';
+
+void initializeCache();
 
 const ALLOWED_PUBLIC_PATTERNS = [
   /^commerce\/categories$/,

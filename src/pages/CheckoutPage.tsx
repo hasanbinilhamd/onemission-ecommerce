@@ -418,16 +418,6 @@ function CheckoutPageContent() {
       return;
     }
 
-    const shippingCostRequest = {
-      originDistrict: '471',
-      destinationDistrict: shippingAddress.districtId,
-      courier: 'all',
-      weight: estimatedShippingWeightGrams,
-      service: 'all',
-    };
-
-    console.log('[CheckoutPage] Shipping Cost Request:', shippingCostRequest);
-
     try {
       const rates = await shippingService.getShippingRates({
         country: shippingAddress.country,
@@ -732,11 +722,6 @@ function CheckoutPageContent() {
     const nextProvinceId = event.target.value;
     const selectedProvince = shippingState.provinces.find((province) => province.id === nextProvinceId) ?? null;
 
-    console.log('[CheckoutPage] Selected Province:', selectedProvince ? {
-      id: selectedProvince.id,
-      name: selectedProvince.name,
-    } : null);
-
     cityRequestKeyRef.current = '';
     districtRequestKeyRef.current = '';
     ratesRequestKeyRef.current = '';
@@ -768,11 +753,6 @@ function CheckoutPageContent() {
     const nextCityId = event.target.value;
     const selectedCity = shippingState.cities.find((city) => city.id === nextCityId) ?? null;
 
-    console.log('[CheckoutPage] Selected City:', selectedCity ? {
-      id: selectedCity.id,
-      name: selectedCity.name,
-    } : null);
-
     districtRequestKeyRef.current = '';
     ratesRequestKeyRef.current = '';
     selectShippingCity(selectedCity);
@@ -800,11 +780,6 @@ function CheckoutPageContent() {
   const handleDistrictChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const nextDistrictId = event.target.value;
     const selectedDistrict = shippingState.districts.find((district) => district.id === nextDistrictId) ?? null;
-
-    console.log('[CheckoutPage] Selected District:', selectedDistrict ? {
-      id: selectedDistrict.id,
-      name: selectedDistrict.name,
-    } : null);
 
     ratesRequestKeyRef.current = '';
     selectShippingDistrict(selectedDistrict);

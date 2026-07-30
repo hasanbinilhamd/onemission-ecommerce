@@ -64,15 +64,14 @@ function LoginPageContent() {
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const incomingToastMessage = useMemo(() => String(locationState?.toastMessage || ''), [locationState?.toastMessage]);
 
   useEffect(() => {
-    const nextToastMessage = String(locationState?.toastMessage || '');
-
-    if (!nextToastMessage) {
+    if (!incomingToastMessage) {
       return;
     }
 
-    setToastMessage(nextToastMessage);
+    setToastMessage(incomingToastMessage);
     const timeout = window.setTimeout(() => {
       setToastMessage('');
     }, 4000);
@@ -83,7 +82,7 @@ function LoginPageContent() {
     );
 
     return () => window.clearTimeout(timeout);
-  }, [location.state]);
+  }, [incomingToastMessage, location.state]);
 
   const navigateAfterLogin = useMemo(() => {
     const redirectTo = locationState?.redirectTo || ROUTES.HOME;

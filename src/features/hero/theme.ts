@@ -8,6 +8,7 @@ export const HERO_GRADIENT_MIDDLE = '#536878' as const;
 export const HERO_GRADIENT_BOTTOM = '#E5E4E2' as const;
 
 export function createHeroGradient(accentColor: string): string {
+  void accentColor;
   return `linear-gradient(180deg, ${HERO_GRADIENT_TOP} 0%, ${HERO_GRADIENT_MIDDLE} 52%, ${HERO_GRADIENT_BOTTOM} 100%)`;
 }
 

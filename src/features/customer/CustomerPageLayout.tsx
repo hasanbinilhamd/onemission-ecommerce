@@ -1,9 +1,6 @@
 import type { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
 import { ROUTES } from '../../app/config/routes';
 import { TopBackNavigation } from '../navigation';
-
-const COMMERCE_LOGO_URL = 'https://ik.imagekit.io/edyl3oplm/Onemission/logos/AMAN_ONEMISSION.png?updatedAt=1782542636942';
 
 interface CustomerPageShellProps {
   children: ReactNode;
@@ -38,10 +35,6 @@ export function CustomerPageHeader({
   return (
     <div className="mb-8">
       {showBackToHome ? <TopBackNavigation label="Back to Home" fallbackTo={ROUTES.HOME} /> : null}
-
-      {/* <Link to={ROUTES.HOME} aria-label="Back to ONEMISSION Commerce homepage" className="inline-flex items-center">
-        <img src={COMMERCE_LOGO_URL} alt="ONEMISSION" className="h-8 w-auto sm:h-10" />
-      </Link> */}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="max-w-[720px]">

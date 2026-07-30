@@ -344,7 +344,6 @@ const HeroCarouselImages = memo(function HeroCarouselImages({
       return undefined;
     }
 
-    activeVideo.currentTime = activeVideo.currentTime;
     const playPromise = activeVideo.play();
     if (playPromise && typeof playPromise.catch === 'function') {
       playPromise.catch(() => undefined);

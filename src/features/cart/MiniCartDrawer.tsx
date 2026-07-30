@@ -5,7 +5,8 @@ import { Drawer, EmptyState, Button } from '../../components/shared';
 import { useCartStore } from '../../stores';
 import { formatCurrency } from '../../utils/formatting';
 import { DURATION } from '../../utils/motion';
-import { CartLineItem, summaryLabelStyle, summaryValueStyle } from './CartLineItem';
+import { CartLineItem } from './CartLineItem';
+import { summaryLabelStyle, summaryValueStyle } from './cartSummaryStyles';
 
 export function MiniCartDrawer() {
   const navigate = useNavigate();

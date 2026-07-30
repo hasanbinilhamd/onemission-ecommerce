@@ -1,19 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Drawer } from '../../components/shared/Drawer';
-
-export interface FilterState {
-  colors: string[];
-  sizes: string[];
-  minPrice: number;
-  maxPrice: number;
-}
-
-export const DEFAULT_FILTERS: FilterState = {
-  colors: [],
-  sizes: [],
-  minPrice: 0,
-  maxPrice: 999999,
-};
+import { DEFAULT_FILTERS, type FilterState } from './filterState';
 
 interface FilterDrawerProps {
   open: boolean;

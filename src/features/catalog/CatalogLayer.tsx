@@ -2,8 +2,8 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import type { Product } from '../../types';
 import { useDebounce } from '../../hooks';
 import { productService } from '../../services/product';
-import { FilterDrawer, DEFAULT_FILTERS } from './FilterDrawer';
-import type { FilterState } from './FilterDrawer';
+import { FilterDrawer } from './FilterDrawer';
+import { DEFAULT_FILTERS, type FilterState } from './filterState';
 
 type SortOption = 'newest' | 'price_asc' | 'price_desc' | 'name_asc' | 'name_desc';
 type CategoryChip = { id: string | null; name: string };

@@ -1,13 +1,16 @@
-export { CartProvider, useCartStore } from './cartStore';
-export { CheckoutProvider, useCheckoutStore } from './checkoutStore';
+export { CartProvider } from './cartStore';
+export { useCartStore } from './cartContext';
+export { CheckoutProvider } from './checkoutStore';
+export { useCheckoutStore } from './checkoutContext';
 export type {
   CheckoutContactField,
   CheckoutShippingField,
   CheckoutShippingState,
   CheckoutState,
   ShippingAsyncResource,
-} from './checkoutStore';
-export { SearchProvider, useSearchStore } from './searchStore';
+} from './checkoutContext';
+export { SearchProvider } from './searchStore';
+export { useSearchStore } from './searchContext';
 export type {
   CheckoutContactInformation,
   CheckoutShippingAddress,

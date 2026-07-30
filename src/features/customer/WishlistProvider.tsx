@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Product } from '../../types';
 import {
   clearGuestWishlistItems,
@@ -13,18 +13,7 @@ import {
   type WishlistItemRecord,
 } from '../../services/wishlist/wishlistStorage';
 import { useAuthenticatedCustomer } from './useAuthenticatedCustomer';
-
-interface WishlistContextValue {
-  items: WishlistItemRecord[];
-  isLoading: boolean;
-  addItem: (product: Product) => void;
-  removeItem: (productId: string) => void;
-  toggleItem: (product: Product) => void;
-  isWishlisted: (productId: string) => boolean;
-  clearWishlist: () => void;
-}
-
-const WishlistContext = createContext<WishlistContextValue | null>(null);
+import { WishlistContext, type WishlistContextValue } from './WishlistContext';
 
 export function WishlistProvider({ children }: { children: ReactNode }) {
   const { user } = useAuthenticatedCustomer();
@@ -108,11 +97,3 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useWishlist() {
-  const context = useContext(WishlistContext);
-  if (!context) {
-    throw new Error('useWishlist must be used within a WishlistProvider');
-  }
-
-  return context;
-}

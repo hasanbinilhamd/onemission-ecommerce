@@ -1,20 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { SearchContext, type SearchContextValue } from './searchContext';
 
 const RECENT_SEARCHES_KEY = 'onemission-recent-searches';
 const MAX_RECENT_SEARCHES = 5;
-
-interface SearchContextValue {
-  isSearchOpen: boolean;
-  query: string;
-  recentSearches: string[];
-  openSearch: () => void;
-  closeSearch: () => void;
-  setQuery: (value: string) => void;
-  submitRecentSearch: (value: string) => void;
-  clearQuery: () => void;
-}
-
-const SearchContext = createContext<SearchContextValue | null>(null);
 
 function normalizeSearch(value: string): string {
   return value.trim();
@@ -78,10 +66,3 @@ export function SearchProvider({ children }: { children: ReactNode }) {
   return <SearchContext.Provider value={value}>{children}</SearchContext.Provider>;
 }
 
-export function useSearchStore(): SearchContextValue {
-  const context = useContext(SearchContext);
-  if (!context) {
-    throw new Error('useSearchStore must be used within a SearchProvider');
-  }
-  return context;
-}

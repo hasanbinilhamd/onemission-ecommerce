@@ -2,7 +2,7 @@ import { ChevronLeft } from 'lucide-react';
 import { useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../app/config/routes';
-import { useNavigationTheme } from './NavigationTheme';
+import { useNavigationTheme } from './NavigationThemeContext';
 
 interface TopBackNavigationProps {
   label?: string;

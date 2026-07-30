@@ -1,18 +1,9 @@
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
-
-export type NavigationTheme = 'light' | 'dark';
-
-interface NavigationThemeValue {
-  theme: NavigationTheme;
-  colors: {
-    foreground: string;
-    muted: string;
-    badgeBorder: string;
-    surfaceBackground: string;
-    surfaceBorder: string;
-    surfaceShadow: string;
-  };
-}
+import { useMemo, type ReactNode } from 'react';
+import {
+  NavigationThemeContext,
+  type NavigationTheme,
+  type NavigationThemeValue,
+} from './NavigationThemeContext';
 
 const NAVIGATION_THEME_TOKENS: Record<NavigationTheme, NavigationThemeValue['colors']> = {
   light: {
@@ -33,8 +24,6 @@ const NAVIGATION_THEME_TOKENS: Record<NavigationTheme, NavigationThemeValue['col
   },
 };
 
-const NavigationThemeContext = createContext<NavigationThemeValue | null>(null);
-
 export function NavigationThemeProvider({
   theme,
   children,
@@ -52,12 +41,4 @@ export function NavigationThemeProvider({
       {children}
     </NavigationThemeContext.Provider>
   );
-}
-
-export function useNavigationTheme(): NavigationThemeValue {
-  const context = useContext(NavigationThemeContext);
-  if (!context) {
-    throw new Error('useNavigationTheme must be used within a NavigationThemeProvider');
-  }
-  return context;
 }

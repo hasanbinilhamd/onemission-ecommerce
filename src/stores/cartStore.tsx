@@ -1,7 +1,5 @@
 import {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
@@ -9,35 +7,9 @@ import {
 } from 'react';
 import { productService } from '../services/product';
 import type { Cart, CartItem, ResolvedCartItem } from '../types';
+import { CartContext, type AddCartItemInput, type CartContextValue } from './cartContext';
 
 const LOCAL_CART_STORAGE_KEY = 'onemission-commerce-cart';
-
-interface AddCartItemInput {
-  productId: string;
-  variantId?: string;
-  quantity: number;
-}
-
-interface CartContextValue {
-  cart: Cart;
-  cartItems: ResolvedCartItem[];
-  isCartReady: boolean;
-  isCartRefreshing: boolean;
-  hasInvalidItems: boolean;
-  refreshCartItems: () => Promise<ResolvedCartItem[]>;
-  isMiniCartOpen: boolean;
-  isMiniCartVisible: boolean;
-  openMiniCart: () => void;
-  closeMiniCart: () => void;
-  setMiniCartVisible: (visible: boolean) => void;
-  addItem: (item: AddCartItemInput) => void;
-  incrementItem: (productId: string, variantId?: string) => void;
-  decrementItem: (productId: string, variantId?: string) => void;
-  removeItem: (productId: string, variantId?: string) => void;
-  clearCart: () => void;
-  totalItems: number;
-  subtotal: number;
-}
 
 const initialCart: Cart = {
   id: 'local-cart',
@@ -46,8 +18,6 @@ const initialCart: Cart = {
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
-
-const CartContext = createContext<CartContextValue | null>(null);
 
 function sameLineItem(item: CartItem, productId: string, variantId?: string): boolean {
   return item.productId === productId && (item.variantId ?? '') === (variantId ?? '');
@@ -358,10 +328,3 @@ export function CartProvider({ children }: { children: ReactNode }) {
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 
-export function useCartStore(): CartContextValue {
-  const context = useContext(CartContext);
-  if (!context) {
-    throw new Error('useCartStore must be used within a CartProvider');
-  }
-  return context;
-}

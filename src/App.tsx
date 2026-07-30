@@ -1,32 +1,38 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { lazy, Suspense, useState, useEffect, useCallback, useRef } from 'react';
 import { Navigate, Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
 import { HomePage } from './pages/HomePage';
-import { CollectionPage } from './pages/CollectionPage';
-import { TermsPage } from './pages/TermsPage';
-import { PrivacyPage } from './pages/PrivacyPage';
-import { ProductDetailPage } from './pages/ProductDetailPage';
-import { CartPage } from './pages/CartPage';
-import { CheckoutPage } from './pages/CheckoutPage';
-import { PaymentCancelledPage, PaymentExpiredPage, PaymentFailedPage, PaymentPendingPage, PaymentSuccessPage } from './pages/PaymentStatusPages';
-import { AccountPage } from './pages/AccountPage';
-import { LoginPage } from './pages/LoginPage';
-import { RegisterPage } from './pages/RegisterPage';
-import { VerifyEmailPage } from './pages/VerifyEmailPage';
-import { MyOrdersPage } from './pages/MyOrdersPage';
-import { CheckoutHistoryPage } from './pages/CheckoutHistoryPage';
-import { OrderDetailPage } from './pages/OrderDetailPage';
-import { TrackOrderPage } from './pages/TrackOrderPage';
-import { ProfilePage } from './pages/ProfilePage';
-import { AddressesPage } from './pages/AddressesPage';
-import { ChangePasswordPage } from './pages/ChangePasswordPage';
-import { WishlistPage } from './pages/WishlistPage';
-import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
-import { ResetPasswordPage } from './pages/ResetPasswordPage';
-import { FloatingNavigation, MiniCartDrawer } from './features/cart';
-import { AccountDashboardLayout } from './features/customer';
-import { SearchOverlay } from './features/search';
+import { FloatingNavigation } from './features/cart';
 import { NavigationThemeProvider, RouteScrollRestoration, type NavigationTheme } from './features/navigation';
+
+const CollectionPage = lazy(() => import('./pages/CollectionPage').then((module) => ({ default: module.CollectionPage })));
+const TermsPage = lazy(() => import('./pages/TermsPage').then((module) => ({ default: module.TermsPage })));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then((module) => ({ default: module.PrivacyPage })));
+const ProductDetailPage = lazy(() => import('./pages/ProductDetailPage').then((module) => ({ default: module.ProductDetailPage })));
+const CartPage = lazy(() => import('./pages/CartPage').then((module) => ({ default: module.CartPage })));
+const CheckoutPage = lazy(() => import('./pages/CheckoutPage').then((module) => ({ default: module.CheckoutPage })));
+const PaymentCancelledPage = lazy(() => import('./pages/PaymentStatusPages').then((module) => ({ default: module.PaymentCancelledPage })));
+const PaymentExpiredPage = lazy(() => import('./pages/PaymentStatusPages').then((module) => ({ default: module.PaymentExpiredPage })));
+const PaymentFailedPage = lazy(() => import('./pages/PaymentStatusPages').then((module) => ({ default: module.PaymentFailedPage })));
+const PaymentPendingPage = lazy(() => import('./pages/PaymentStatusPages').then((module) => ({ default: module.PaymentPendingPage })));
+const PaymentSuccessPage = lazy(() => import('./pages/PaymentStatusPages').then((module) => ({ default: module.PaymentSuccessPage })));
+const AccountPage = lazy(() => import('./pages/AccountPage').then((module) => ({ default: module.AccountPage })));
+const LoginPage = lazy(() => import('./pages/LoginPage').then((module) => ({ default: module.LoginPage })));
+const RegisterPage = lazy(() => import('./pages/RegisterPage').then((module) => ({ default: module.RegisterPage })));
+const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage').then((module) => ({ default: module.VerifyEmailPage })));
+const MyOrdersPage = lazy(() => import('./pages/MyOrdersPage').then((module) => ({ default: module.MyOrdersPage })));
+const CheckoutHistoryPage = lazy(() => import('./pages/CheckoutHistoryPage').then((module) => ({ default: module.CheckoutHistoryPage })));
+const OrderDetailPage = lazy(() => import('./pages/OrderDetailPage').then((module) => ({ default: module.OrderDetailPage })));
+const TrackOrderPage = lazy(() => import('./pages/TrackOrderPage').then((module) => ({ default: module.TrackOrderPage })));
+const ProfilePage = lazy(() => import('./pages/ProfilePage').then((module) => ({ default: module.ProfilePage })));
+const AddressesPage = lazy(() => import('./pages/AddressesPage').then((module) => ({ default: module.AddressesPage })));
+const ChangePasswordPage = lazy(() => import('./pages/ChangePasswordPage').then((module) => ({ default: module.ChangePasswordPage })));
+const WishlistPage = lazy(() => import('./pages/WishlistPage').then((module) => ({ default: module.WishlistPage })));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage').then((module) => ({ default: module.ForgotPasswordPage })));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage').then((module) => ({ default: module.ResetPasswordPage })));
+const AccountDashboardLayout = lazy(() => import('./features/customer').then((module) => ({ default: module.AccountDashboardLayout })));
+const MiniCartDrawer = lazy(() => import('./features/cart').then((module) => ({ default: module.MiniCartDrawer })));
+const SearchOverlay = lazy(() => import('./features/search').then((module) => ({ default: module.SearchOverlay })));
 
 type HomeExperienceSnapshot = {
   scrollY: number;
@@ -165,53 +171,57 @@ function App() {
     <NavigationThemeProvider theme={navigationTheme}>
       <>
         <RouteScrollRestoration />
-        <Routes>
-          <Route
-            path="/"
-            element={<MainLayout>{renderHomePage()}</MainLayout>}
-          />
+        <Suspense fallback={null}>
+          <Routes>
+            <Route
+              path="/"
+              element={<MainLayout>{renderHomePage()}</MainLayout>}
+            />
 
-          <Route path="/collection" element={<CollectionPage />} />
-          <Route path="/terms" element={<TermsPage />} />
-          <Route path="/privacy" element={<PrivacyPage />} />
-          <Route path="/product/:slug" element={<ProductDetailPage />} />
-          <Route path="/cart" element={<CartPage />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
-          <Route path="/payment/success" element={<PaymentSuccessPage />} />
-          <Route path="/payment/pending" element={<PaymentPendingPage />} />
-          <Route path="/payment/expired" element={<PaymentExpiredPage />} />
-          <Route path="/payment/cancelled" element={<PaymentCancelledPage />} />
-          <Route path="/payment/failed" element={<PaymentFailedPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/verify-email" element={<VerifyEmailPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/track-order" element={<TrackOrderPage />} />
+            <Route path="/collection" element={<CollectionPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/product/:slug" element={<ProductDetailPage />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/payment/success" element={<PaymentSuccessPage />} />
+            <Route path="/payment/pending" element={<PaymentPendingPage />} />
+            <Route path="/payment/expired" element={<PaymentExpiredPage />} />
+            <Route path="/payment/cancelled" element={<PaymentCancelledPage />} />
+            <Route path="/payment/failed" element={<PaymentFailedPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/track-order" element={<TrackOrderPage />} />
 
-          <Route path="/account" element={<AccountDashboardLayout />}>
-            <Route index element={<AccountPage />} />
-            <Route path="profile" element={<ProfilePage />} />
-            <Route path="address" element={<AddressesPage />} />
-            <Route path="orders" element={<MyOrdersPage />} />
-            <Route path="orders/:orderNumber" element={<OrderDetailPage />} />
-            <Route path="checkout-history" element={<CheckoutHistoryPage />} />
-            <Route path="wishlist" element={<WishlistPage />} />
-            <Route path="password" element={<ChangePasswordPage />} />
-          </Route>
+            <Route path="/account" element={<AccountDashboardLayout />}>
+              <Route index element={<AccountPage />} />
+              <Route path="profile" element={<ProfilePage />} />
+              <Route path="address" element={<AddressesPage />} />
+              <Route path="orders" element={<MyOrdersPage />} />
+              <Route path="orders/:orderNumber" element={<OrderDetailPage />} />
+              <Route path="checkout-history" element={<CheckoutHistoryPage />} />
+              <Route path="wishlist" element={<WishlistPage />} />
+              <Route path="password" element={<ChangePasswordPage />} />
+            </Route>
 
-          <Route path="/account/addresses" element={<Navigate to="/account/address" replace />} />
-          <Route path="/account/change-password" element={<Navigate to="/account/password" replace />} />
-          <Route path="/orders" element={<Navigate to="/account/orders" replace />} />
-          <Route path="/orders/:orderNumber" element={<LegacyOrderRedirect />} />
-          <Route path="/wishlist" element={<Navigate to="/account/wishlist" replace />} />
+            <Route path="/account/addresses" element={<Navigate to="/account/address" replace />} />
+            <Route path="/account/change-password" element={<Navigate to="/account/password" replace />} />
+            <Route path="/orders" element={<Navigate to="/account/orders" replace />} />
+            <Route path="/orders/:orderNumber" element={<LegacyOrderRedirect />} />
+            <Route path="/wishlist" element={<Navigate to="/account/wishlist" replace />} />
 
-          <Route path="*" element={<MainLayout>{renderHomePage()}</MainLayout>} />
-        </Routes>
+            <Route path="*" element={<MainLayout>{renderHomePage()}</MainLayout>} />
+          </Routes>
+        </Suspense>
 
         <FloatingNavigation />
-        <MiniCartDrawer />
-        <SearchOverlay />
+        <Suspense fallback={null}>
+          <MiniCartDrawer />
+          <SearchOverlay />
+        </Suspense>
       </>
     </NavigationThemeProvider>
   );

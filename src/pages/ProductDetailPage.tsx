@@ -317,11 +317,19 @@ function ProductDetailContent() {
         return;
       }
 
-      const categoryProducts = await productService.getProducts({
-        category: detail.category?.slug,
-        limit: 8,
-        sort: 'newest',
-      });
+      const [categoryProducts, fallbackProducts] = await Promise.all([
+        detail.category?.slug
+          ? productService.getProducts({
+              category: detail.category.slug,
+              limit: 8,
+              sort: 'newest',
+            })
+          : Promise.resolve({ products: [] }),
+        productService.getProducts({
+          limit: 12,
+          sort: 'newest',
+        }),
+      ]);
 
       const sameCategory = categoryProducts.products.filter((entry) => entry.id !== detail.id);
 
@@ -329,11 +337,6 @@ function ProductDetailContent() {
         setRelatedProducts(sameCategory.slice(0, 4));
         return;
       }
-
-      const fallbackProducts = await productService.getProducts({
-        limit: 12,
-        sort: 'newest',
-      });
 
       const fallback = fallbackProducts.products.filter((entry) => entry.id !== detail.id && !sameCategory.some((item) => item.id === entry.id));
       setRelatedProducts([...sameCategory, ...fallback].slice(0, 4));

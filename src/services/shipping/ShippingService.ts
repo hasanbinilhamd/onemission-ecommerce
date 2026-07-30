@@ -23,6 +23,27 @@ function sortByNameAscending<T extends { name: string }>(items: T[]): T[] {
   return [...items].sort((left, right) => left.name.localeCompare(right.name, 'en', { sensitivity: 'base' }));
 }
 
+function selectCheapestRatePerCourier(items: ShippingRate[]): ShippingRate[] {
+  const cheapestRateByCourier = new Map<string, ShippingRate>();
+
+  items.forEach((item) => {
+    const courierCode = String(item.courierCode || '').trim().toLowerCase();
+    if (!courierCode) {
+      return;
+    }
+
+    const currentCheapest = cheapestRateByCourier.get(courierCode);
+    if (!currentCheapest || item.cost < currentCheapest.cost) {
+      cheapestRateByCourier.set(courierCode, item);
+    }
+  });
+
+  return items.filter((item) => {
+    const courierCode = String(item.courierCode || '').trim().toLowerCase();
+    return cheapestRateByCourier.get(courierCode)?.id === item.id;
+  });
+}
+
 export class ShippingService {
   private provincesCache: ShippingProvince[] | null = null;
   private readonly citiesCache = new Map<string, ShippingCity[]>();
@@ -65,6 +86,7 @@ export class ShippingService {
 
   async getShippingRates(address: ShippingRateRequest): Promise<ShippingRate[]> {
     const response = await this.provider.getShippingRates(address);
-    return response.map(mapShippingRate);
+    const mapped = response.map(mapShippingRate);
+    return selectCheapestRatePerCourier(mapped);
   }
 }

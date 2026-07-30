@@ -48,6 +48,7 @@ export function CheckoutSection({
               textTransform: 'uppercase',
               color: '#9CA3AF',
               fontWeight: 600,
+              fontFamily: "'Chakra Petch', sans-serif",
             }}
           >
             {stepLabel}

@@ -19,19 +19,6 @@ interface ChangePasswordErrors {
   confirmPassword?: string;
 }
 
-function getPasswordStrength(password: string) {
-  const lengthScore = password.length >= 8 ? 1 : 0;
-  const lowercaseScore = /[a-z]/.test(password) ? 1 : 0;
-  const uppercaseScore = /[A-Z]/.test(password) ? 1 : 0;
-  const numberScore = /\d/.test(password) ? 1 : 0;
-  const totalScore = lengthScore + lowercaseScore + uppercaseScore + numberScore;
-
-  if (totalScore <= 1) return { label: 'Weak', width: '25%', tone: 'bg-red-500' };
-  if (totalScore === 2) return { label: 'Fair', width: '50%', tone: 'bg-amber-500' };
-  if (totalScore === 3) return { label: 'Good', width: '75%', tone: 'bg-blue-500' };
-  return { label: 'Strong', width: '100%', tone: 'bg-emerald-500' };
-}
-
 function validatePasswordForm(values: ChangePasswordFormState): ChangePasswordErrors {
   const errors: ChangePasswordErrors = {};
 
@@ -41,8 +28,6 @@ function validatePasswordForm(values: ChangePasswordFormState): ChangePasswordEr
 
   if (!isRequired(values.newPassword)) {
     errors.newPassword = 'New Password is required.';
-  } else if (values.newPassword.length < 8) {
-    errors.newPassword = 'New Password must be at least 8 characters.';
   }
 
   if (!isRequired(values.confirmPassword)) {
@@ -104,14 +89,12 @@ export function ChangePasswordPage() {
 
   if (!user) return null;
 
-  const passwordStrength = getPasswordStrength(form.newPassword);
-
   return (
     <div className="space-y-6">
       <div>
-        <p className="m-0 text-sm font-semibold uppercase tracking-[0.12em] text-neutral-400">Change Password</p>
+        <p className="m-0 text-sm font-semibold uppercase tracking-[0.12em] text-neutral-400" style={{ fontFamily: "'Chakra Petch', sans-serif" }}>Change Password</p>
         <h2 className="mt-2 text-2xl font-semibold text-neutral-950">Security Settings</h2>
-        <p className="mt-2 text-sm leading-7 text-neutral-500">Choose a strong password to protect your customer account across devices.</p>
+        <p className="mt-2 text-sm leading-7 text-neutral-500">Update your password for your customer account across devices.</p>
       </div>
 
       {errorMessage ? <div className="rounded-3xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">{errorMessage}</div> : null}
@@ -129,15 +112,7 @@ export function ChangePasswordPage() {
 
         <form className="grid gap-5" onSubmit={handleSubmit}>
           <Input label="Current Password" type="password" autoComplete="current-password" value={form.currentPassword} onChange={(event) => setForm((current) => ({ ...current, currentPassword: event.target.value }))} error={errors.currentPassword} disabled={isSaving} />
-          <div className="grid gap-3">
-            <Input label="New Password" type="password" autoComplete="new-password" value={form.newPassword} onChange={(event) => setForm((current) => ({ ...current, newPassword: event.target.value }))} error={errors.newPassword} disabled={isSaving} />
-            <div className="grid gap-2">
-              <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-100">
-                <div className={`h-full rounded-full transition-all ${passwordStrength.tone}`} style={{ width: passwordStrength.width }} />
-              </div>
-              <p className="m-0 text-xs font-medium text-neutral-500">Strength: {passwordStrength.label}</p>
-            </div>
-          </div>
+          <Input label="New Password" type="password" autoComplete="new-password" value={form.newPassword} onChange={(event) => setForm((current) => ({ ...current, newPassword: event.target.value }))} error={errors.newPassword} disabled={isSaving} />
           <Input label="Confirm Password" type="password" autoComplete="new-password" value={form.confirmPassword} onChange={(event) => setForm((current) => ({ ...current, confirmPassword: event.target.value }))} error={errors.confirmPassword} disabled={isSaving} />
 
           {statusMessage ? (

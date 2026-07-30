@@ -12,7 +12,14 @@ body,
 }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'SF-Pro-Display', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }

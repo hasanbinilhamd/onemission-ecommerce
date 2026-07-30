@@ -16,7 +16,7 @@ export function CheckoutOrderSummary({ className = '' }: CheckoutOrderSummaryPro
     <aside className={className} style={{ alignSelf: 'start' }}>
       <div style={{ border: '1px solid #E5E7EB', borderRadius: '20px', padding: '20px', backgroundColor: '#FFFFFF' }}>
         <div style={{ marginBottom: '20px' }}>
-          <p style={{ margin: '0 0 8px', fontSize: '12px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9CA3AF', fontWeight: 600 }}>
+          <p style={{ margin: '0 0 8px', fontSize: '12px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9CA3AF', fontWeight: 600, fontFamily: "'Chakra Petch', sans-serif" }}>
             Summary
           </p>
           <h2 style={{ margin: 0, fontSize: '22px', lineHeight: 1.2, color: '#111827' }}>

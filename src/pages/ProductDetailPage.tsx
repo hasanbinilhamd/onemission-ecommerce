@@ -490,7 +490,7 @@ function ProductDetailContent() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#fff', fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#fff', fontFamily: "'SF-Pro-Display', sans-serif" }}>
       <div
         style={{
           position: 'sticky',

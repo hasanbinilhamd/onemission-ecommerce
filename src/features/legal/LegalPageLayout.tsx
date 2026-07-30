@@ -54,6 +54,7 @@ export function LegalPageLayout({
                 letterSpacing: '0.18em',
                 textTransform: 'uppercase',
                 color: LEGAL_MUTED,
+                fontFamily: "'Chakra Petch', sans-serif",
               }}
             >
               Legal

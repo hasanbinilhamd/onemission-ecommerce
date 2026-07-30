@@ -667,7 +667,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
   return (
     <div
       style={{
-        fontFamily: 'Inter, sans-serif',
+        fontFamily: "'SF-Pro-Display', sans-serif",
         backgroundColor: '#0A0A0A',
       }}
     >

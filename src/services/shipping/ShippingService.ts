@@ -19,6 +19,10 @@ import type {
  * Checkout UI depends on this class only. RajaOngkir integration should be
  * implemented by swapping providers, not by changing components.
  */
+function sortByNameAscending<T extends { name: string }>(items: T[]): T[] {
+  return [...items].sort((left, right) => left.name.localeCompare(right.name, 'en', { sensitivity: 'base' }));
+}
+
 export class ShippingService {
   private provincesCache: ShippingProvince[] | null = null;
   private readonly citiesCache = new Map<string, ShippingCity[]>();
@@ -32,7 +36,7 @@ export class ShippingService {
     }
 
     const response = await this.provider.getProvinces();
-    const mapped = response.map(mapShippingProvince);
+    const mapped = sortByNameAscending(response.map(mapShippingProvince));
     this.provincesCache = mapped;
     return mapped;
   }
@@ -43,7 +47,7 @@ export class ShippingService {
     }
 
     const response = await this.provider.getCities(province);
-    const mapped = response.map(mapShippingCity);
+    const mapped = sortByNameAscending(response.map(mapShippingCity));
     this.citiesCache.set(province, mapped);
     return mapped;
   }
@@ -54,7 +58,7 @@ export class ShippingService {
     }
 
     const response = await this.provider.getDistricts(city);
-    const mapped = response.map(mapShippingDistrict);
+    const mapped = sortByNameAscending(response.map(mapShippingDistrict));
     this.districtsCache.set(city, mapped);
     return mapped;
   }

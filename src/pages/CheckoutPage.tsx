@@ -28,6 +28,7 @@ import {
   type CheckoutShippingAddress,
   type ShippingRate,
 } from '../stores';
+import type { PromotionValidationResponse } from '../types';
 import {
   createCheckoutSession,
   createPaymentAttempt,
@@ -38,6 +39,7 @@ import {
   shippingService,
 } from '../services/shipping';
 import { openMidtransSnap } from '../services/payment/midtransSnap';
+import { validatePromotion } from '../services/api/promotionService';
 import { formatCurrency } from '../utils/formatting';
 import { isEmail, isRequired } from '../utils/validation';
 
@@ -262,6 +264,7 @@ function CheckoutPageContent() {
   const {
     cart,
     cartItems,
+    subtotal,
     hasInvalidItems,
     isCartRefreshing,
     refreshCartItems,
@@ -291,6 +294,11 @@ function CheckoutPageContent() {
   const [contactErrors, setContactErrors] = useState<ContactValidationErrors>({});
   const [shippingErrors, setShippingErrors] = useState<ShippingValidationErrors>({});
   const [statusMessage, setStatusMessage] = useState('');
+  const [voucherCode, setVoucherCode] = useState('');
+  const [appliedPromotion, setAppliedPromotion] = useState<PromotionValidationResponse['promotion'] | null>(null);
+  const [promotionPricing, setPromotionPricing] = useState<PromotionValidationResponse['pricing'] | null>(null);
+  const [promotionError, setPromotionError] = useState('');
+  const [isApplyingPromotion, setIsApplyingPromotion] = useState(false);
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
   const [isSnapFocusMode, setIsSnapFocusMode] = useState(false);
 
@@ -345,6 +353,8 @@ function CheckoutPageContent() {
     && shippingAddress.postalCode
     && isRequired(shippingAddress.streetAddress),
   );
+  const shippingCostPreview = promotionPricing?.shippingCost ?? shippingState.selectedRate?.cost ?? 0;
+  const grandTotalPreview = promotionPricing?.grandTotal ?? (subtotal + (shippingState.selectedRate?.cost ?? 0));
 
   const resetDeliveryCompletion = useCallback(() => {
     setSectionCompletion((previous) => ({
@@ -352,6 +362,53 @@ function CheckoutPageContent() {
       delivery: false,
     }));
   }, []);
+
+  const applyPromotionCode = useCallback(async (overrideCode = '') => {
+    const nextCode = String(overrideCode || voucherCode).trim().toUpperCase();
+    if (!nextCode) {
+      setPromotionError('Enter a voucher code first.');
+      return;
+    }
+
+    setIsApplyingPromotion(true);
+    setPromotionError('');
+
+    try {
+      const accessToken = user ? await getValidAccessToken() : '';
+      const response = await validatePromotion({
+        code: nextCode,
+        customerEmail: contactInformation.email,
+        subtotal,
+        shippingCost: shippingState.selectedRate?.cost ?? 0,
+      }, accessToken || '');
+      setVoucherCode(nextCode);
+      setAppliedPromotion(response.promotion);
+      setPromotionPricing(response.pricing);
+      setStatusMessage(`Promotion ${response.promotion.code} applied.`);
+    } catch (error) {
+      setAppliedPromotion(null);
+      setPromotionPricing(null);
+      setPromotionError(error instanceof Error ? error.message : 'Promotion could not be applied.');
+    } finally {
+      setIsApplyingPromotion(false);
+    }
+  }, [contactInformation.email, getValidAccessToken, shippingState.selectedRate?.cost, subtotal, user, voucherCode]);
+
+  const removePromotionCode = useCallback(() => {
+    setAppliedPromotion(null);
+    setPromotionPricing(null);
+    setVoucherCode('');
+    setPromotionError('');
+    setStatusMessage('Promotion removed.');
+  }, []);
+
+  useEffect(() => {
+    if (!appliedPromotion?.code) {
+      return;
+    }
+
+    void applyPromotionCode(appliedPromotion.code);
+  }, [appliedPromotion?.code, applyPromotionCode, subtotal, shippingState.selectedRate?.cost, contactInformation.email]);
 
   const loadProvinces = useCallback(async () => {
     setShippingLoading('provinces', true);
@@ -926,7 +983,8 @@ function CheckoutPageContent() {
           customerType: 'Individual',
         },
         currency: 'IDR',
-        discount: 0,
+        promotionCode: appliedPromotion?.code || '',
+        discount: promotionPricing?.discountAmount || 0,
         tax: 0,
         courier: shippingState.selectedRate.courierCode,
         items: refreshedCartItems.map((item) => ({
@@ -1362,6 +1420,63 @@ function CheckoutPageContent() {
               )}
             </CheckoutSection>
 
+            <CheckoutSection
+              stepLabel="Optional"
+              title="Voucher"
+              description="Apply a voucher or promotion code before continuing to payment."
+            >
+              <div style={{ display: 'grid', gap: '12px' }}>
+                <div className="sm:grid sm:grid-cols-[minmax(0,1fr)_auto]" style={{ display: 'grid', gap: '12px', alignItems: 'end' }}>
+                  <Input
+                    label="Voucher Code"
+                    name="voucherCode"
+                    value={voucherCode}
+                    onChange={(event) => {
+                      setVoucherCode(event.target.value.toUpperCase());
+                      setPromotionError('');
+                    }}
+                    placeholder="SAVE20"
+                  />
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    <Button type="button" variant="secondary" onClick={() => void applyPromotionCode()} disabled={isApplyingPromotion || !voucherCode.trim()}>
+                      {isApplyingPromotion ? 'Applying...' : 'Apply'}
+                    </Button>
+                    {appliedPromotion ? (
+                      <Button type="button" variant="ghost" onClick={removePromotionCode}>
+                        Remove
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+
+                {promotionError ? (
+                  <CheckoutErrorState message={promotionError} />
+                ) : null}
+
+                {appliedPromotion && promotionPricing ? (
+                  <div style={{ border: '1px solid #E5E7EB', borderRadius: '16px', padding: '16px', backgroundColor: '#FFFFFF' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                      <div>
+                        <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 600, color: '#111827' }}>{appliedPromotion.title}</p>
+                        <p style={{ margin: 0, fontSize: '12px', color: '#6B7280' }}>{appliedPromotion.code} · {appliedPromotion.discountType.replace(/_/g, ' ')}</p>
+                      </div>
+                      <Badge variant="success">Applied</Badge>
+                    </div>
+                    <div style={{ display: 'grid', gap: '6px', marginTop: '14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                        <p style={{ margin: 0, fontSize: '12px', color: '#6B7280' }}>Discount</p>
+                        <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: '#15803D' }}>- {formatCurrency(promotionPricing.totalSavings || 0)}</p>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                        <p style={{ margin: 0, fontSize: '12px', color: '#6B7280' }}>Shipping After Promotion</p>
+                        <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: '#111827' }}>{formatCurrency(promotionPricing.shippingCost || 0)}</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </CheckoutSection>
+
             <div style={{ display: 'grid', gap: '12px' }}>
               {hasInvalidItems && (
                 <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.6, color: '#B91C1C' }}>
@@ -1394,7 +1509,7 @@ function CheckoutPageContent() {
             </div>
           </div>
 
-          <CheckoutOrderSummary className="lg:sticky lg:top-24" />
+          <CheckoutOrderSummary className="lg:sticky lg:top-24" discountAmount={promotionPricing?.discountAmount || 0} shippingCostOverride={promotionPricing ? shippingCostPreview : undefined} totalOverride={promotionPricing ? grandTotalPreview : undefined} promotionTitle={appliedPromotion?.title || ""} totalSavings={promotionPricing?.totalSavings || 0} />
         </div>
       </div>
       </div>

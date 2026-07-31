@@ -47,6 +47,7 @@ const ALLOWED_PUBLIC_PATTERNS = [
   /^payment-attempt\/[^/]+\/snap$/,
   /^newsletter\/subscribe$/,
   /^reviews$/,
+  /^promotions\/validate$/,
   /^website$/,
   /^website\/hero$/,
   /^website\/brand-video$/,

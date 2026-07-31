@@ -15,6 +15,7 @@ export interface CheckoutSessionPayload {
   };
   salesChannelId?: string;
   currency: string;
+  promotionCode?: string;
   discount: number;
   tax: number;
   courier: string;

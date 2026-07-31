@@ -189,6 +189,57 @@ export interface ShippingRateRequest {
   weightGrams?: number;
 }
 
+export interface PromotionSnapshotPricing {
+  subtotal: number;
+  originalShippingCost: number;
+  shippingCost: number;
+  discountAmount: number;
+  shippingDiscountAmount: number;
+  totalSavings: number;
+  grandTotal: number;
+}
+
+export interface PromotionSnapshot {
+  id: string;
+  code: string;
+  title: string;
+  description: string;
+  promotionType: string;
+  discountType: string;
+  percentageValue: number;
+  fixedAmount: number;
+  minimumPurchase: number;
+  maximumDiscount: number;
+  isPublic: boolean;
+  pricing: PromotionSnapshotPricing;
+  appliedAt: string;
+}
+
+export interface PromotionValidationResponse {
+  promotion: {
+    id: string;
+    code: string;
+    title: string;
+    description: string;
+    promotionType: string;
+    discountType: string;
+    percentageValue: number;
+    fixedAmount: number;
+    minimumPurchase: number;
+    maximumDiscount: number;
+    quota: number;
+    usedCount: number;
+    status: string;
+    isPublic: boolean;
+    startDate: string | null;
+    endDate: string | null;
+    createdAt: string;
+    updatedAt: string;
+    deletedAt?: string | null;
+  };
+  pricing: PromotionSnapshotPricing;
+}
+
 export interface CommerceCheckoutSessionItem {
   id: string;
   productId: string;
@@ -223,6 +274,7 @@ export interface CommerceCheckoutSessionDetail {
   };
   currency: string;
   items: CommerceCheckoutSessionItem[];
+  promotion: PromotionSnapshot | null;
   shipping: {
     recipientName: string;
     phone: string;

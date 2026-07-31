@@ -4,13 +4,25 @@ import { formatCurrency } from '../../utils/formatting';
 
 interface CheckoutOrderSummaryProps {
   className?: string;
+  discountAmount?: number;
+  shippingCostOverride?: number;
+  totalOverride?: number;
+  promotionTitle?: string;
+  totalSavings?: number;
 }
 
-export function CheckoutOrderSummary({ className = '' }: CheckoutOrderSummaryProps) {
+export function CheckoutOrderSummary({
+  className = '',
+  discountAmount = 0,
+  shippingCostOverride,
+  totalOverride,
+  promotionTitle = '',
+  totalSavings = 0,
+}: CheckoutOrderSummaryProps) {
   const { cart, cartItems, subtotal, totalItems } = useCartStore();
   const { checkout } = useCheckoutStore();
-  const shippingCost = checkout.shipping.selectedRate?.cost ?? 0;
-  const total = subtotal + shippingCost;
+  const shippingCost = shippingCostOverride ?? checkout.shipping.selectedRate?.cost ?? 0;
+  const total = totalOverride ?? (subtotal - discountAmount + shippingCost);
 
   return (
     <aside className={className} style={{ alignSelf: 'start' }}>
@@ -106,10 +118,24 @@ export function CheckoutOrderSummary({ className = '' }: CheckoutOrderSummaryPro
             <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Subtotal</p>
             <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#111827' }}>{formatCurrency(subtotal)}</p>
           </div>
+          {promotionTitle ? (
+            <div style={{ display: 'grid', gap: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Promotion</p>
+                <p style={{ margin: 0, fontSize: '13px', color: '#111827', textAlign: 'right', fontWeight: 600 }}>{promotionTitle}</p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Discount</p>
+                <p style={{ margin: 0, fontSize: '13px', color: totalSavings > 0 ? '#15803D' : '#111827', textAlign: 'right', fontWeight: 600 }}>
+                  {totalSavings > 0 ? `- ${formatCurrency(totalSavings)}` : formatCurrency(0)}
+                </p>
+              </div>
+            </div>
+          ) : null}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
             <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Shipping</p>
             <p style={{ margin: 0, fontSize: '13px', color: '#111827', textAlign: 'right', fontWeight: shippingCost > 0 ? 600 : 500 }}>
-              {shippingCost > 0 ? formatCurrency(shippingCost) : 'Select a courier'}
+              {checkout.shipping.selectedRate || shippingCostOverride !== undefined ? formatCurrency(shippingCost) : 'Select a courier'}
             </p>
           </div>
         </div>

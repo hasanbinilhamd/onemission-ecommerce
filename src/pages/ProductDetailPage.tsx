@@ -164,10 +164,6 @@ if (typeof document !== 'undefined') {
   }
 }
 
-function ProductInformationFallback({ message = 'Information coming soon.' }: { message?: string }) {
-  return <p>{message}</p>;
-}
-
 function SizeGuideContent({ imageUrl }: { imageUrl?: string }) {
   const [hasImageError, setHasImageError] = useState(false);
 
@@ -321,6 +317,10 @@ function ProductDetailContent() {
   const displayPrice = selectedVariant?.price ?? product?.price ?? 0;
   const averageRating = Number(product?.averageRating ?? product?.rating ?? 0);
   const reviewCount = Number(product?.reviewCount ?? 0);
+  const hasDescriptionSection = Boolean(product?.longDescription?.trim());
+  const hasMaterialsSection = Boolean(product?.materials?.trim());
+  const hasCareSection = Boolean(product?.care?.trim());
+  const hasShippingSection = Boolean(product?.shipping?.trim());
   const availableStock = Math.max(selectedVariant?.stock ?? product?.currentStock ?? 0, 0);
   const inventoryStatus = selectedVariant?.available === false || availableStock <= 0
     ? 'OUT_OF_STOCK'
@@ -610,37 +610,29 @@ function ProductDetailContent() {
         </div>
 
         <div style={{ marginTop: '56px', borderTop: '1px solid #F3F4F6', maxWidth: '720px' }}>
-          <AccordionSection title="Description">
-            {product.longDescription?.trim() ? (
+          {hasDescriptionSection ? (
+            <AccordionSection title="Description">
               <p>{product.longDescription}</p>
-            ) : (
-              <ProductInformationFallback />
-            )}
-          </AccordionSection>
+            </AccordionSection>
+          ) : null}
 
-          <AccordionSection title="Materials">
-            {product.materials?.trim() ? (
+          {hasMaterialsSection ? (
+            <AccordionSection title="Materials">
               <p>{product.materials}</p>
-            ) : (
-              <ProductInformationFallback />
-            )}
-          </AccordionSection>
+            </AccordionSection>
+          ) : null}
 
-          <AccordionSection title="Care Instructions">
-            {product.care?.trim() ? (
+          {hasCareSection ? (
+            <AccordionSection title="Care Instructions">
               <p>{product.care}</p>
-            ) : (
-              <ProductInformationFallback />
-            )}
-          </AccordionSection>
+            </AccordionSection>
+          ) : null}
 
-          <AccordionSection title="Shipping Information">
-            {product.shipping?.trim() ? (
+          {hasShippingSection ? (
+            <AccordionSection title="Shipping Information">
               <p>{product.shipping}</p>
-            ) : (
-              <ProductInformationFallback />
-            )}
-          </AccordionSection>
+            </AccordionSection>
+          ) : null}
 
           <AccordionSection title="Size Guide">
             <SizeGuideContent imageUrl={product.sizeGuideImageUrl} />

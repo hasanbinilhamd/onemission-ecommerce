@@ -26,10 +26,13 @@ export function WriteReviewModal({
   const [title, setTitle] = useState('');
   const [comment, setComment] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const [isSubmitted, setIsSubmitted] = useState(false);
 
   useEffect(() => {
     if (!open) {
+      setRating(5);
+      setTitle('');
+      setComment('');
+      setErrorMessage('');
       return;
     }
 
@@ -37,7 +40,6 @@ export function WriteReviewModal({
     setTitle('');
     setComment('');
     setErrorMessage('');
-    setIsSubmitted(false);
   }, [item?.id, open]);
 
   const handleSubmit = async () => {
@@ -52,102 +54,88 @@ export function WriteReviewModal({
       title: title.trim(),
       comment: comment.trim(),
     });
-    setIsSubmitted(true);
   };
 
   return (
-    <Modal open={open} onClose={isSubmitting ? () => undefined : onClose} title={isSubmitted ? 'Thank you!' : 'Write Review'}>
-      {isSubmitted ? (
-        <div className="grid gap-4">
-          <p className="m-0 text-sm leading-7 text-neutral-600">
-            Your review has been submitted successfully.
+    <Modal open={open} onClose={isSubmitting ? () => undefined : onClose} title="Write Review">
+      <div className="grid gap-4">
+        <div>
+          <p className="m-0 text-sm font-semibold text-neutral-950">{item?.productName || 'Product Review'}</p>
+          <p className="mt-1 text-sm text-neutral-500">{item?.variantName || 'Verified purchase'}</p>
+        </div>
+
+        <div className="grid gap-2">
+          <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9CA3AF', fontFamily: "'Chakra Petch', sans-serif" }}>
+            Rating
           </p>
-          <div className="flex justify-end">
-            <Button type="button" onClick={onClose}>
-              Close
-            </Button>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {Array.from({ length: 5 }).map((_, index) => {
+              const starValue = index + 1;
+              const isActive = starValue <= rating;
+              return (
+                <button
+                  key={starValue}
+                  type="button"
+                  onClick={() => setRating(starValue)}
+                  style={{
+                    border: 'none',
+                    background: 'transparent',
+                    padding: 0,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                  }}
+                  aria-label={`Set rating to ${starValue}`}
+                >
+                  <Star size={24} className={isActive ? 'fill-amber-400 text-amber-400' : 'text-neutral-300'} />
+                </button>
+              );
+            })}
+            <span style={{ fontSize: '14px', fontWeight: 600, color: '#111827' }}>{rating}.0</span>
           </div>
         </div>
-      ) : (
-        <div className="grid gap-4">
-          <div>
-            <p className="m-0 text-sm font-semibold text-neutral-950">{item?.productName || 'Product Review'}</p>
-            <p className="mt-1 text-sm text-neutral-500">{item?.variantName || 'Verified purchase'}</p>
-          </div>
 
-          <div className="grid gap-2">
-            <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9CA3AF', fontFamily: "'Chakra Petch', sans-serif" }}>
-              Rating
-            </p>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              {Array.from({ length: 5 }).map((_, index) => {
-                const starValue = index + 1;
-                const isActive = starValue <= rating;
-                return (
-                  <button
-                    key={starValue}
-                    type="button"
-                    onClick={() => setRating(starValue)}
-                    style={{
-                      border: 'none',
-                      background: 'transparent',
-                      padding: 0,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                    }}
-                    aria-label={`Set rating to ${starValue}`}
-                  >
-                    <Star size={24} className={isActive ? 'fill-amber-400 text-amber-400' : 'text-neutral-300'} />
-                  </button>
-                );
-              })}
-              <span style={{ fontSize: '14px', fontWeight: 600, color: '#111827' }}>{rating}.0</span>
-            </div>
-          </div>
-
-          <div className="grid gap-2">
-            <label className="text-sm font-medium text-neutral-900" htmlFor="review-title">
-              Title (optional)
-            </label>
-            <input
-              id="review-title"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              className="w-full rounded-2xl border border-neutral-200 px-4 py-3 text-sm outline-none focus:border-neutral-900"
-              placeholder="Excellent quality"
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <label className="text-sm font-medium text-neutral-900" htmlFor="review-comment">
-              Comment
-            </label>
-            <textarea
-              id="review-comment"
-              rows={5}
-              value={comment}
-              onChange={(event) => setComment(event.target.value)}
-              className="w-full rounded-2xl border border-neutral-200 px-4 py-3 text-sm outline-none focus:border-neutral-900"
-              placeholder="Share your product experience..."
-            />
-          </div>
-
-          {errorMessage ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {errorMessage}
-            </div>
-          ) : null}
-
-          <div className="flex justify-end gap-3">
-            <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
-              Cancel
-            </Button>
-            <Button type="button" onClick={() => void handleSubmit()} disabled={isSubmitting}>
-              {isSubmitting ? 'Submitting...' : 'Submit'}
-            </Button>
-          </div>
+        <div className="grid gap-2">
+          <label className="text-sm font-medium text-neutral-900" htmlFor="review-title">
+            Title (optional)
+          </label>
+          <input
+            id="review-title"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            className="w-full rounded-2xl border border-neutral-200 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+            placeholder="Excellent quality"
+          />
         </div>
-      )}
+
+        <div className="grid gap-2">
+          <label className="text-sm font-medium text-neutral-900" htmlFor="review-comment">
+            Comment
+          </label>
+          <textarea
+            id="review-comment"
+            rows={5}
+            value={comment}
+            onChange={(event) => setComment(event.target.value)}
+            className="w-full rounded-2xl border border-neutral-200 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+            placeholder="Share your product experience..."
+          />
+        </div>
+
+        {errorMessage ? (
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {errorMessage}
+          </div>
+        ) : null}
+
+        <div className="flex justify-end gap-3">
+          <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button type="button" onClick={() => void handleSubmit()} disabled={isSubmitting}>
+            {isSubmitting ? 'Submitting...' : 'Submit'}
+          </Button>
+        </div>
+      </div>
     </Modal>
   );
 }

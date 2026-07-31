@@ -1,10 +1,12 @@
 import { PackageSearch } from 'lucide-react';
+import { toast } from 'sonner';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button, EmptyState, LoadingSkeleton } from '../components/shared';
 import { OrderDetailView, useAuthenticatedCustomer } from '../features/customer';
 import { WriteReviewModal, type WriteReviewSubmitInput } from '../features/reviews';
 import { cancelCustomerOrder, createReturnRequest, getOrderByNumber } from '../services/api/orderService';
+import { productService } from '../services/product';
 import { createProductReview } from '../services/api/reviewService';
 import type { CommerceOrderDetail, CommerceOrderProduct } from '../types';
 import { ROUTES } from '../app/config/routes';
@@ -113,7 +115,7 @@ export function OrderDetailPage() {
     setIsSubmittingReview(true);
     try {
       const accessToken = await getValidAccessToken();
-      await createProductReview({
+      const response = await createProductReview({
         productId: reviewItem.productId,
         orderId: order.id,
         orderItemId: reviewItem.id,
@@ -121,8 +123,11 @@ export function OrderDetailPage() {
         title: input.title,
         comment: input.comment,
       }, accessToken || '');
+
+      productService.applyReviewSummary(reviewItem.productId, response.summary);
+      setReviewItem(null);
+      toast.success(response.message || 'Review submitted successfully.');
       await loadOrder();
-      setActionFeedback({ tone: 'success', message: 'Thank you. Your review has been submitted successfully.' });
     } catch (error) {
       setActionFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Review could not be submitted right now.' });
       throw error;

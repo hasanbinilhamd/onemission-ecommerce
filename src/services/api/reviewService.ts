@@ -1,6 +1,11 @@
 import { env } from '../../app/config/env';
 import type { ProductReviewListResponse, Review } from '../../types';
 
+export interface ProductReviewSummary {
+  averageRating: number;
+  reviewCount: number;
+}
+
 export interface CreateProductReviewInput {
   productId: string;
   orderId: string;
@@ -70,8 +75,8 @@ export async function listProductReviews(productId: string, page = 1, limit = 10
 export async function createProductReview(
   input: CreateProductReviewInput,
   accessToken = '',
-): Promise<{ review: Review; message: string }> {
-  return fetchJson<{ review: Review; message: string }>(
+): Promise<{ review: Review; summary: ProductReviewSummary; message: string }> {
+  return fetchJson<{ review: Review; summary: ProductReviewSummary; message: string }>(
     '/reviews',
     {
       method: 'POST',

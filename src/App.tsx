@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState, useEffect, useCallback, useRef } from 'react';
 import { Navigate, Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import { MainLayout } from './layouts/MainLayout';
 import { ROUTES } from './app/config/routes';
 import { HomePage } from './pages/HomePage';
@@ -63,6 +64,35 @@ function persistHomeExperienceSnapshot(snapshot: HomeExperienceSnapshot): void {
   window.sessionStorage.setItem(HOME_EXPERIENCE_SNAPSHOT_KEY, JSON.stringify(snapshot));
 }
 
+
+function restoreHomepageBrowsingPosition(snapshot: HomeExperienceSnapshot | null): void {
+  if (typeof window === 'undefined') return;
+
+  const restoreToFeaturedSection = () => {
+    const featuredSection = document.getElementById('featured-products-section');
+    if (!featuredSection) return;
+    const nextTop = Math.max(0, featuredSection.getBoundingClientRect().top + window.scrollY - 24);
+    window.scrollTo({ top: nextTop, behavior: 'auto' });
+  };
+
+  const restorePosition = () => {
+    const targetScrollY = Number(snapshot?.scrollY || 0);
+    if (targetScrollY > 0) {
+      window.scrollTo({ top: targetScrollY, behavior: 'auto' });
+      return;
+    }
+
+    restoreToFeaturedSection();
+  };
+
+  requestAnimationFrame(() => {
+    restorePosition();
+    requestAnimationFrame(restorePosition);
+    window.setTimeout(restorePosition, 120);
+    window.setTimeout(restorePosition, 280);
+  });
+}
+
 function clearRestoreCatalogFlag(locationState: Record<string, unknown> | null | undefined): void {
   if (typeof window === 'undefined') return;
 
@@ -113,12 +143,8 @@ function App() {
       const snapshot = readHomeExperienceSnapshot();
       if (snapshot) {
         setHeroIndex(snapshot.heroIndex);
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            window.scrollTo({ top: snapshot.scrollY, behavior: 'auto' });
-          });
-        });
       }
+      restoreHomepageBrowsingPosition(snapshot);
 
       if (requestedRestore) {
         clearRestoreCatalogFlag(location.state as Record<string, unknown> | undefined);
@@ -228,6 +254,7 @@ function App() {
           <MiniCartDrawer />
           <SearchOverlay />
         </Suspense>
+        <Toaster position="top-center" richColors />
       </>
     </NavigationThemeProvider>
   );

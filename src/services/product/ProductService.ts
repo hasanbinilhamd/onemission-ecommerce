@@ -247,6 +247,73 @@ export class ProductService {
     return this.productByIdCache.get(id) ?? null;
   }
 
+  private mergeReviewSummary(product: Product, summary: { averageRating: number; reviewCount: number }): Product {
+    return {
+      ...product,
+      averageRating: summary.averageRating,
+      rating: summary.averageRating,
+      reviewCount: summary.reviewCount,
+    };
+  }
+
+  applyReviewSummary(productId: string, summary: { averageRating: number; reviewCount: number }): void {
+    const normalizedProductId = String(productId || '').trim();
+    if (!normalizedProductId) {
+      return;
+    }
+
+    const cachedProduct = this.productByIdCache.get(normalizedProductId);
+    if (cachedProduct) {
+      const nextProduct = this.mergeReviewSummary(cachedProduct, summary);
+      this.productByIdCache.set(normalizedProductId, nextProduct);
+      if (nextProduct.slug) {
+        this.productBySlugCache.set(nextProduct.slug, nextProduct);
+      }
+    }
+
+    for (const [slug, entry] of this.detailResponseCache.entries()) {
+      if (entry.value?.id === normalizedProductId) {
+        const nextProduct = this.mergeReviewSummary(entry.value, summary);
+        this.detailResponseCache.set(slug, {
+          ...entry,
+          value: nextProduct,
+        });
+        this.productBySlugCache.set(slug, nextProduct);
+      }
+    }
+
+    for (const [cacheKey, entry] of this.collectionResponseCache.entries()) {
+      const hasTarget = entry.value.products.some((product) => product.id === normalizedProductId);
+      if (!hasTarget) {
+        continue;
+      }
+
+      this.collectionResponseCache.set(cacheKey, {
+        ...entry,
+        value: {
+          ...entry.value,
+          products: entry.value.products.map((product) => (
+            product.id === normalizedProductId ? this.mergeReviewSummary(product, summary) : product
+          )),
+        },
+      });
+    }
+
+    for (const [cacheKey, entry] of this.searchResponseCache.entries()) {
+      const hasTarget = entry.value.some((product) => product.id === normalizedProductId);
+      if (!hasTarget) {
+        continue;
+      }
+
+      this.searchResponseCache.set(cacheKey, {
+        ...entry,
+        value: entry.value.map((product) => (
+          product.id === normalizedProductId ? this.mergeReviewSummary(product, summary) : product
+        )),
+      });
+    }
+  }
+
   getCachedProductBySlug(slug: string): Product | null {
     return this.productBySlugCache.get(slug) ?? null;
   }

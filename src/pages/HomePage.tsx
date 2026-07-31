@@ -91,6 +91,16 @@ const GRAIN_SVG =
 
 const HERO_GRADIENTS = HERO_THEMES.map((item) => createHeroGradient(item.accentColor));
 
+if (typeof document !== 'undefined') {
+  const styleId = 'om-hero-skeleton-keyframes';
+  if (!document.getElementById(styleId)) {
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `@keyframes heroSkeletonPulse { 0% { opacity: 0.38; } 50% { opacity: 0.72; } 100% { opacity: 0.38; } }`;
+    document.head.appendChild(style);
+  }
+}
+
 function mapHeroItems(items: readonly WebsiteHeroCmsItem[]): HeroCarouselItem[] {
   return [...items]
     .sort((left, right) => left.displayOrder - right.displayOrder || left.id.localeCompare(right.id))
@@ -285,6 +295,10 @@ const HeroGradientBackground = memo(function HeroGradientBackground({
   );
 });
 
+function isValidHeroAssetUrl(value: string): boolean {
+  return /^https?:\/\//i.test(String(value || '').trim());
+}
+
 const HeroCarouselImages = memo(function HeroCarouselImages({
   items,
   activeIndex,
@@ -303,8 +317,31 @@ const HeroCarouselImages = memo(function HeroCarouselImages({
   onPointerCancel: (event: ReactPointerEvent<HTMLDivElement>) => void;
 }) {
   const [failedVideoMedia, setFailedVideoMedia] = useState<Record<string, boolean>>({});
+  const [loadedMedia, setLoadedMedia] = useState<Record<string, boolean>>({});
   const activeVideoRef = useRef<HTMLVideoElement | null>(null);
   const preloadedMediaRef = useRef<Set<string>>(new Set());
+
+  const markMediaLoaded = useCallback((assetUrl: string) => {
+    const normalizedAssetUrl = String(assetUrl || '').trim();
+    if (!normalizedAssetUrl) {
+      return;
+    }
+
+    setLoadedMedia((current) => (
+      current[normalizedAssetUrl]
+        ? current
+        : {
+            ...current,
+            [normalizedAssetUrl]: true,
+          }
+    ));
+  }, []);
+
+  useEffect(() => {
+    setLoadedMedia({});
+    setFailedVideoMedia({});
+    preloadedMediaRef.current.clear();
+  }, [isMobile, items]);
 
   useEffect(() => {
     if (items.length === 0) {
@@ -325,26 +362,36 @@ const HeroCarouselImages = memo(function HeroCarouselImages({
       const mediaSource = resolveHeroMediaSource(mediaItem, isMobile);
 
       [poster, blurMedia].forEach((assetUrl) => {
-        if (!assetUrl || preloadedMediaRef.current.has(assetUrl)) {
+        const normalizedAssetUrl = String(assetUrl || '').trim();
+        if (!isValidHeroAssetUrl(normalizedAssetUrl) || preloadedMediaRef.current.has(normalizedAssetUrl)) {
           return;
         }
 
         const image = new Image();
-        image.src = assetUrl;
-        preloadedMediaRef.current.add(assetUrl);
+        image.onload = () => {
+          markMediaLoaded(normalizedAssetUrl);
+        };
+        image.src = normalizedAssetUrl;
+        preloadedMediaRef.current.add(normalizedAssetUrl);
       });
 
-      if (mediaItem.mediaType === 'video' && mediaSource && !preloadedMediaRef.current.has(mediaSource)) {
+      if (mediaItem.mediaType === 'video' && isValidHeroAssetUrl(mediaSource) && !preloadedMediaRef.current.has(mediaSource)) {
         const video = document.createElement('video');
         video.preload = 'auto';
         video.muted = true;
         video.playsInline = true;
+        video.onloadeddata = () => {
+          markMediaLoaded(mediaSource);
+          if (isValidHeroAssetUrl(poster)) {
+            markMediaLoaded(poster);
+          }
+        };
         video.src = mediaSource;
         video.load();
         preloadedMediaRef.current.add(mediaSource);
       }
     });
-  }, [activeIndex, isMobile, items]);
+  }, [activeIndex, isMobile, items, markMediaLoaded]);
 
   useEffect(() => {
     const activeVideo = activeVideoRef.current;
@@ -362,17 +409,69 @@ const HeroCarouselImages = memo(function HeroCarouselImages({
     };
   }, [activeIndex]);
 
+  const hasRenderableItems = useMemo(() => items.some((item) => {
+    const poster = getHeroPoster(item, isMobile);
+    const mediaSource = resolveHeroMediaSource(item, isMobile);
+    return isValidHeroAssetUrl(poster) || isValidHeroAssetUrl(mediaSource);
+  }), [isMobile, items]);
+
+  const hasLoadedVisibleMedia = useMemo(() => items.some((item) => {
+    const poster = getHeroPoster(item, isMobile);
+    const blurMedia = getHeroBlurMedia(item, isMobile);
+    const mediaSource = resolveHeroMediaSource(item, isMobile);
+    return Boolean(loadedMedia[poster] || loadedMedia[blurMedia] || loadedMedia[mediaSource]);
+  }), [isMobile, items, loadedMedia]);
+
   return (
     <div className="absolute inset-0" style={{ zIndex: 3 }}>
+      {!hasRenderableItems || !hasLoadedVisibleMedia ? (
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'center',
+            paddingBottom: isMobile ? '12%' : '4%',
+            pointerEvents: 'none',
+          }}
+        >
+          <div
+            style={{
+              width: isMobile ? '56%' : '26%',
+              height: isMobile ? '62%' : '88%',
+              borderRadius: '999px 999px 24px 24px',
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 100%)',
+              opacity: 0.65,
+              animation: 'heroSkeletonPulse 1.6s ease-in-out infinite',
+              transform: `scale(${isMobile ? 1.08 : 1.12})`,
+            }}
+          />
+        </div>
+      ) : null}
+
       {items.map((imageItem, index) => {
         const role = getRole(index, activeIndex, items.length);
         const style = roleStyle(role, isMobile);
         const mediaSource = resolveHeroMediaSource(imageItem, isMobile);
         const poster = getHeroPoster(imageItem, isMobile);
+        const blurMedia = getHeroBlurMedia(imageItem, isMobile);
         const mediaKey = `${imageItem.desktopUrl}-${imageItem.mobileUrl}-${index}`;
+        const displayImageSource = role === 'center' ? poster : blurMedia;
+        const hasValidImageSource = isValidHeroAssetUrl(displayImageSource);
+        const hasValidVideoSource = isValidHeroAssetUrl(mediaSource);
         const shouldRenderVideo = role === 'center'
           && imageItem.mediaType === 'video'
+          && hasValidVideoSource
           && !failedVideoMedia[mediaSource];
+        const isMediaReady = shouldRenderVideo
+          ? Boolean(loadedMedia[mediaSource] || loadedMedia[poster])
+          : Boolean(loadedMedia[displayImageSource]);
+
+        if (!shouldRenderVideo && !hasValidImageSource) {
+          return null;
+        }
 
         return (
           <div
@@ -389,7 +488,7 @@ const HeroCarouselImages = memo(function HeroCarouselImages({
               aspectRatio: '0.6 / 1',
               transform: style.transform,
               filter: style.filter,
-              opacity: style.opacity,
+              opacity: isMediaReady ? style.opacity : 0,
               zIndex: style.zIndex,
               transition: `transform ${DURATION}ms ${EASE}, filter ${DURATION}ms ${EASE}, opacity ${DURATION}ms ${EASE}, left ${DURATION}ms ${EASE}`,
               willChange: 'transform, filter, opacity',
@@ -409,6 +508,12 @@ const HeroCarouselImages = memo(function HeroCarouselImages({
                 preload="auto"
                 disablePictureInPicture
                 controls={false}
+                onLoadedData={() => {
+                  markMediaLoaded(mediaSource);
+                  if (isValidHeroAssetUrl(poster)) {
+                    markMediaLoaded(poster);
+                  }
+                }}
                 onError={() => {
                   setFailedVideoMedia((current) => ({
                     ...current,
@@ -425,9 +530,12 @@ const HeroCarouselImages = memo(function HeroCarouselImages({
               />
             ) : (
               <img
-                src={role === 'center' ? poster : getHeroBlurMedia(imageItem, isMobile)}
+                src={displayImageSource}
                 alt=""
                 draggable={false}
+                onLoad={(event) => {
+                  markMediaLoaded(event.currentTarget.currentSrc || displayImageSource);
+                }}
                 style={{
                   width: '100%',
                   height: '100%',

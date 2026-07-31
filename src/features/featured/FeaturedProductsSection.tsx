@@ -130,6 +130,7 @@ export function FeaturedProductsSection({
 
   return (
     <section
+      id="featured-products-section"
       ref={sectionRef}
       aria-label="Featured products"
       style={{

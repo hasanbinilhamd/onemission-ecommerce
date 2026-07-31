@@ -4,37 +4,82 @@ import { IMAGE_PLACEHOLDER } from '../../app/constants';
 import { useMediaQuery } from '../../hooks';
 import type { Product, ProductGalleryItem } from '../../types';
 
+type MediaSurfaceMode = 'preview' | 'thumbnail';
+
+function normalizeMediaUrl(value?: string): string {
+  return String(value || '').trim();
+}
+
 function buildGalleryItems(product: Product): ProductGalleryItem[] {
-  if (Array.isArray(product.galleryItems) && product.galleryItems.length > 0) {
-    return [...product.galleryItems]
-      .sort((left, right) => left.sortOrder - right.sortOrder || left.id.localeCompare(right.id))
-      .map((item, index) => ({
-        id: item.id || `${product.id}-gallery-${index + 1}`,
-        mediaType: (item.mediaType === 'video' ? 'video' : 'image') as 'image' | 'video',
-        mediaUrl: String(item.mediaUrl || '').trim(),
-        sortOrder: Number.isFinite(Number(item.sortOrder)) ? Number(item.sortOrder) : index + 1,
-      }))
-      .filter((item) => Boolean(item.mediaUrl));
-  }
+  const composedItems: ProductGalleryItem[] = [];
+  const seenUrls = new Set<string>();
 
-  if (Array.isArray(product.images) && product.images.length > 0) {
-    return product.images
-      .map((mediaUrl, index) => ({
-        id: `${product.id}-image-${index + 1}`,
-        mediaType: 'image' as const,
-        mediaUrl,
-        sortOrder: index + 1,
-      }))
-      .filter((item) => Boolean(item.mediaUrl));
-  }
+  const pushUniqueItem = (item: ProductGalleryItem) => {
+    const normalizedUrl = normalizeMediaUrl(item.mediaUrl);
+    if (!normalizedUrl || seenUrls.has(normalizedUrl)) {
+      return;
+    }
 
-  const fallbackUrl = String(product.imageUrl || '').trim() || IMAGE_PLACEHOLDER;
-  return [{
-    id: `${product.id}-fallback-thumbnail`,
+    seenUrls.add(normalizedUrl);
+    composedItems.push({
+      ...item,
+      mediaUrl: normalizedUrl,
+    });
+  };
+
+  const thumbnailUrl = normalizeMediaUrl(product.imageUrl) || IMAGE_PLACEHOLDER;
+  pushUniqueItem({
+    id: `${product.id}-thumbnail`,
     mediaType: 'image',
-    mediaUrl: fallbackUrl,
+    mediaUrl: thumbnailUrl,
     sortOrder: 1,
-  }];
+  });
+
+  const hoverImageUrl = normalizeMediaUrl(product.hoverImageUrl);
+  if (hoverImageUrl) {
+    pushUniqueItem({
+      id: `${product.id}-hover`,
+      mediaType: 'image',
+      mediaUrl: hoverImageUrl,
+      sortOrder: 2,
+    });
+  }
+
+  if (Array.isArray(product.galleryItems) && product.galleryItems.length > 0) {
+    [...product.galleryItems]
+      .sort((left, right) => left.sortOrder - right.sortOrder || left.id.localeCompare(right.id))
+      .forEach((item, index) => {
+        pushUniqueItem({
+          id: item.id || `${product.id}-gallery-${index + 1}`,
+          mediaType: item.mediaType === 'video' ? 'video' : 'image',
+          mediaUrl: item.mediaUrl,
+          sortOrder: index + 3,
+        });
+      });
+  } else if (Array.isArray(product.images) && product.images.length > 0) {
+    product.images.forEach((mediaUrl, index) => {
+      pushUniqueItem({
+        id: `${product.id}-image-${index + 1}`,
+        mediaType: 'image',
+        mediaUrl,
+        sortOrder: index + 3,
+      });
+    });
+  }
+
+  if (composedItems.length === 0) {
+    return [{
+      id: `${product.id}-fallback-thumbnail`,
+      mediaType: 'image',
+      mediaUrl: IMAGE_PLACEHOLDER,
+      sortOrder: 1,
+    }];
+  }
+
+  return composedItems.map((item, index) => ({
+    ...item,
+    sortOrder: index + 1,
+  }));
 }
 
 function VideoBadge() {
@@ -60,7 +105,21 @@ function VideoBadge() {
   );
 }
 
-function ProductMediaSurface({ item, alt, eager = false }: { item: ProductGalleryItem; alt: string; eager?: boolean }) {
+function ProductMediaSurface({
+  item,
+  alt,
+  eager = false,
+  mode = 'preview',
+}: {
+  item: ProductGalleryItem;
+  alt: string;
+  eager?: boolean;
+  mode?: MediaSurfaceMode;
+}) {
+  const isPreview = mode === 'preview';
+  const objectFit = isPreview ? 'cover' : 'contain';
+  const objectPosition = isPreview ? 'center top' : 'center center';
+
   if (item.mediaType === 'video') {
     return (
       <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -72,8 +131,8 @@ function ProductMediaSurface({ item, alt, eager = false }: { item: ProductGaller
           style={{
             width: '100%',
             height: '100%',
-            objectFit: 'contain',
-            objectPosition: 'center',
+            objectFit,
+            objectPosition,
             backgroundColor: '#000000',
           }}
         />
@@ -90,8 +149,8 @@ function ProductMediaSurface({ item, alt, eager = false }: { item: ProductGaller
       style={{
         width: '100%',
         height: '100%',
-        objectFit: 'contain',
-        objectPosition: 'center',
+        objectFit,
+        objectPosition,
         display: 'block',
       }}
       onError={(event) => {
@@ -187,7 +246,7 @@ export function ProductMediaGallery({ product }: { product: Product }) {
                       transition: 'border-color 200ms ease, transform 200ms ease',
                     }}
                   >
-                    <ProductMediaSurface item={item} alt={`${product.name} media ${index + 1}`} />
+                    <ProductMediaSurface item={item} alt={`${product.name} media ${index + 1}`} mode="thumbnail" />
                   </button>
                 );
               })}
@@ -205,12 +264,13 @@ export function ProductMediaGallery({ product }: { product: Product }) {
               border: '1px solid #F3F4F6',
             }}
           >
-            <div style={{ position: 'absolute', inset: 0, padding: '24px' }}>
+            <div style={{ position: 'absolute', inset: 0 }}>
               <ProductMediaSurface
                 key={`${activeItem.id}:${activeItem.mediaType}:${activeItem.mediaUrl}`}
                 item={activeItem}
                 alt={product.name}
                 eager
+                mode="preview"
               />
             </div>
           </div>
@@ -246,11 +306,12 @@ export function ProductMediaGallery({ product }: { product: Product }) {
                   overflow: 'hidden',
                 }}
               >
-                <div style={{ width: '100%', aspectRatio: '4 / 5', padding: '16px' }}>
+                <div style={{ width: '100%', aspectRatio: '4 / 5' }}>
                   <ProductMediaSurface
                     item={item}
                     alt={`${product.name} media ${index + 1}`}
                     eager={index === activeIndex}
+                    mode="preview"
                   />
                 </div>
               </div>

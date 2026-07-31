@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState, useEffect, useCallback, useRef } from 'react';
 import { Navigate, Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
+import { ROUTES } from './app/config/routes';
 import { HomePage } from './pages/HomePage';
 import { FloatingNavigation } from './features/cart';
 import { NavigationThemeProvider, RouteScrollRestoration, type NavigationTheme } from './features/navigation';
@@ -159,13 +160,18 @@ function App() {
     navigate(`/product/${slug}`, { state: { fromCatalog: true } });
   }, [heroIndex, navigate]);
 
+  const handleCollectionSelect = useCallback(() => {
+    navigate(ROUTES.COLLECTION);
+  }, [navigate]);
+
   const renderHomePage = useCallback(() => (
     <HomePage
       activeIndex={heroIndex}
       onActiveIndexChange={setHeroIndex}
       onProductSelect={handleProductSelect}
+      onCollectionSelect={handleCollectionSelect}
     />
-  ), [handleProductSelect, heroIndex]);
+  ), [handleCollectionSelect, handleProductSelect, heroIndex]);
 
   return (
     <NavigationThemeProvider theme={navigationTheme}>

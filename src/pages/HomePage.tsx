@@ -433,9 +433,10 @@ interface HomePageProps {
   activeIndex: number;
   onActiveIndexChange: (index: number) => void;
   onProductSelect: (slug: string) => void;
+  onCollectionSelect: () => void;
 }
 
-export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: HomePageProps) {
+export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, onCollectionSelect }: HomePageProps) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.innerWidth < 640 : false,
@@ -572,12 +573,16 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
 
   const resolveGestureNavigation = useCallback((shouldNavigate: boolean) => {
     const layer = heroGestureRef.current;
-    const { deltaX, isHorizontal, pointerId } = dragStateRef.current;
+    const { deltaX, deltaY, isHorizontal, pointerId } = dragStateRef.current;
 
-    if (shouldNavigate && layer && isHorizontal) {
-      const threshold = layer.clientWidth * 0.24;
-      if (Math.abs(deltaX) >= threshold) {
-        rotateHero(deltaX < 0 ? 'next' : 'prev');
+    if (shouldNavigate && layer) {
+      if (isHorizontal) {
+        const threshold = layer.clientWidth * 0.24;
+        if (Math.abs(deltaX) >= threshold) {
+          rotateHero(deltaX < 0 ? 'next' : 'prev');
+        }
+      } else if (Math.abs(deltaX) < 8 && Math.abs(deltaY) < 8) {
+        onCollectionSelect();
       }
     }
 
@@ -590,7 +595,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
     }
 
     resetGestureState();
-  }, [resetGestureState, rotateHero]);
+  }, [onCollectionSelect, resetGestureState, rotateHero]);
 
   const handlePointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
@@ -768,7 +773,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect }: 
               inset: 0,
               zIndex: 45,
               touchAction: 'pan-y',
-              cursor: 'grab',
+              cursor: isMobile ? 'auto' : 'pointer',
             }}
           />
 

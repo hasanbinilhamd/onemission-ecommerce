@@ -10,6 +10,18 @@ interface TopBackNavigationProps {
   onBack?: () => void;
 }
 
+function scrollViewportToTop() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.scrollTo({
+    left: 0,
+    top: 0,
+    behavior: 'auto',
+  });
+}
+
 export function TopBackNavigation({
   label = 'Back',
   fallbackTo = ROUTES.HOME,
@@ -25,13 +37,16 @@ export function TopBackNavigation({
       return;
     }
 
-    if (typeof window !== 'undefined' && window.history.length > 1 && location.key !== 'default') {
-      navigate(-1);
+    if (location.pathname === fallbackTo) {
+      scrollViewportToTop();
       return;
     }
 
-    navigate(fallbackTo, { replace: true });
-  }, [fallbackTo, location.key, navigate, onBack]);
+    navigate(fallbackTo);
+    window.requestAnimationFrame(() => {
+      scrollViewportToTop();
+    });
+  }, [fallbackTo, location.pathname, navigate, onBack]);
 
   return (
     <div

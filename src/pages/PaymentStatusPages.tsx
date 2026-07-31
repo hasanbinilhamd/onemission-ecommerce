@@ -112,6 +112,15 @@ function buildCancelledOrExpiredQuery(params: {
   return query.toString();
 }
 
+function navigateToHome(navigate: ReturnType<typeof useNavigate>) {
+  navigate('/');
+  if (typeof window !== 'undefined') {
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ left: 0, top: 0, behavior: 'auto' });
+    });
+  }
+}
+
 interface PaymentStatusPageProps {
   title: string;
   description: string;
@@ -180,7 +189,7 @@ function PaymentStatusPage({
         </div>
 
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Button type="button" onClick={onPrimaryAction || (() => navigate('/'))}>
+          <Button type="button" onClick={onPrimaryAction || (() => navigateToHome(navigate))}>
             {primaryActionLabel}
           </Button>
           {secondaryActionLabel && onSecondaryAction ? (
@@ -308,7 +317,7 @@ export function PaymentSuccessPage() {
         </div>
 
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Button type="button" onClick={() => navigate('/')}>
+          <Button type="button" onClick={() => navigateToHome(navigate)}>
             Continue Shopping
           </Button>
           <Button type="button" variant="secondary" onClick={() => navigate('/orders')}>
@@ -568,7 +577,7 @@ export function PaymentPendingPage() {
         description={statusMessage || 'Your payment is still pending. Please continue payment or check back in a moment.'}
         tone="pending"
         primaryActionLabel="Back to Home"
-        onPrimaryAction={() => navigate('/')}
+        onPrimaryAction={() => navigateToHome(navigate)}
       />
     );
   }
@@ -695,7 +704,7 @@ export function PaymentCancelledPage() {
       primaryActionLabel="Checkout Again"
       onPrimaryAction={() => navigate('/checkout')}
       secondaryActionLabel="Continue Shopping"
-      onSecondaryAction={() => navigate('/')}
+      onSecondaryAction={() => navigateToHome(navigate)}
     />
   );
 }
@@ -711,7 +720,7 @@ export function PaymentExpiredPage() {
       primaryActionLabel="Checkout Again"
       onPrimaryAction={() => navigate('/checkout')}
       secondaryActionLabel="Continue Shopping"
-      onSecondaryAction={() => navigate('/')}
+      onSecondaryAction={() => navigateToHome(navigate)}
     />
   );
 }

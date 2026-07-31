@@ -68,6 +68,7 @@ export interface CommerceProductCardApiDto {
   discountPercentage: number;
   currency: string;
   category: string;
+  averageRating: number | null;
   rating: number | null;
   reviewCount: number;
   stockStatus: 'IN_STOCK' | 'OUT_OF_STOCK';
@@ -112,6 +113,9 @@ export interface CommerceProductDetailApiDto {
   sizeGuideImageUrl: string;
   thumbnail: string;
   hoverImage: string;
+  averageRating: number | null;
+  rating: number | null;
+  reviewCount: number;
   gallery: string[];
   galleryMedia?: CommerceProductGalleryItemApiDto[];
   category: {

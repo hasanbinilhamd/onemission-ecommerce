@@ -2,7 +2,7 @@ import { Mail, MapPin, Package, Truck } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { Button, Modal } from '../../components/shared';
 import { IMAGE_PLACEHOLDER } from '../../app/constants';
-import type { CommerceOrderDetail, CommerceOrderReturnRequest, CommerceOrderTimelineEntry } from '../../types';
+import type { CommerceOrderDetail, CommerceOrderProduct, CommerceOrderReturnRequest, CommerceOrderTimelineEntry } from '../../types';
 import { formatCurrency, formatDate } from '../../utils/formatting';
 import { TopBackNavigation } from '../navigation';
 import { OrderPaymentStatusBadge, OrderStatusBadge } from './OrderStatusBadge';
@@ -13,6 +13,8 @@ interface OrderDetailViewProps {
   onBack?: () => void;
   onCancelOrder?: (input: { reason: string }) => Promise<void>;
   onRequestReturn?: (input: { reason: string; description: string; attachments: string[] }) => Promise<void>;
+  onOpenReview?: (item: CommerceOrderProduct) => void;
+  reviewSubmittingItemId?: string;
   isMutating?: boolean;
 }
 
@@ -287,6 +289,8 @@ export function OrderDetailView({
   onBack,
   onCancelOrder,
   onRequestReturn,
+  onOpenReview,
+  reviewSubmittingItemId = '',
   isMutating = false,
 }: OrderDetailViewProps) {
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
@@ -356,6 +360,33 @@ export function OrderDetailView({
     setReturnAttachments([]);
     setReturnAttachmentNames([]);
     setReturnFormError('');
+  };
+
+
+  const renderReviewAction = (item: CommerceOrderProduct) => {
+    if (item.review?.isReviewed) {
+      return (
+        <span className="inline-flex items-center rounded-full border border-neutral-200 bg-neutral-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
+          Reviewed
+        </span>
+      );
+    }
+
+    if (!item.review?.canReview || !onOpenReview) {
+      return null;
+    }
+
+    return (
+      <Button
+        type="button"
+        variant="secondary"
+        className="gap-2"
+        disabled={isMutating || reviewSubmittingItemId === item.id}
+        onClick={() => onOpenReview(item)}
+      >
+        {reviewSubmittingItemId === item.id ? 'Submitting...' : 'Write Review'}
+      </Button>
+    );
   };
 
   return (
@@ -444,6 +475,7 @@ export function OrderDetailView({
                 <th className="w-[10%] px-3 py-3 text-right font-semibold">Quantity</th>
                 <th className="w-[11%] px-3 py-3 text-right font-semibold">Unit Price</th>
                 <th className="w-[11%] px-0 py-3 text-right font-semibold">Subtotal</th>
+                {onOpenReview ? <th className="w-[14%] px-0 py-3 text-right font-semibold">Action</th> : null}
               </tr>
             </thead>
             <tbody>
@@ -474,6 +506,11 @@ export function OrderDetailView({
                   <td className="py-4 text-right font-semibold text-neutral-950">
                     {formatCurrency(item.subtotal, item.currency)}
                   </td>
+                  {onOpenReview ? (
+                    <td className="py-4 text-right">
+                      <div className="flex justify-end">{renderReviewAction(item)}</div>
+                    </td>
+                  ) : null}
                 </tr>
               ))}
             </tbody>
@@ -505,6 +542,11 @@ export function OrderDetailView({
                   <p className="mt-1 font-medium text-neutral-900">{formatCurrency(item.subtotal, item.currency)}</p>
                 </div>
               </div>
+              {onOpenReview ? (
+                <div className="mt-4 flex justify-end">
+                  {renderReviewAction(item)}
+                </div>
+              ) : null}
             </div>
           ))}
         </div>

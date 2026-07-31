@@ -1,5 +1,3 @@
-// ─── Reviews feature ──────────────────────────────────────────────────────────
-// Scope: product reviews, ratings, moderation, review submission.
-// Implement when Sprint 6 (Reviews) begins.
-
-export {};
+export { CustomerReviewsSection } from './CustomerReviewsSection';
+export { RatingStars } from './RatingStars';
+export { WriteReviewModal, type WriteReviewSubmitInput } from './WriteReviewModal';

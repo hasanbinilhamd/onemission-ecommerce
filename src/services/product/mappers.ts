@@ -102,7 +102,8 @@ export function mapCommerceProductCard(dto: CommerceProductCardApiDto): Product 
     hasVariants: dto.hasVariants,
     minimumPrice: dto.minimumPrice,
     maximumPrice: dto.maximumPrice,
-    rating: dto.rating,
+    averageRating: dto.averageRating,
+    rating: dto.averageRating ?? dto.rating,
     reviewCount: dto.reviewCount,
   };
 }
@@ -134,6 +135,9 @@ export function mapCommerceProductDetail(dto: CommerceProductDetailApiDto): Prod
     currency: dto.currency,
     imageUrl: dto.thumbnail,
     hoverImageUrl: dto.hoverImage || dto.thumbnail,
+    averageRating: dto.averageRating,
+    rating: dto.averageRating ?? dto.rating,
+    reviewCount: dto.reviewCount,
     images: galleryItems.filter((item) => item.mediaType === 'image').map((item) => item.mediaUrl),
     galleryItems,
     category: {

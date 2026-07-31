@@ -3,8 +3,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button, EmptyState, LoadingSkeleton } from '../components/shared';
 import { OrderDetailView, useAuthenticatedCustomer } from '../features/customer';
+import { WriteReviewModal, type WriteReviewSubmitInput } from '../features/reviews';
 import { cancelCustomerOrder, createReturnRequest, getOrderByNumber } from '../services/api/orderService';
-import type { CommerceOrderDetail } from '../types';
+import { createProductReview } from '../services/api/reviewService';
+import type { CommerceOrderDetail, CommerceOrderProduct } from '../types';
 import { ROUTES } from '../app/config/routes';
 
 function normalizeEmail(email: string) {
@@ -26,6 +28,8 @@ export function OrderDetailPage() {
   const [isMutatingOrder, setIsMutatingOrder] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [actionFeedback, setActionFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
+  const [reviewItem, setReviewItem] = useState<CommerceOrderProduct | null>(null);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   const authenticatedEmail = useMemo(() => normalizeEmail(user?.email || ''), [user?.email]);
 
@@ -102,6 +106,31 @@ export function OrderDetailPage() {
     }
   }, [getValidAccessToken, order]);
 
+
+  const handleCreateReview = useCallback(async (input: WriteReviewSubmitInput) => {
+    if (!order || !reviewItem) return;
+
+    setIsSubmittingReview(true);
+    try {
+      const accessToken = await getValidAccessToken();
+      await createProductReview({
+        productId: reviewItem.productId,
+        orderId: order.id,
+        orderItemId: reviewItem.id,
+        rating: input.rating,
+        title: input.title,
+        comment: input.comment,
+      }, accessToken || '');
+      await loadOrder();
+      setActionFeedback({ tone: 'success', message: 'Thank you. Your review has been submitted successfully.' });
+    } catch (error) {
+      setActionFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Review could not be submitted right now.' });
+      throw error;
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  }, [getValidAccessToken, loadOrder, order, reviewItem]);
+
   const showLoadingState = isAuthLoading || isLoadingOrder;
 
   if (authErrorMessage) {
@@ -168,7 +197,16 @@ export function OrderDetailPage() {
         onBack={() => navigate(ROUTES.ACCOUNT_ORDERS)}
         onCancelOrder={handleCancelOrder}
         onRequestReturn={handleRequestReturn}
-        isMutating={isMutatingOrder}
+        onOpenReview={(item) => setReviewItem(item)}
+        reviewSubmittingItemId={isSubmittingReview ? reviewItem?.id || '' : ''}
+        isMutating={isMutatingOrder || isSubmittingReview}
+      />
+      <WriteReviewModal
+        open={!!reviewItem}
+        item={reviewItem}
+        onClose={() => setReviewItem(null)}
+        onSubmit={handleCreateReview}
+        isSubmitting={isSubmittingReview}
       />
     </div>
   );

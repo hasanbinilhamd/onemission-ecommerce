@@ -64,6 +64,7 @@ export interface Product {
   hasVariants?: boolean;
   minimumPrice?: number;
   maximumPrice?: number;
+  averageRating?: number | null;
   rating?: number | null;
   reviewCount?: number;
   currentStock?: number;
@@ -439,6 +440,13 @@ export interface CommerceOrderShipment {
   shippingDate: string | null;
 }
 
+export interface CommerceOrderProductReviewState {
+  reviewId: string;
+  isReviewed: boolean;
+  canReview: boolean;
+  rating: number | null;
+}
+
 export interface CommerceOrderProduct {
   id: string;
   productId: string;
@@ -452,6 +460,7 @@ export interface CommerceOrderProduct {
   quantity: number;
   subtotal: number;
   currency: string;
+  review?: CommerceOrderProductReviewState | null;
 }
 
 export interface CommerceOrderTimelineEntry {
@@ -579,8 +588,31 @@ export interface CommerceOrderDetail {
 export interface Review {
   id: string;
   productId: string;
+  orderId: string;
+  orderItemId: string;
   customerId: string;
   rating: number;
-  comment?: string;
+  title: string;
+  comment: string;
+  isPublished: boolean;
+  customerName: string;
+  verifiedPurchase: boolean;
   createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProductReviewListResponse {
+  data: Review[];
+  pagination: {
+    page: number;
+    limit: number;
+    totalItems: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+  summary: {
+    averageRating: number;
+    reviewCount: number;
+  };
 }

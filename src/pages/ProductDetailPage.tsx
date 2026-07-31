@@ -8,6 +8,7 @@ import { EmptyState } from '../components/shared/EmptyState';
 import { LoadingSkeleton } from '../components/shared/LoadingSkeleton';
 import { productService } from '../services/product';
 import { ProductMediaGallery } from '../features/product/ProductMediaGallery';
+import { CustomerReviewsSection, RatingStars } from '../features/reviews';
 import { formatCurrency } from '../utils/formatting';
 import { useCartStore } from '../stores';
 import { useWishlist } from '../features/customer';
@@ -318,6 +319,8 @@ function ProductDetailContent() {
 
   const displaySku = selectedVariant?.sku ?? product?.sku;
   const displayPrice = selectedVariant?.price ?? product?.price ?? 0;
+  const averageRating = Number(product?.averageRating ?? product?.rating ?? 0);
+  const reviewCount = Number(product?.reviewCount ?? 0);
   const availableStock = Math.max(selectedVariant?.stock ?? product?.currentStock ?? 0, 0);
   const inventoryStatus = selectedVariant?.available === false || availableStock <= 0
     ? 'OUT_OF_STOCK'
@@ -493,6 +496,16 @@ function ProductDetailContent() {
               {product.name}
             </h1>
 
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '18px' }}>
+              <RatingStars value={averageRating} size={16} />
+              <span style={{ fontSize: '16px', fontWeight: 600, color: '#111827' }}>
+                {averageRating > 0 ? averageRating.toFixed(1) : '0.0'}
+              </span>
+              <span style={{ fontSize: '14px', color: '#6B7280' }}>
+                ({reviewCount} Review{reviewCount === 1 ? '' : 's'})
+              </span>
+            </div>
+
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', marginBottom: '16px' }}>
               <p style={{ margin: 0, fontSize: '22px', fontWeight: 600, color: '#111827' }}>
                 {formatCurrency(displayPrice)}
@@ -633,6 +646,8 @@ function ProductDetailContent() {
             <SizeGuideContent imageUrl={product.sizeGuideImageUrl} />
           </AccordionSection>
         </div>
+
+        <CustomerReviewsSection product={product} />
 
         {relatedProducts.length > 0 && (
           <div style={{ marginTop: '72px' }}>

@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { CatalogLayer } from '../features/catalog';
 import { HERO_THEMES, createHeroGradient } from '../features/hero/theme';
@@ -289,10 +289,18 @@ const HeroCarouselImages = memo(function HeroCarouselImages({
   items,
   activeIndex,
   isMobile,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onPointerCancel,
 }: {
   items: readonly HeroCarouselItem[];
   activeIndex: number;
   isMobile: boolean;
+  onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void;
+  onPointerMove: (event: ReactPointerEvent<HTMLDivElement>) => void;
+  onPointerUp: (event: ReactPointerEvent<HTMLDivElement>) => void;
+  onPointerCancel: (event: ReactPointerEvent<HTMLDivElement>) => void;
 }) {
   const [failedVideoMedia, setFailedVideoMedia] = useState<Record<string, boolean>>({});
   const activeVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -369,6 +377,10 @@ const HeroCarouselImages = memo(function HeroCarouselImages({
         return (
           <div
             key={mediaKey}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerCancel}
             style={{
               position: 'absolute',
               left: style.left,
@@ -381,6 +393,8 @@ const HeroCarouselImages = memo(function HeroCarouselImages({
               zIndex: style.zIndex,
               transition: `transform ${DURATION}ms ${EASE}, filter ${DURATION}ms ${EASE}, opacity ${DURATION}ms ${EASE}, left ${DURATION}ms ${EASE}`,
               willChange: 'transform, filter, opacity',
+              touchAction: 'pan-y',
+              cursor: isMobile ? 'auto' : 'pointer',
             }}
           >
             {shouldRenderVideo ? (
@@ -457,7 +471,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
   const resolvedActiveIndex = heroItems.length > 0 ? activeIndex % heroItems.length : 0;
   const heroSceneRef = useRef<HTMLElement | null>(null);
   const collectionSceneRef = useRef<HTMLElement | null>(null);
-  const heroGestureRef = useRef<HTMLDivElement | null>(null);
+  const heroPointerTargetRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number | null>(null);
   const dragStateRef = useRef({
     pointerId: -1,
@@ -572,12 +586,13 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
   }, []);
 
   const resolveGestureNavigation = useCallback((shouldNavigate: boolean) => {
-    const layer = heroGestureRef.current;
+    const pointerTarget = heroPointerTargetRef.current;
+    const gestureSurfaceWidth = heroSceneRef.current?.clientWidth || window.innerWidth || 1;
     const { deltaX, deltaY, isHorizontal, pointerId } = dragStateRef.current;
 
-    if (shouldNavigate && layer) {
+    if (shouldNavigate) {
       if (isHorizontal) {
-        const threshold = layer.clientWidth * 0.24;
+        const threshold = gestureSurfaceWidth * 0.24;
         if (Math.abs(deltaX) >= threshold) {
           rotateHero(deltaX < 0 ? 'next' : 'prev');
         }
@@ -586,14 +601,15 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
       }
     }
 
-    if (layer && pointerId !== -1) {
+    if (pointerTarget && pointerId !== -1) {
       try {
-        layer.releasePointerCapture(pointerId);
+        pointerTarget.releasePointerCapture(pointerId);
       } catch {
         // Ignore browsers that already cancelled pointer capture.
       }
     }
 
+    heroPointerTargetRef.current = null;
     resetGestureState();
   }, [onCollectionSelect, resetGestureState, rotateHero]);
 
@@ -610,6 +626,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
       isHorizontal: false,
     };
 
+    heroPointerTargetRef.current = event.currentTarget;
     event.currentTarget.setPointerCapture(event.pointerId);
   }, []);
 
@@ -743,7 +760,15 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
             )}
           </div>
 
-          <HeroCarouselImages items={heroItems} activeIndex={resolvedActiveIndex} isMobile={isMobile} />
+          <HeroCarouselImages
+            items={heroItems}
+            activeIndex={resolvedActiveIndex}
+            isMobile={isMobile}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerCancel}
+          />
 
           <div
             className="absolute top-6 left-4 sm:left-8"
@@ -761,21 +786,6 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
             />
           </div>
 
-          <div
-            ref={heroGestureRef}
-            aria-hidden="true"
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerCancel}
-            style={{
-              position: 'absolute',
-              inset: 0,
-              zIndex: 45,
-              touchAction: 'pan-y',
-              cursor: isMobile ? 'auto' : 'pointer',
-            }}
-          />
 
           <div
             className="hidden sm:block absolute sm:bottom-1/3 sm:left-0 w-screen"

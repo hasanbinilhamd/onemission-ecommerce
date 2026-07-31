@@ -1,5 +1,5 @@
 import { ChevronLeft } from 'lucide-react';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../app/config/routes';
 import { useNavigationTheme } from './NavigationThemeContext';
@@ -30,23 +30,37 @@ export function TopBackNavigation({
   const navigate = useNavigate();
   const location = useLocation();
   const { colors } = useNavigationTheme();
+  const isBackToHome = useMemo(
+    () => label.trim().toLowerCase() === 'back to home',
+    [label],
+  );
 
   const handleBack = useCallback(() => {
+    if (isBackToHome) {
+      if (location.pathname === ROUTES.HOME) {
+        scrollViewportToTop();
+        return;
+      }
+
+      navigate(ROUTES.HOME);
+      window.requestAnimationFrame(() => {
+        scrollViewportToTop();
+      });
+      return;
+    }
+
     if (onBack) {
       onBack();
       return;
     }
 
-    if (location.pathname === fallbackTo) {
-      scrollViewportToTop();
+    if (typeof window !== 'undefined' && window.history.length > 1 && location.key !== 'default') {
+      navigate(-1);
       return;
     }
 
-    navigate(fallbackTo);
-    window.requestAnimationFrame(() => {
-      scrollViewportToTop();
-    });
-  }, [fallbackTo, location.pathname, navigate, onBack]);
+    navigate(fallbackTo, { replace: true });
+  }, [fallbackTo, isBackToHome, location.key, location.pathname, navigate, onBack]);
 
   return (
     <div

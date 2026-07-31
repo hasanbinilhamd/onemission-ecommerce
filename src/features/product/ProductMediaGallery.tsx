@@ -117,7 +117,7 @@ function ProductMediaSurface({
   mode?: MediaSurfaceMode;
 }) {
   const isPreview = mode === 'preview';
-  const objectFit = isPreview ? 'cover' : 'contain';
+  const objectFit = 'cover';
   const objectPosition = isPreview ? 'center top' : 'center center';
 
   if (item.mediaType === 'video') {
@@ -224,33 +224,50 @@ export function ProductMediaGallery({ product }: { product: Product }) {
           }}
         >
           {galleryItems.length > 1 ? (
-            <div style={{ display: 'grid', gap: '10px' }}>
-              {galleryItems.map((item, index) => {
-                const isActive = index === activeIndex;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setActiveIndex(index)}
-                    aria-label={`View media ${index + 1}`}
-                    style={{
-                      position: 'relative',
-                      width: '96px',
-                      height: '120px',
-                      borderRadius: '10px',
-                      overflow: 'hidden',
-                      padding: 0,
-                      border: isActive ? '2px solid #111827' : '1px solid #E5E7EB',
-                      backgroundColor: '#f1f1f4',
-                      cursor: 'pointer',
-                      transition: 'border-color 200ms ease, transform 200ms ease',
-                    }}
-                  >
-                    <ProductMediaSurface item={item} alt={`${product.name} media ${index + 1}`} mode="thumbnail" />
-                  </button>
-                );
-              })}
-            </div>
+            <>
+              <style>
+                {`.product-media-thumbnail-scroller::-webkit-scrollbar{display:none;width:0;height:0;}`}
+              </style>
+              <div
+                className="product-media-thumbnail-scroller"
+                style={{
+                  display: 'grid',
+                  gap: '10px',
+                  maxHeight: '620px',
+                  overflowY: 'auto',
+                  alignContent: 'start',
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none',
+                }}
+              >
+                {galleryItems.map((item, index) => {
+                  const isActive = index === activeIndex;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setActiveIndex(index)}
+                      aria-label={`View media ${index + 1}`}
+                      style={{
+                        position: 'relative',
+                        width: '96px',
+                        height: '120px',
+                        borderRadius: '10px',
+                        overflow: 'hidden',
+                        padding: 0,
+                        border: isActive ? '2px solid #111827' : '1px solid #E5E7EB',
+                        backgroundColor: '#f1f1f4',
+                        cursor: 'pointer',
+                        transition: 'border-color 200ms ease, transform 200ms ease',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <ProductMediaSurface item={item} alt={`${product.name} media ${index + 1}`} mode="thumbnail" />
+                    </button>
+                  );
+                })}
+              </div>
+            </>
           ) : null}
 
           <div

@@ -7,8 +7,8 @@ import { ProductCard } from '../features/catalog/ProductCard';
 import { EmptyState } from '../components/shared/EmptyState';
 import { LoadingSkeleton } from '../components/shared/LoadingSkeleton';
 import { productService } from '../services/product';
+import { ProductMediaGallery } from '../features/product/ProductMediaGallery';
 import { formatCurrency } from '../utils/formatting';
-import { IMAGE_PLACEHOLDER } from '../app/constants';
 import { useCartStore } from '../stores';
 import { useWishlist } from '../features/customer';
 import { DURATION, EASING } from '../utils/motion';
@@ -57,81 +57,6 @@ function AccordionSection({ title, children }: { title: string; children: ReactN
           }}
         >
           {children}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Gallery({ product }: { product: Product }) {
-  const images = product.images?.length
-    ? product.images
-    : [product.imageUrl ?? IMAGE_PLACEHOLDER];
-
-  const [mainIndex, setMainIndex] = useState(0);
-  const mainSrc = images[mainIndex] ?? IMAGE_PLACEHOLDER;
-
-  useEffect(() => {
-    setMainIndex(0);
-  }, [product.id]);
-
-  return (
-    <div>
-      <div
-        style={{
-          position: 'relative',
-          width: '100%',
-          paddingBottom: '125%',
-          overflow: 'hidden',
-          borderRadius: '10px',
-          backgroundColor: '#F0F0F0',
-          marginBottom: '12px',
-        }}
-      >
-        <img
-          key={mainSrc}
-          src={mainSrc}
-          alt={product.name}
-          style={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'contain',
-            objectPosition: 'center',
-            animation: 'galleryFadeIn 250ms ease forwards',
-          }}
-        />
-      </div>
-
-      {images.length > 1 && (
-        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
-          {images.map((src, index) => (
-            <button
-              key={`${src}-${index}`}
-              type="button"
-              onClick={() => setMainIndex(index)}
-              aria-label={`View image ${index + 1}`}
-              style={{
-                flexShrink: 0,
-                width: '72px',
-                height: '72px',
-                border: index === mainIndex ? '2px solid #111827' : '2px solid transparent',
-                borderRadius: '6px',
-                overflow: 'hidden',
-                backgroundColor: '#F0F0F0',
-                cursor: 'pointer',
-                padding: 0,
-                transition: 'border-color 150ms ease',
-              }}
-            >
-              <img
-                src={src}
-                alt={`Thumbnail ${index + 1}`}
-                style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center' }}
-              />
-            </button>
-          ))}
         </div>
       )}
     </div>
@@ -544,7 +469,7 @@ function ProductDetailContent() {
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px 80px' }}>
         <div className="lg:grid lg:grid-cols-5 lg:gap-12">
           <div className="lg:col-span-3" style={{ marginBottom: '32px' }}>
-            <Gallery product={product} />
+            <ProductMediaGallery product={product} />
           </div>
 
           <div className="lg:col-span-2">

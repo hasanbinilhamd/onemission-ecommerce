@@ -213,9 +213,10 @@ export class ProductService {
 
       const hasVariantDetails = Array.isArray(cached.variants) && cached.variants.length > 0;
       const hasImages = Array.isArray(cached.images) && cached.images.length > 0;
+      const hasGalleryItems = Array.isArray(cached.galleryItems) && cached.galleryItems.length > 0;
       const hasLongDescription = typeof cached.longDescription === 'string';
 
-      if (hasVariantDetails && hasImages && hasLongDescription) {
+      if (hasVariantDetails && (hasImages || hasGalleryItems) && hasLongDescription) {
         continue;
       }
 

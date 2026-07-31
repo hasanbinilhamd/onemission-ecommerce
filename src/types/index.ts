@@ -24,6 +24,13 @@ export interface Variant {
   variantName?: string;
 }
 
+export interface ProductGalleryItem {
+  id: string;
+  mediaType: 'image' | 'video';
+  mediaUrl: string;
+  sortOrder: number;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -38,8 +45,10 @@ export interface Product {
   discountPercentage?: number;
   currency?: string;
   imageUrl?: string;
-  /** Ordered gallery images — first is the main image shown in catalog. */
+  hoverImageUrl?: string;
+  /** Ordered gallery images derived from galleryItems for compatibility. */
   images?: string[];
+  galleryItems?: ProductGalleryItem[];
   category?: Category;
   variants?: Variant[];
   tags?: string[];

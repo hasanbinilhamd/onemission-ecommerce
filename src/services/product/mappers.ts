@@ -1,8 +1,9 @@
-import type { Category, Product, Variant } from '../../types';
+import type { Category, Product, ProductGalleryItem, Variant } from '../../types';
 import type {
   CommerceCategoryApiDto,
   CommerceProductCardApiDto,
   CommerceProductDetailApiDto,
+  CommerceProductGalleryItemApiDto,
   CommerceProductVariantApiDto,
   ProductCollectionResult,
   ProductListFilters,
@@ -58,6 +59,15 @@ export function mapCommerceProductVariant(dto: CommerceProductVariantApiDto): Va
   };
 }
 
+export function mapCommerceProductGalleryItem(dto: CommerceProductGalleryItemApiDto): ProductGalleryItem {
+  return {
+    id: dto.id,
+    mediaType: dto.mediaType,
+    mediaUrl: dto.mediaUrl,
+    sortOrder: dto.sortOrder,
+  };
+}
+
 function buildCategoryFromName(name: string): Category {
   const slug = String(name || '')
     .toLowerCase()
@@ -83,6 +93,7 @@ export function mapCommerceProductCard(dto: CommerceProductCardApiDto): Product 
     discountPercentage: dto.discountPercentage,
     currency: dto.currency,
     imageUrl: dto.thumbnail,
+    hoverImageUrl: dto.hoverImage || dto.thumbnail,
     images: [dto.thumbnail],
     category: buildCategoryFromName(dto.category),
     stockStatus: dto.stockStatus,
@@ -97,6 +108,15 @@ export function mapCommerceProductCard(dto: CommerceProductCardApiDto): Product 
 }
 
 export function mapCommerceProductDetail(dto: CommerceProductDetailApiDto): Product {
+  const galleryItems = Array.isArray(dto.galleryMedia) && dto.galleryMedia.length > 0
+    ? dto.galleryMedia.map(mapCommerceProductGalleryItem)
+    : dto.gallery.map((mediaUrl, index) => ({
+        id: `${dto.id}-gallery-${index + 1}`,
+        mediaType: 'image' as const,
+        mediaUrl,
+        sortOrder: index + 1,
+      }));
+
   return {
     id: dto.id,
     name: dto.name,
@@ -113,7 +133,9 @@ export function mapCommerceProductDetail(dto: CommerceProductDetailApiDto): Prod
     discountPercentage: dto.discountPercentage,
     currency: dto.currency,
     imageUrl: dto.thumbnail,
-    images: dto.gallery,
+    hoverImageUrl: dto.hoverImage || dto.thumbnail,
+    images: galleryItems.filter((item) => item.mediaType === 'image').map((item) => item.mediaUrl),
+    galleryItems,
     category: {
       id: dto.category.id,
       name: dto.category.name,

@@ -1,5 +1,5 @@
 import { Heart } from 'lucide-react';
-import { memo, type MouseEvent } from 'react';
+import { memo, useEffect, useMemo, useState, type MouseEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { Product } from '../../types';
 import { ROUTES } from '../../app/config/routes';
@@ -7,6 +7,7 @@ import { IMAGE_PLACEHOLDER } from '../../app/constants';
 import { formatCurrency } from '../../utils/formatting';
 import { mapProductToWishlistItem, setPendingWishlistItem } from '../../services/wishlist/wishlistStorage';
 import { useAuthenticatedCustomer, useWishlist } from '../customer';
+import { useMediaQuery } from '../../hooks';
 
 if (typeof document !== 'undefined') {
   const STYLE_ID = 'om-product-card-keyframes';
@@ -40,9 +41,67 @@ export const ProductCard = memo(function ProductCard({
   const location = useLocation();
   const { user } = useAuthenticatedCustomer();
   const { isWishlisted, toggleItem } = useWishlist();
+  const supportsHoverPreview = useMediaQuery('(hover: hover) and (pointer: fine)');
   const wishlisted = isWishlisted(product.id);
-
   const imageSurfaceBackground = appearance === 'featured' ? '#E5E4E2' : '#FFFFFF';
+
+  const [isHovered, setIsHovered] = useState(false);
+  const [thumbnailLoadFailed, setThumbnailLoadFailed] = useState(false);
+  const [hoverImageReady, setHoverImageReady] = useState(false);
+
+  const thumbnailSrc = useMemo(() => {
+    if (thumbnailLoadFailed) {
+      return IMAGE_PLACEHOLDER;
+    }
+
+    const candidate = String(product.imageUrl || '').trim();
+    return candidate || IMAGE_PLACEHOLDER;
+  }, [product.imageUrl, thumbnailLoadFailed]);
+
+  const hoverSrc = useMemo(() => {
+    const candidate = String(product.hoverImageUrl || '').trim();
+    return candidate || thumbnailSrc;
+  }, [product.hoverImageUrl, thumbnailSrc]);
+
+  const hasDedicatedHoverImage = useMemo(() => {
+    const candidate = String(product.hoverImageUrl || '').trim();
+    return Boolean(candidate) && candidate !== thumbnailSrc;
+  }, [product.hoverImageUrl, thumbnailSrc]);
+
+  useEffect(() => {
+    setIsHovered(false);
+    setThumbnailLoadFailed(false);
+  }, [product.id, product.imageUrl]);
+
+  useEffect(() => {
+    if (!supportsHoverPreview || !hasDedicatedHoverImage) {
+      setHoverImageReady(false);
+      return undefined;
+    }
+
+    setHoverImageReady(false);
+
+    let isActive = true;
+    const image = new Image();
+
+    image.onload = () => {
+      if (isActive) {
+        setHoverImageReady(true);
+      }
+    };
+    image.onerror = () => {
+      if (isActive) {
+        setHoverImageReady(false);
+      }
+    };
+    image.src = hoverSrc;
+
+    return () => {
+      isActive = false;
+    };
+  }, [hasDedicatedHoverImage, hoverSrc, supportsHoverPreview]);
+
+  const showHoverImage = supportsHoverPreview && isHovered && hoverImageReady && hasDedicatedHoverImage;
 
   const handleWishlistClick = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -75,6 +134,8 @@ export const ProductCard = memo(function ProductCard({
       <button
         type="button"
         onClick={() => onClick(product)}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         style={{
           all: 'unset',
           cursor: 'pointer',
@@ -104,25 +165,57 @@ export const ProductCard = memo(function ProductCard({
               padding: '12px',
             }}
           >
-            <img
-              src={product.imageUrl ?? IMAGE_PLACEHOLDER}
-              alt={product.name}
-              loading="lazy"
+            <div
               style={{
+                position: 'relative',
                 width: '100%',
                 height: '100%',
-                objectFit: 'contain',
-                objectPosition: 'center center',
+                transform: isHovered ? 'scale(1.05)' : 'scale(1)',
                 transition: 'transform 320ms cubic-bezier(0.4,0,0.2,1)',
                 willChange: 'transform',
               }}
-              onMouseEnter={(event) => {
-                event.currentTarget.style.transform = 'scale(1.05)';
-              }}
-              onMouseLeave={(event) => {
-                event.currentTarget.style.transform = 'scale(1)';
-              }}
-            />
+            >
+              <img
+                src={thumbnailSrc}
+                alt={product.name}
+                loading="lazy"
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                  objectPosition: 'center center',
+                  opacity: showHoverImage ? 0 : 1,
+                  transition: 'opacity 300ms ease',
+                }}
+                onError={() => {
+                  setThumbnailLoadFailed(true);
+                }}
+              />
+              {hasDedicatedHoverImage ? (
+                <img
+                  src={hoverSrc}
+                  alt={product.name}
+                  aria-hidden="true"
+                  loading="lazy"
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                    objectPosition: 'center center',
+                    opacity: showHoverImage ? 1 : 0,
+                    transition: 'opacity 300ms ease',
+                    pointerEvents: 'none',
+                  }}
+                  onError={() => {
+                    setHoverImageReady(false);
+                  }}
+                />
+              ) : null}
+            </div>
           </div>
         </div>
 

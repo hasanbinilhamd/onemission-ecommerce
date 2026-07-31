@@ -62,6 +62,7 @@ export interface CommerceProductCardApiDto {
   name: string;
   shortDescription: string;
   thumbnail: string;
+  hoverImage: string;
   price: number;
   compareAtPrice: number | null;
   discountPercentage: number;
@@ -92,6 +93,13 @@ export interface CommerceProductVariantApiDto {
   available: boolean;
 }
 
+export interface CommerceProductGalleryItemApiDto {
+  id: string;
+  mediaType: 'image' | 'video';
+  mediaUrl: string;
+  sortOrder: number;
+}
+
 export interface CommerceProductDetailApiDto {
   id: string;
   slug: string;
@@ -103,7 +111,9 @@ export interface CommerceProductDetailApiDto {
   shippingInformation: string;
   sizeGuideImageUrl: string;
   thumbnail: string;
+  hoverImage: string;
   gallery: string[];
+  galleryMedia?: CommerceProductGalleryItemApiDto[];
   category: {
     id: string;
     name: string;

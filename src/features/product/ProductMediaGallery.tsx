@@ -241,7 +241,7 @@ export function ProductMediaGallery({ product }: { product: Product }) {
                       overflow: 'hidden',
                       padding: 0,
                       border: isActive ? '2px solid #111827' : '1px solid #E5E7EB',
-                      backgroundColor: '#F7F7F5',
+                      backgroundColor: '#f1f1ee',
                       cursor: 'pointer',
                       transition: 'border-color 200ms ease, transform 200ms ease',
                     }}
@@ -260,7 +260,7 @@ export function ProductMediaGallery({ product }: { product: Product }) {
               minHeight: '620px',
               borderRadius: '12px',
               overflow: 'hidden',
-              backgroundColor: '#F7F7F5',
+              backgroundColor: '#f1f1ee',
               border: '1px solid #F3F4F6',
             }}
           >
@@ -300,7 +300,7 @@ export function ProductMediaGallery({ product }: { product: Product }) {
                   minWidth: '100%',
                   scrollSnapAlign: 'start',
                   scrollSnapStop: 'always',
-                  backgroundColor: '#F7F7F5',
+                  backgroundColor: '#f1f1ee',
                   border: '1px solid #F3F4F6',
                   borderRadius: '12px',
                   overflow: 'hidden',

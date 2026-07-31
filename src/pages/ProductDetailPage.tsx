@@ -184,7 +184,7 @@ function SizeGuideContent({ imageUrl }: { imageUrl?: string }) {
         width: '100%',
         borderRadius: '10px',
         overflow: 'hidden',
-        backgroundColor: '#F7F7F5',
+        backgroundColor: '#f1f1ee',
         padding: '12px',
         boxSizing: 'border-box',
       }}

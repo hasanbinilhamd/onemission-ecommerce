@@ -380,11 +380,18 @@ function CheckoutPageContent() {
         customerEmail: contactInformation.email,
         subtotal,
         shippingCost: shippingState.selectedRate?.cost ?? 0,
+        courier: shippingState.selectedRate?.courierCode ?? '',
+        items: cartItems.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          subtotal: item.price * item.quantity,
+          category: item.categoryName,
+        })),
       }, accessToken || '');
       setVoucherCode(nextCode);
-      setAppliedPromotion(response.promotion);
+      setAppliedPromotion(response.promotion ?? response.promotions?.[0] ?? null);
       setPromotionPricing(response.pricing);
-      setStatusMessage(`Promotion ${response.promotion.code} applied.`);
+      setStatusMessage(`Promotion ${(response.promotion ?? response.promotions?.[0])?.code || nextCode} applied.`);
     } catch (error) {
       setAppliedPromotion(null);
       setPromotionPricing(null);
@@ -392,7 +399,7 @@ function CheckoutPageContent() {
     } finally {
       setIsApplyingPromotion(false);
     }
-  }, [contactInformation.email, getValidAccessToken, shippingState.selectedRate?.cost, subtotal, user, voucherCode]);
+  }, [cartItems, contactInformation.email, getValidAccessToken, shippingState.selectedRate?.cost, shippingState.selectedRate?.courierCode, subtotal, user, voucherCode]);
 
   const removePromotionCode = useCallback(() => {
     setAppliedPromotion(null);
@@ -402,13 +409,52 @@ function CheckoutPageContent() {
     setStatusMessage('Promotion removed.');
   }, []);
 
+  const previewAutomaticPromotions = useCallback(async () => {
+    if (!shippingState.selectedRate || subtotal <= 0 || voucherCode.trim()) {
+      return;
+    }
+
+    try {
+      const accessToken = user ? await getValidAccessToken() : '';
+      const response = await validatePromotion({
+        code: '',
+        customerEmail: contactInformation.email,
+        subtotal,
+        shippingCost: shippingState.selectedRate.cost,
+        courier: shippingState.selectedRate.courierCode,
+        items: cartItems.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          subtotal: item.price * item.quantity,
+          category: item.categoryName,
+        })),
+      }, accessToken || '');
+
+      if ((response.pricing?.totalSavings || 0) > 0) {
+        setAppliedPromotion(response.promotion ?? response.promotions?.[0] ?? null);
+        setPromotionPricing(response.pricing);
+      } else {
+        setAppliedPromotion(null);
+        setPromotionPricing(null);
+      }
+      setPromotionError('');
+    } catch {
+      setAppliedPromotion(null);
+      setPromotionPricing(null);
+    }
+  }, [cartItems, contactInformation.email, getValidAccessToken, shippingState.selectedRate, subtotal, user, voucherCode]);
+
   useEffect(() => {
-    if (!appliedPromotion?.code) {
+    if (!appliedPromotion?.code || appliedPromotion.promotionType !== 'VOUCHER') {
       return;
     }
 
     void applyPromotionCode(appliedPromotion.code);
-  }, [appliedPromotion?.code, applyPromotionCode, subtotal, shippingState.selectedRate?.cost, contactInformation.email]);
+  }, [appliedPromotion?.code, appliedPromotion?.promotionType, applyPromotionCode, subtotal, shippingState.selectedRate?.cost, contactInformation.email]);
+
+  useEffect(() => {
+    void previewAutomaticPromotions();
+  }, [previewAutomaticPromotions]);
 
   const loadProvinces = useCallback(async () => {
     setShippingLoading('provinces', true);
@@ -983,7 +1029,7 @@ function CheckoutPageContent() {
           customerType: 'Individual',
         },
         currency: 'IDR',
-        promotionCode: appliedPromotion?.code || '',
+        promotionCode: appliedPromotion?.promotionType === 'VOUCHER' ? appliedPromotion.code : '',
         discount: promotionPricing?.discountAmount || 0,
         tax: 0,
         courier: shippingState.selectedRate.courierCode,

@@ -12,10 +12,17 @@ function getApiBaseUrl() {
 
 export async function validatePromotion(
   payload: {
-    code: string;
+    code?: string;
     customerEmail?: string;
     subtotal: number;
     shippingCost: number;
+    courier?: string;
+    items?: Array<{
+      productId: string;
+      quantity: number;
+      subtotal: number;
+      category?: string;
+    }>;
   },
   accessToken = '',
 ): Promise<PromotionValidationResponse> {

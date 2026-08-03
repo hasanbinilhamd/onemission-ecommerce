@@ -193,6 +193,8 @@ export interface PromotionSnapshotPricing {
   subtotal: number;
   originalShippingCost: number;
   shippingCost: number;
+  automaticDiscountAmount?: number;
+  voucherDiscountAmount?: number;
   discountAmount: number;
   shippingDiscountAmount: number;
   totalSavings: number;
@@ -215,28 +217,34 @@ export interface PromotionSnapshot {
   appliedAt: string;
 }
 
+export interface PromotionValidationPromotion {
+  id: string;
+  code: string;
+  title: string;
+  description?: string;
+  promotionType: string;
+  discountType: string;
+  percentageValue?: number;
+  fixedAmount?: number;
+  minimumPurchase?: number;
+  maximumDiscount?: number;
+  quota?: number;
+  usedCount?: number;
+  status?: string;
+  isPublic?: boolean;
+  startDate?: string | null;
+  endDate?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: string | null;
+  discountAmount?: number;
+  shippingDiscountAmount?: number;
+  voucherCode?: string;
+}
+
 export interface PromotionValidationResponse {
-  promotion: {
-    id: string;
-    code: string;
-    title: string;
-    description: string;
-    promotionType: string;
-    discountType: string;
-    percentageValue: number;
-    fixedAmount: number;
-    minimumPurchase: number;
-    maximumDiscount: number;
-    quota: number;
-    usedCount: number;
-    status: string;
-    isPublic: boolean;
-    startDate: string | null;
-    endDate: string | null;
-    createdAt: string;
-    updatedAt: string;
-    deletedAt?: string | null;
-  };
+  promotion: PromotionValidationPromotion | null;
+  promotions?: PromotionValidationPromotion[];
   pricing: PromotionSnapshotPricing;
 }
 

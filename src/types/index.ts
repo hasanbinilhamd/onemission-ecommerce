@@ -197,8 +197,22 @@ export interface PromotionSnapshotPricing {
   voucherDiscountAmount?: number;
   discountAmount: number;
   shippingDiscountAmount: number;
+  shippingDiscount?: number;
+  finalSubtotal?: number;
+  finalShipping?: number;
+  finalTotal?: number;
   totalSavings: number;
   grandTotal: number;
+}
+
+export interface PromotionResult {
+  promotionId: string;
+  promotionType: string;
+  discountAmount: number;
+  shippingDiscount: number;
+  finalSubtotal: number;
+  finalShipping: number;
+  finalTotal: number;
 }
 
 export interface PromotionSnapshot {
@@ -245,6 +259,7 @@ export interface PromotionValidationPromotion {
 export interface PromotionValidationResponse {
   promotion: PromotionValidationPromotion | null;
   promotions?: PromotionValidationPromotion[];
+  promotionResult?: PromotionResult;
   pricing: PromotionSnapshotPricing;
 }
 

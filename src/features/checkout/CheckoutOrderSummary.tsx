@@ -1,5 +1,7 @@
+import type { ReactNode } from 'react';
 import { IMAGE_PLACEHOLDER } from '../../app/constants';
 import { useCartStore, useCheckoutStore } from '../../stores';
+import type { PromotionResult } from '../../types';
 import { formatCurrency } from '../../utils/formatting';
 
 interface CheckoutOrderSummaryProps {
@@ -9,6 +11,8 @@ interface CheckoutOrderSummaryProps {
   totalOverride?: number;
   promotionTitle?: string;
   totalSavings?: number;
+  promotionResult?: PromotionResult | null;
+  voucherSlot?: ReactNode;
 }
 
 export function CheckoutOrderSummary({
@@ -17,12 +21,13 @@ export function CheckoutOrderSummary({
   shippingCostOverride,
   totalOverride,
   promotionTitle = '',
-  totalSavings = 0,
+  promotionResult = null,
+  voucherSlot,
 }: CheckoutOrderSummaryProps) {
   const { cart, cartItems, subtotal, totalItems } = useCartStore();
   const { checkout } = useCheckoutStore();
-  const shippingCost = shippingCostOverride ?? checkout.shipping.selectedRate?.cost ?? 0;
-  const total = totalOverride ?? (subtotal - discountAmount + shippingCost);
+  const shippingCost = promotionResult?.finalShipping ?? shippingCostOverride ?? checkout.shipping.selectedRate?.cost ?? 0;
+  const total = promotionResult?.finalTotal ?? totalOverride ?? (subtotal - discountAmount + shippingCost);
 
   return (
     <aside className={className} style={{ alignSelf: 'start' }}>
@@ -118,6 +123,9 @@ export function CheckoutOrderSummary({
             <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Subtotal</p>
             <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#111827' }}>{formatCurrency(subtotal)}</p>
           </div>
+          {voucherSlot ? (
+            <div style={{ margin: '2px 0 4px' }}>{voucherSlot}</div>
+          ) : null}
           {promotionTitle ? (
             <div style={{ display: 'grid', gap: '6px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
@@ -126,8 +134,8 @@ export function CheckoutOrderSummary({
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
                 <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Discount</p>
-                <p style={{ margin: 0, fontSize: '13px', color: totalSavings > 0 ? '#15803D' : '#111827', textAlign: 'right', fontWeight: 600 }}>
-                  {totalSavings > 0 ? `- ${formatCurrency(totalSavings)}` : formatCurrency(0)}
+                <p style={{ margin: 0, fontSize: '13px', color: discountAmount > 0 ? '#15803D' : '#111827', textAlign: 'right', fontWeight: 600 }}>
+                  {discountAmount > 0 ? `- ${formatCurrency(discountAmount)}` : formatCurrency(0)}
                 </p>
               </div>
             </div>

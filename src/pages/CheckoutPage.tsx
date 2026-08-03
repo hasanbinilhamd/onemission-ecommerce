@@ -297,6 +297,7 @@ function CheckoutPageContent() {
   const [voucherCode, setVoucherCode] = useState('');
   const [appliedPromotion, setAppliedPromotion] = useState<PromotionValidationResponse['promotion'] | null>(null);
   const [promotionPricing, setPromotionPricing] = useState<PromotionValidationResponse['pricing'] | null>(null);
+  const [promotionResult, setPromotionResult] = useState<PromotionValidationResponse['promotionResult'] | null>(null);
   const [promotionError, setPromotionError] = useState('');
   const [isApplyingPromotion, setIsApplyingPromotion] = useState(false);
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
@@ -353,8 +354,8 @@ function CheckoutPageContent() {
     && shippingAddress.postalCode
     && isRequired(shippingAddress.streetAddress),
   );
-  const shippingCostPreview = promotionPricing?.shippingCost ?? shippingState.selectedRate?.cost ?? 0;
-  const grandTotalPreview = promotionPricing?.grandTotal ?? (subtotal + (shippingState.selectedRate?.cost ?? 0));
+  const shippingCostPreview = promotionResult?.finalShipping ?? promotionPricing?.shippingCost ?? shippingState.selectedRate?.cost ?? 0;
+  const grandTotalPreview = promotionResult?.finalTotal ?? promotionPricing?.grandTotal ?? (subtotal + (shippingState.selectedRate?.cost ?? 0));
 
   const resetDeliveryCompletion = useCallback(() => {
     setSectionCompletion((previous) => ({
@@ -391,10 +392,12 @@ function CheckoutPageContent() {
       setVoucherCode(nextCode);
       setAppliedPromotion(response.promotion ?? response.promotions?.[0] ?? null);
       setPromotionPricing(response.pricing);
+      setPromotionResult(response.promotionResult ?? null);
       setStatusMessage(`Promotion ${(response.promotion ?? response.promotions?.[0])?.code || nextCode} applied.`);
     } catch (error) {
       setAppliedPromotion(null);
       setPromotionPricing(null);
+      setPromotionResult(null);
       setPromotionError(error instanceof Error ? error.message : 'Promotion could not be applied.');
     } finally {
       setIsApplyingPromotion(false);
@@ -404,13 +407,14 @@ function CheckoutPageContent() {
   const removePromotionCode = useCallback(() => {
     setAppliedPromotion(null);
     setPromotionPricing(null);
+    setPromotionResult(null);
     setVoucherCode('');
     setPromotionError('');
     setStatusMessage('Promotion removed.');
   }, []);
 
   const previewAutomaticPromotions = useCallback(async () => {
-    if (!shippingState.selectedRate || subtotal <= 0 || voucherCode.trim()) {
+    if (subtotal <= 0 || voucherCode.trim()) {
       return;
     }
 
@@ -420,8 +424,8 @@ function CheckoutPageContent() {
         code: '',
         customerEmail: contactInformation.email,
         subtotal,
-        shippingCost: shippingState.selectedRate.cost,
-        courier: shippingState.selectedRate.courierCode,
+        shippingCost: shippingState.selectedRate?.cost ?? 0,
+        courier: shippingState.selectedRate?.courierCode ?? '',
         items: cartItems.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
@@ -433,14 +437,17 @@ function CheckoutPageContent() {
       if ((response.pricing?.totalSavings || 0) > 0) {
         setAppliedPromotion(response.promotion ?? response.promotions?.[0] ?? null);
         setPromotionPricing(response.pricing);
+        setPromotionResult(response.promotionResult ?? null);
       } else {
         setAppliedPromotion(null);
         setPromotionPricing(null);
+        setPromotionResult(null);
       }
       setPromotionError('');
     } catch {
       setAppliedPromotion(null);
       setPromotionPricing(null);
+      setPromotionResult(null);
     }
   }, [cartItems, contactInformation.email, getValidAccessToken, shippingState.selectedRate, subtotal, user, voucherCode]);
 
@@ -1133,6 +1140,61 @@ function CheckoutPageContent() {
     setIsSubmittingPayment(false);
   };
 
+  const voucherSummaryCard = (
+    <div style={{ display: 'grid', gap: '12px' }}>
+      <div className="sm:grid sm:grid-cols-[minmax(0,1fr)_auto]" style={{ display: 'grid', gap: '10px', alignItems: 'end' }}>
+        <Input
+          label="Voucher"
+          name="voucherCode"
+          value={voucherCode}
+          onChange={(event) => {
+            setVoucherCode(event.target.value.toUpperCase());
+            setPromotionError('');
+          }}
+          placeholder="SAVE20"
+        />
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <Button type="button" variant="secondary" onClick={() => void applyPromotionCode()} disabled={isApplyingPromotion || !voucherCode.trim()}>
+            {isApplyingPromotion ? 'Applying...' : 'Apply'}
+          </Button>
+          {appliedPromotion ? (
+            <Button type="button" variant="ghost" onClick={removePromotionCode}>
+              Remove
+            </Button>
+          ) : null}
+        </div>
+      </div>
+
+      {promotionError ? (
+        <CheckoutErrorState message={promotionError} />
+      ) : null}
+
+      {appliedPromotion && promotionPricing ? (
+        <div style={{ border: '1px solid #E5E7EB', borderRadius: '14px', padding: '12px', backgroundColor: '#F9FAFB' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+            <div>
+              <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 600, color: '#111827' }}>{appliedPromotion.title}</p>
+              <p style={{ margin: 0, fontSize: '12px', color: '#6B7280' }}>{appliedPromotion.code ? `${appliedPromotion.code} · ` : ''}{appliedPromotion.discountType.replace(/_/g, ' ')}</p>
+            </div>
+            <Badge variant="success">Applied</Badge>
+          </div>
+          <div style={{ display: 'grid', gap: '6px', marginTop: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+              <p style={{ margin: 0, fontSize: '12px', color: '#6B7280' }}>Discount</p>
+              <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: '#15803D' }}>- {formatCurrency(promotionResult?.discountAmount ?? promotionPricing.discountAmount ?? 0)}</p>
+            </div>
+            {(promotionResult?.shippingDiscount || promotionPricing.shippingDiscountAmount || 0) > 0 ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                <p style={{ margin: 0, fontSize: '12px', color: '#6B7280' }}>Shipping Discount</p>
+                <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: '#15803D' }}>- {formatCurrency(promotionResult?.shippingDiscount ?? promotionPricing.shippingDiscountAmount ?? 0)}</p>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+
   if (isCartEmpty) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', padding: '120px 24px 60px' }}>
@@ -1466,63 +1528,6 @@ function CheckoutPageContent() {
               )}
             </CheckoutSection>
 
-            <CheckoutSection
-              stepLabel="Optional"
-              title="Voucher"
-              description="Apply a voucher or promotion code before continuing to payment."
-            >
-              <div style={{ display: 'grid', gap: '12px' }}>
-                <div className="sm:grid sm:grid-cols-[minmax(0,1fr)_auto]" style={{ display: 'grid', gap: '12px', alignItems: 'end' }}>
-                  <Input
-                    label="Voucher Code"
-                    name="voucherCode"
-                    value={voucherCode}
-                    onChange={(event) => {
-                      setVoucherCode(event.target.value.toUpperCase());
-                      setPromotionError('');
-                    }}
-                    placeholder="SAVE20"
-                  />
-                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    <Button type="button" variant="secondary" onClick={() => void applyPromotionCode()} disabled={isApplyingPromotion || !voucherCode.trim()}>
-                      {isApplyingPromotion ? 'Applying...' : 'Apply'}
-                    </Button>
-                    {appliedPromotion ? (
-                      <Button type="button" variant="ghost" onClick={removePromotionCode}>
-                        Remove
-                      </Button>
-                    ) : null}
-                  </div>
-                </div>
-
-                {promotionError ? (
-                  <CheckoutErrorState message={promotionError} />
-                ) : null}
-
-                {appliedPromotion && promotionPricing ? (
-                  <div style={{ border: '1px solid #E5E7EB', borderRadius: '16px', padding: '16px', backgroundColor: '#FFFFFF' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
-                      <div>
-                        <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 600, color: '#111827' }}>{appliedPromotion.title}</p>
-                        <p style={{ margin: 0, fontSize: '12px', color: '#6B7280' }}>{appliedPromotion.code} · {appliedPromotion.discountType.replace(/_/g, ' ')}</p>
-                      </div>
-                      <Badge variant="success">Applied</Badge>
-                    </div>
-                    <div style={{ display: 'grid', gap: '6px', marginTop: '14px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                        <p style={{ margin: 0, fontSize: '12px', color: '#6B7280' }}>Discount</p>
-                        <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: '#15803D' }}>- {formatCurrency(promotionPricing.totalSavings || 0)}</p>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                        <p style={{ margin: 0, fontSize: '12px', color: '#6B7280' }}>Shipping After Promotion</p>
-                        <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: '#111827' }}>{formatCurrency(promotionPricing.shippingCost || 0)}</p>
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            </CheckoutSection>
-
             <div style={{ display: 'grid', gap: '12px' }}>
               {hasInvalidItems && (
                 <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.6, color: '#B91C1C' }}>
@@ -1555,7 +1560,16 @@ function CheckoutPageContent() {
             </div>
           </div>
 
-          <CheckoutOrderSummary className="lg:sticky lg:top-24" discountAmount={promotionPricing?.discountAmount || 0} shippingCostOverride={promotionPricing ? shippingCostPreview : undefined} totalOverride={promotionPricing ? grandTotalPreview : undefined} promotionTitle={appliedPromotion?.title || ""} totalSavings={promotionPricing?.totalSavings || 0} />
+          <CheckoutOrderSummary
+            className="lg:sticky lg:top-24"
+            discountAmount={promotionResult?.discountAmount ?? promotionPricing?.discountAmount ?? 0}
+            shippingCostOverride={promotionPricing ? shippingCostPreview : undefined}
+            totalOverride={promotionPricing ? grandTotalPreview : undefined}
+            promotionTitle={appliedPromotion?.title || ""}
+            totalSavings={promotionPricing?.totalSavings || 0}
+            promotionResult={promotionResult ?? null}
+            voucherSlot={voucherSummaryCard}
+          />
         </div>
       </div>
       </div>

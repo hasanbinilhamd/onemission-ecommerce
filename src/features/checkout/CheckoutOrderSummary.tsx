@@ -7,10 +7,9 @@ import { formatCurrency } from '../../utils/formatting';
 interface CheckoutOrderSummaryProps {
   className?: string;
   discountAmount?: number;
+  discountLabel?: string;
   shippingCostOverride?: number;
   totalOverride?: number;
-  promotionTitle?: string;
-  totalSavings?: number;
   promotionResult?: PromotionResult | null;
   voucherSlot?: ReactNode;
 }
@@ -18,9 +17,9 @@ interface CheckoutOrderSummaryProps {
 export function CheckoutOrderSummary({
   className = '',
   discountAmount = 0,
+  discountLabel = 'Discount',
   shippingCostOverride,
   totalOverride,
-  promotionTitle = '',
   promotionResult = null,
   voucherSlot,
 }: CheckoutOrderSummaryProps) {
@@ -126,26 +125,23 @@ export function CheckoutOrderSummary({
           {voucherSlot ? (
             <div style={{ margin: '2px 0 4px' }}>{voucherSlot}</div>
           ) : null}
-          {promotionTitle ? (
-            <div style={{ display: 'grid', gap: '6px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Promotion</p>
-                <p style={{ margin: 0, fontSize: '13px', color: '#111827', textAlign: 'right', fontWeight: 600 }}>{promotionTitle}</p>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Discount</p>
-                <p style={{ margin: 0, fontSize: '13px', color: discountAmount > 0 ? '#15803D' : '#111827', textAlign: 'right', fontWeight: 600 }}>
-                  {discountAmount > 0 ? `- ${formatCurrency(discountAmount)}` : formatCurrency(0)}
-                </p>
-              </div>
-            </div>
-          ) : null}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
             <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Shipping</p>
             <p style={{ margin: 0, fontSize: '13px', color: '#111827', textAlign: 'right', fontWeight: shippingCost > 0 ? 600 : 500 }}>
               {checkout.shipping.selectedRate || shippingCostOverride !== undefined ? formatCurrency(shippingCost) : 'Select a courier'}
             </p>
           </div>
+          {discountAmount > 0 ? (
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+              <div>
+                <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Discount</p>
+                <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#111827', fontWeight: 600 }}>{discountLabel}</p>
+              </div>
+              <p style={{ margin: 0, fontSize: '13px', color: '#15803D', textAlign: 'right', fontWeight: 600 }}>
+                - {formatCurrency(discountAmount)}
+              </p>
+            </div>
+          ) : null}
         </div>
 
         <div style={{ height: '1px', backgroundColor: '#F3F4F6', marginBottom: '20px' }} />

@@ -1140,6 +1140,18 @@ function CheckoutPageContent() {
     setIsSubmittingPayment(false);
   };
 
+
+  const appliedVoucher = appliedPromotion?.promotionType === 'VOUCHER' ? appliedPromotion : null;
+  const voucherDiscountAmount = appliedVoucher
+    ? Number(appliedVoucher.discountAmount ?? promotionPricing?.voucherDiscountAmount ?? 0)
+    : 0;
+  const summaryDiscountAmount = appliedVoucher
+    ? voucherDiscountAmount
+    : Number(promotionResult?.discountAmount ?? promotionPricing?.discountAmount ?? 0);
+  const summaryDiscountLabel = appliedVoucher
+    ? `${appliedVoucher.code}${appliedVoucher.discountType === 'PERCENTAGE' && appliedVoucher.percentageValue ? ` (${Number(appliedVoucher.percentageValue)}%)` : ''}`
+    : appliedPromotion?.title || 'Promotion';
+
   const voucherSummaryCard = (
     <div style={{ display: 'grid', gap: '12px' }}>
       <div className="sm:grid sm:grid-cols-[minmax(0,1fr)_auto]" style={{ display: 'grid', gap: '10px', alignItems: 'end' }}>
@@ -1169,27 +1181,19 @@ function CheckoutPageContent() {
         <CheckoutErrorState message={promotionError} />
       ) : null}
 
-      {appliedPromotion && promotionPricing ? (
-        <div style={{ border: '1px solid #E5E7EB', borderRadius: '14px', padding: '12px', backgroundColor: '#F9FAFB' }}>
+      {appliedVoucher ? (
+        <div style={{ border: '1px solid #DCFCE7', borderRadius: '14px', padding: '12px', backgroundColor: '#F0FDF4' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
             <div>
-              <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 600, color: '#111827' }}>{appliedPromotion.title}</p>
-              <p style={{ margin: 0, fontSize: '12px', color: '#6B7280' }}>{appliedPromotion.code ? `${appliedPromotion.code} · ` : ''}{appliedPromotion.discountType.replace(/_/g, ' ')}</p>
+              <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 700, color: '#15803D' }}>✓ Voucher Applied</p>
+              <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: '#111827' }}>{appliedVoucher.title}</p>
+              <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#6B7280' }}>{appliedVoucher.code} · {appliedVoucher.discountType.replace(/_/g, ' ')}</p>
             </div>
             <Badge variant="success">Applied</Badge>
           </div>
-          <div style={{ display: 'grid', gap: '6px', marginTop: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-              <p style={{ margin: 0, fontSize: '12px', color: '#6B7280' }}>Discount</p>
-              <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: '#15803D' }}>- {formatCurrency(promotionResult?.discountAmount ?? promotionPricing.discountAmount ?? 0)}</p>
-            </div>
-            {(promotionResult?.shippingDiscount || promotionPricing.shippingDiscountAmount || 0) > 0 ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                <p style={{ margin: 0, fontSize: '12px', color: '#6B7280' }}>Shipping Discount</p>
-                <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: '#15803D' }}>- {formatCurrency(promotionResult?.shippingDiscount ?? promotionPricing.shippingDiscountAmount ?? 0)}</p>
-              </div>
-            ) : null}
-          </div>
+          <p style={{ margin: '10px 0 0', fontSize: '12px', fontWeight: 600, color: '#15803D' }}>
+            You saved {formatCurrency(voucherDiscountAmount)}
+          </p>
         </div>
       ) : null}
     </div>
@@ -1562,11 +1566,10 @@ function CheckoutPageContent() {
 
           <CheckoutOrderSummary
             className="lg:sticky lg:top-24"
-            discountAmount={promotionResult?.discountAmount ?? promotionPricing?.discountAmount ?? 0}
+            discountAmount={summaryDiscountAmount}
             shippingCostOverride={promotionPricing ? shippingCostPreview : undefined}
             totalOverride={promotionPricing ? grandTotalPreview : undefined}
-            promotionTitle={appliedPromotion?.title || ""}
-            totalSavings={promotionPricing?.totalSavings || 0}
+            discountLabel={summaryDiscountLabel}
             promotionResult={promotionResult ?? null}
             voucherSlot={voucherSummaryCard}
           />

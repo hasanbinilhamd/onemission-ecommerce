@@ -52,6 +52,7 @@ const ALLOWED_PUBLIC_PATTERNS = [
   /^website\/hero$/,
   /^website\/brand-video$/,
   /^website\/product-story$/,
+  /^website\/collection$/,
 ];
 
 function getUpstreamBaseUrl() {

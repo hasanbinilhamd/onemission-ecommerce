@@ -44,7 +44,7 @@ export function CollectionPage() {
     <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF' }}>
       <TopBackNavigation label="Back to Home" fallbackTo={ROUTES.HOME} />
       <CollectionHeroSection hero={collectionHero} isLoading={isCollectionHeroLoading} />
-      <CollectionPageCatalog onProductSelect={handleProductSelect} />
+      <CollectionPageCatalog onProductSelect={handleProductSelect} collectionDescription={collectionHero?.description || ''} />
     </div>
   );
 }

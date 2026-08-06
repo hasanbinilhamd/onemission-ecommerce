@@ -6,7 +6,7 @@ interface CollectionHeroSectionProps {
   isLoading?: boolean;
 }
 
-const HERO_HEIGHT = 'clamp(360px, 64vh, 680px)';
+const HERO_HEIGHT = 'clamp(420px, 72vh, 760px)';
 
 function resolveMediaUrl(item: WebsiteCollectionHeroMediaItem | null, isMobile: boolean): string {
   if (!item) return '';
@@ -140,56 +140,31 @@ export function CollectionHeroSection({ hero, isLoading = false }: CollectionHer
           zIndex: 1,
           height: HERO_HEIGHT,
           display: 'flex',
-          alignItems: 'flex-end',
+          alignItems: 'center',
+          justifyContent: 'center',
           maxWidth: '1440px',
           margin: '0 auto',
-          padding: '120px 20px 72px',
+          padding: '96px 20px',
           boxSizing: 'border-box',
+          textAlign: 'center',
         }}
         className="sm:px-8"
       >
-        <div style={{ maxWidth: '720px' }}>
-          <p
+        {hero.title ? (
+          <h1
             style={{
-              margin: '0 0 12px',
-              fontSize: '12px',
-              fontWeight: 600,
-              letterSpacing: '0.18em',
-              textTransform: 'uppercase',
-              color: 'rgba(255,255,255,0.72)',
+              margin: 0,
+              fontFamily: "'SF-Pro-Display', sans-serif",
+              fontSize: 'clamp(46px, 7vw, 104px)',
+              lineHeight: 0.94,
+              letterSpacing: '-0.055em',
+              fontWeight: 500,
+              color: '#FFFFFF',
             }}
           >
-            Collection
-          </p>
-          {hero.title ? (
-            <h1
-              style={{
-                margin: 0,
-                fontFamily: "'SF-Pro-Display', sans-serif",
-                fontSize: 'clamp(42px, 6vw, 88px)',
-                lineHeight: 0.94,
-                letterSpacing: '-0.055em',
-                fontWeight: 500,
-                color: '#FFFFFF',
-              }}
-            >
-              {hero.title}
-            </h1>
-          ) : null}
-          {hero.description ? (
-            <p
-              style={{
-                margin: '18px 0 0',
-                maxWidth: '560px',
-                fontSize: '16px',
-                lineHeight: 1.7,
-                color: 'rgba(255,255,255,0.74)',
-              }}
-            >
-              {hero.description}
-            </p>
-          ) : null}
-        </div>
+            {hero.title}
+          </h1>
+        ) : null}
       </div>
     </section>
   );

@@ -51,9 +51,10 @@ function matchesSize(product: Product, sizes: string[]): boolean {
 
 interface CollectionPageCatalogProps {
   onProductSelect: (slug: string) => void;
+  collectionDescription?: string;
 }
 
-export function CollectionPageCatalog({ onProductSelect }: CollectionPageCatalogProps) {
+export function CollectionPageCatalog({ onProductSelect, collectionDescription = '' }: CollectionPageCatalogProps) {
   const visibleCountRef = useRef(PAGE_SIZE);
 
   const [search, setSearch] = useState('');
@@ -255,6 +256,19 @@ export function CollectionPageCatalog({ onProductSelect }: CollectionPageCatalog
         >
           The ONEMISSION collection.
         </h1>
+        {collectionDescription ? (
+          <p
+            style={{
+              margin: '18px 0 0',
+              maxWidth: '640px',
+              fontSize: '16px',
+              lineHeight: 1.7,
+              color: '#4B5563',
+            }}
+          >
+            {collectionDescription}
+          </p>
+        ) : null}
       </div>
 
       <div

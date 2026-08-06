@@ -850,7 +850,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
               fontWeight: 400,
               color: '#ffffff',
               opacity: 0.6,
-              lineHeight: isMobile ? 0.6 : 1,
+              lineHeight: isMobile ? 0.68 : 1,
               textTransform: 'lowercase',
               letterSpacing: '-0.08em',
               whiteSpace: 'nowrap',

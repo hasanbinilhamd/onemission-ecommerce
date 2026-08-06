@@ -27,6 +27,26 @@ export interface WebsiteProductStoryItem {
   active: boolean;
 }
 
+
+export interface WebsiteCollectionHeroMediaItem {
+  id: string;
+  mediaType: WebsiteMediaType;
+  desktopUrl: string;
+  mobileUrl: string;
+  displayOrder: number;
+  active: boolean;
+}
+
+export interface WebsiteCollectionHero {
+  id: string;
+  heroType: 'image' | 'slideshow' | 'video';
+  title: string;
+  description: string;
+  overlayOpacity: number;
+  active: boolean;
+  mediaItems: WebsiteCollectionHeroMediaItem[];
+}
+
 export interface WebsiteHomepageContent {
   heroItems: WebsiteHeroItem[];
   brandVideo: WebsiteBrandVideo | null;
@@ -96,5 +116,9 @@ export const websiteService = {
 
   async getProductStoryItems(): Promise<WebsiteProductStoryItem[]> {
     return fetchJson<WebsiteProductStoryItem[]>('product-story');
+  },
+
+  async getCollectionHero(): Promise<WebsiteCollectionHero | null> {
+    return fetchJson<WebsiteCollectionHero | null>('collection');
   },
 };

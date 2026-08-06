@@ -165,8 +165,8 @@ function roleStyle(role: Role, isMobile: boolean): React.CSSProperties {
     case 'center':
       return {
         left: '50%',
-        height: isMobile ? '75%' : '92%',
-        bottom: isMobile ? '7.5%' : 0,
+        height: isMobile ? '70%' : '92%',
+        bottom: isMobile ? '12%' : 0,
         transform: `translateX(-50%) scale(${isMobile ? 1.20 : 1.26})`,
         filter: 'blur(0px)',
         opacity: 1,

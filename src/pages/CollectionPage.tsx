@@ -9,6 +9,7 @@ import { websiteService, type WebsiteCollectionHero } from '../services/api/webs
 export function CollectionPage() {
   const navigate = useNavigate();
   const [collectionHero, setCollectionHero] = useState<WebsiteCollectionHero | null>(null);
+  const [isCollectionHeroLoading, setIsCollectionHeroLoading] = useState(true);
 
   useEffect(() => {
     let isActive = true;
@@ -21,6 +22,10 @@ export function CollectionPage() {
       } catch {
         if (isActive) {
           setCollectionHero(null);
+        }
+      } finally {
+        if (isActive) {
+          setIsCollectionHeroLoading(false);
         }
       }
     };
@@ -38,7 +43,7 @@ export function CollectionPage() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF' }}>
       <TopBackNavigation label="Back to Home" fallbackTo={ROUTES.HOME} />
-      <CollectionHeroSection hero={collectionHero} />
+      <CollectionHeroSection hero={collectionHero} isLoading={isCollectionHeroLoading} />
       <CollectionPageCatalog onProductSelect={handleProductSelect} />
     </div>
   );

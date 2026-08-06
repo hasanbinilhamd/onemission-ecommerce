@@ -3,14 +3,42 @@ import type { WebsiteCollectionHero, WebsiteCollectionHeroMediaItem } from '../.
 
 interface CollectionHeroSectionProps {
   hero: WebsiteCollectionHero | null;
+  isLoading?: boolean;
 }
+
+const HERO_HEIGHT = 'clamp(360px, 64vh, 680px)';
 
 function resolveMediaUrl(item: WebsiteCollectionHeroMediaItem | null, isMobile: boolean): string {
   if (!item) return '';
   return isMobile && item.mobileUrl ? item.mobileUrl : item.desktopUrl;
 }
 
-export function CollectionHeroSection({ hero }: CollectionHeroSectionProps) {
+function CollectionHeroSkeleton() {
+  return (
+    <section
+      aria-label="Loading collection hero"
+      aria-busy="true"
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: HERO_HEIGHT,
+        overflow: 'hidden',
+        background: 'linear-gradient(135deg, #111827 0%, #1F2937 48%, #111827 100%)',
+      }}
+    >
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'radial-gradient(circle at 64% 36%, rgba(255,255,255,0.10), transparent 34rem)',
+        }}
+      />
+    </section>
+  );
+}
+
+export function CollectionHeroSection({ hero, isLoading = false }: CollectionHeroSectionProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -38,6 +66,10 @@ export function CollectionHeroSection({ hero }: CollectionHeroSectionProps) {
     return () => window.clearInterval(timer);
   }, [activeItems.length, hero?.heroType]);
 
+  if (isLoading) {
+    return <CollectionHeroSkeleton />;
+  }
+
   if (!hero?.active || activeItems.length === 0) {
     return null;
   }
@@ -52,7 +84,7 @@ export function CollectionHeroSection({ hero }: CollectionHeroSectionProps) {
       style={{
         position: 'relative',
         width: '100%',
-        minHeight: 'min(72vh, 720px)',
+        height: HERO_HEIGHT,
         overflow: 'hidden',
         backgroundColor: '#111827',
       }}
@@ -106,7 +138,7 @@ export function CollectionHeroSection({ hero }: CollectionHeroSectionProps) {
         style={{
           position: 'relative',
           zIndex: 1,
-          minHeight: 'min(72vh, 720px)',
+          height: HERO_HEIGHT,
           display: 'flex',
           alignItems: 'flex-end',
           maxWidth: '1440px',

@@ -211,6 +211,7 @@ function App() {
             />
 
             <Route path="/collection" element={<CollectionPage />} />
+            <Route path="/collections" element={<CollectionPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/product/:slug" element={<ProductDetailPage />} />

@@ -225,7 +225,7 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
       style={{
         maxWidth: '1440px',
         margin: '0 auto',
-        padding: '88px 20px 72px',
+        padding: '20px 20px 72px',
         boxSizing: 'border-box',
       }}
       className="sm:px-8"
@@ -233,7 +233,7 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
       <div style={{ marginBottom: '28px' }}>
         <p
           style={{
-            margin: '0 0 10px',
+            margin: '0 0 5px',
             fontSize: '12px',
             fontWeight: 600,
             letterSpacing: '0.18em',
@@ -243,28 +243,14 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
         >
           Collection
         </p>
-        <h1
-          style={{
-            margin: 0,
-            fontFamily: "'SF-Pro-Display', sans-serif",
-            fontSize: 'clamp(36px, 5vw, 72px)',
-            lineHeight: 0.96,
-            letterSpacing: '-0.04em',
-            fontWeight: 400,
-            color: '#111827',
-          }}
-        >
-          The ONEMISSION collection.
-        </h1>
         {collectionDescription ? (
           <p
             style={{
-              margin: '18px 0 0',
-              maxWidth: '640px',
-              fontSize: '16px',
+              fontSize: '12px',
               lineHeight: 1.7,
               color: '#4B5563',
             }}
+            className="max-w-full sm:max-w-[80%]"
           >
             {collectionDescription}
           </p>

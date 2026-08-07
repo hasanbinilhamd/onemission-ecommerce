@@ -260,7 +260,7 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
     <section
       aria-label="Collection page catalog"
       style={{
-        maxWidth: '1440px',
+        maxWidth: '100%',
         margin: '0 auto',
         padding: '20px 20px 72px',
         boxSizing: 'border-box',

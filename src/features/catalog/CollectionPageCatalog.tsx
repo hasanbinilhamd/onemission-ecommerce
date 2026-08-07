@@ -495,6 +495,8 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
                   product={product}
                   onClick={handleProductClick}
                   isNew={newProductIds.has(product.id)}
+                  appearance="collection"
+                  imageOnly={gridMode === 3}
                 />
               </div>
             ))}

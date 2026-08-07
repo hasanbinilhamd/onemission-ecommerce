@@ -29,6 +29,7 @@ interface ProductCardProps {
   onClick: (product: Product) => void;
   isNew?: boolean;
   appearance?: 'default' | 'collection' | 'featured';
+  imageOnly?: boolean;
 }
 
 export const ProductCard = memo(function ProductCard({
@@ -36,6 +37,7 @@ export const ProductCard = memo(function ProductCard({
   onClick,
   isNew = false,
   appearance = 'default',
+  imageOnly = false,
 }: ProductCardProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -43,7 +45,11 @@ export const ProductCard = memo(function ProductCard({
   const { isWishlisted, toggleItem } = useWishlist();
   const supportsHoverPreview = useMediaQuery('(hover: hover) and (pointer: fine)');
   const wishlisted = isWishlisted(product.id);
-  const imageSurfaceBackground = appearance === 'featured' ? '#E5E4E2' : '#FFFFFF';
+  const imageSurfaceBackground = appearance === 'featured'
+    ? '#E5E4E2'
+    : appearance === 'collection'
+      ? '#F3F4F6'
+      : '#FFFFFF';
 
   const [isHovered, setIsHovered] = useState(false);
   const [thumbnailLoadFailed, setThumbnailLoadFailed] = useState(false);
@@ -152,7 +158,7 @@ export const ProductCard = memo(function ProductCard({
             overflow: 'hidden',
             borderRadius: '6px',
             backgroundColor: imageSurfaceBackground,
-            marginBottom: '10px',
+            marginBottom: imageOnly ? 0 : '10px',
           }}
         >
           <div
@@ -219,57 +225,68 @@ export const ProductCard = memo(function ProductCard({
           </div>
         </div>
 
-        {product.category && (
+        <div
+          style={{
+            opacity: imageOnly ? 0 : 1,
+            maxHeight: imageOnly ? 0 : '96px',
+            overflow: 'hidden',
+            transition: 'opacity 230ms ease-out, max-height 230ms ease-out',
+          }}
+        >
+          {product.category && (
+            <p
+              style={{
+                margin: '0 0 3px',
+                fontSize: '10px',
+                fontWeight: 500,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                color: '#9CA3AF',
+              }}
+            >
+              {product.category.name}
+            </p>
+          )}
+
           <p
             style={{
-              margin: '0 0 3px',
-              fontSize: '10px',
-              fontWeight: 500,
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              color: '#9CA3AF',
+              margin: '0 0 4px',
+              fontSize: '13px',
+              fontWeight: 600,
+              color: '#111827',
+              lineHeight: 1.35,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
             }}
           >
-            {product.category.name}
+            {product.name}
           </p>
-        )}
 
-        <p
-          style={{
-            margin: '0 0 4px',
-            fontSize: '13px',
-            fontWeight: 600,
-            color: '#111827',
-            lineHeight: 1.35,
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-          }}
-        >
-          {product.name}
-        </p>
-
-        <p
-          style={{
-            margin: 0,
-            fontSize: '13px',
-            color: '#374151',
-            fontWeight: 500,
-          }}
-        >
-          {formatCurrency(product.price)}
-        </p>
+          <p
+            style={{
+              margin: 0,
+              fontSize: '13px',
+              color: '#374151',
+              fontWeight: 500,
+            }}
+          >
+            {formatCurrency(product.price)}
+          </p>
+        </div>
       </button>
 
-      <button
-        type="button"
-        aria-label={wishlisted ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
-        onClick={handleWishlistClick}
-        className={`absolute right-3 top-3 inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${wishlisted ? 'border-black bg-black text-white' : 'border-white/80 bg-white/90 text-neutral-700 hover:bg-white'}`}
-      >
-        <Heart size={16} fill={wishlisted ? 'currentColor' : 'none'} />
-      </button>
+      {!imageOnly ? (
+        <button
+          type="button"
+          aria-label={wishlisted ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
+          onClick={handleWishlistClick}
+          className={`absolute right-3 top-3 inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${wishlisted ? 'border-black bg-black text-white' : 'border-white/80 bg-white/90 text-neutral-700 hover:bg-white'}`}
+        >
+          <Heart size={16} fill={wishlisted ? 'currentColor' : 'none'} />
+        </button>
+      ) : null}
     </div>
   );
 });

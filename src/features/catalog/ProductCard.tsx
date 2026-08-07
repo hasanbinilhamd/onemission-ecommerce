@@ -156,7 +156,6 @@ export const ProductCard = memo(function ProductCard({
             width: '100%',
             paddingBottom: '133%',
             overflow: 'hidden',
-            borderRadius: '6px',
             backgroundColor: imageSurfaceBackground,
             marginBottom: imageOnly ? 0 : '10px',
           }}

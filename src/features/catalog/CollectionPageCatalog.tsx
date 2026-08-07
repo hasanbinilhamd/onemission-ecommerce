@@ -11,6 +11,7 @@ import { DEFAULT_FILTERS, type FilterState } from './filterState';
 
 type SortOption = 'newest' | 'price_asc' | 'price_desc' | 'name_asc' | 'name_desc';
 type CategoryChip = { id: string | null; name: string };
+type GridMode = 1 | 2 | 3;
 
 const SORT_LABELS: Record<SortOption, string> = {
   newest: 'Newest',
@@ -23,6 +24,17 @@ const SORT_LABELS: Record<SortOption, string> = {
 const ALL_CHIP: CategoryChip = { id: null, name: 'All' };
 const PAGE_SIZE = 8;
 const MAX_REMOTE_LIMIT = 48;
+const GRID_MODE_STORAGE_KEY = 'collection-grid-mode';
+const GRID_MODE_OPTIONS: Array<{ mode: GridMode; label: string; iconColumns: number }> = [
+  { mode: 1, label: '3 columns', iconColumns: 1 },
+  { mode: 2, label: '4 columns', iconColumns: 2 },
+  { mode: 3, label: '6 columns', iconColumns: 3 },
+];
+const GRID_MODE_CLASSES: Record<GridMode, string> = {
+  1: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
+  2: 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
+  3: 'grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6',
+};
 
 function countActiveFilters(filters: FilterState): number {
   return (
@@ -49,6 +61,25 @@ function matchesSize(product: Product, sizes: string[]): boolean {
   }) ?? false;
 }
 
+function getDefaultGridMode(): GridMode {
+  if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) {
+    return 2;
+  }
+
+  return 1;
+}
+
+function readStoredGridMode(): GridMode {
+  if (typeof window === 'undefined') {
+    return 1;
+  }
+
+  const storedValue = Number(window.localStorage.getItem(GRID_MODE_STORAGE_KEY));
+  return storedValue === 1 || storedValue === 2 || storedValue === 3
+    ? storedValue
+    : getDefaultGridMode();
+}
+
 interface CollectionPageCatalogProps {
   onProductSelect: (slug: string) => void;
   collectionDescription?: string;
@@ -73,12 +104,17 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [newProductIds, setNewProductIds] = useState<ReadonlySet<string>>(new Set());
+  const [gridMode, setGridMode] = useState<GridMode>(readStoredGridMode);
 
   const debouncedSearch = useDebounce(search, 300);
 
   useEffect(() => {
     visibleCountRef.current = visibleCount;
   }, [visibleCount]);
+
+  useEffect(() => {
+    window.localStorage.setItem(GRID_MODE_STORAGE_KEY, String(gridMode));
+  }, [gridMode]);
 
   const loadCategories = useCallback(async () => {
     setIsLoadingCategories(true);
@@ -172,6 +208,7 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
   const visibleProducts = filtered.slice(0, visibleCount);
   const hasMore = visibleCount < filtered.length;
   const activeFilterCount = countActiveFilters(filters);
+  const gridClassName = GRID_MODE_CLASSES[gridMode];
 
   const handleProductClick = useCallback((product: Product) => {
     onProductSelect(product.slug);
@@ -257,21 +294,7 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
         ) : null}
       </div>
 
-      <div
-        style={{
-          position: 'sticky',
-          top: '56px',
-          zIndex: 20,
-          backgroundColor: 'rgba(255,255,255,0.92)',
-          backdropFilter: 'blur(18px)',
-          WebkitBackdropFilter: 'blur(18px)',
-          border: '1px solid rgba(229,231,235,0.9)',
-          borderRadius: '20px',
-          padding: '16px',
-          marginBottom: '28px',
-          boxShadow: '0 16px 40px rgba(15,23,42,0.06)',
-        }}
-      >
+      <div style={{ marginBottom: '28px' }}>
         <div style={{ position: 'relative', marginBottom: '14px' }}>
           <svg
             width="15"
@@ -299,7 +322,8 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
             aria-label="Search products"
             style={{
               width: '100%',
-              padding: '11px 12px 11px 36px',
+              height: 'clamp(40px, 4.2vw, 44px)',
+              padding: '0 12px 0 36px',
               border: '1px solid #E5E7EB',
               borderRadius: '10px',
               fontSize: '14px',
@@ -317,78 +341,124 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
           />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: '6px',
+            overflowX: 'auto',
+            paddingBottom: '2px',
+            scrollbarWidth: 'none',
+            marginBottom: '14px',
+          }}
+        >
+          {categoryChips.map((category) => (
+            <button
+              key={category.id ?? 'all'}
+              type="button"
+              onClick={() => setActiveCategory(category.id)}
+              style={chipStyle(activeCategory === category.id)}
+            >
+              {category.name}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
           <div
-            style={{
-              display: 'flex',
-              gap: '6px',
-              flex: 1,
-              overflowX: 'auto',
-              paddingBottom: '2px',
-              scrollbarWidth: 'none',
-              minWidth: '220px',
-            }}
+            role="group"
+            aria-label="Product grid layout"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
           >
-            {categoryChips.map((category) => (
-              <button
-                key={category.id ?? 'all'}
-                type="button"
-                onClick={() => setActiveCategory(category.id)}
-                style={chipStyle(activeCategory === category.id)}
-              >
-                {category.name}
-              </button>
-            ))}
+            {GRID_MODE_OPTIONS.map((option) => {
+              const active = gridMode === option.mode;
+              return (
+                <button
+                  key={option.mode}
+                  type="button"
+                  aria-label={option.label}
+                  aria-pressed={active}
+                  onClick={() => setGridMode(option.mode)}
+                  style={{
+                    width: '34px',
+                    height: '34px',
+                    border: active ? '1px solid #111827' : '1px solid #E5E7EB',
+                    borderRadius: '8px',
+                    backgroundColor: active ? '#111827' : '#FFFFFF',
+                    color: active ? '#FFFFFF' : '#374151',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'background-color 180ms ease, color 180ms ease, border-color 180ms ease',
+                  }}
+                >
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: `repeat(${option.iconColumns}, 4px)`,
+                      gap: '3px',
+                    }}
+                  >
+                    {Array.from({ length: option.iconColumns }).map((_, index) => (
+                      <span key={index} style={{ width: '4px', height: '12px', borderRadius: '1px', backgroundColor: 'currentColor' }} />
+                    ))}
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
-          <select
-            value={sort}
-            onChange={(event) => setSort(event.target.value as SortOption)}
-            aria-label="Sort products"
-            disabled={isLoadingCategories}
-            style={{
-              flexShrink: 0,
-              padding: '7px 10px',
-              border: '1px solid #E5E7EB',
-              borderRadius: '8px',
-              fontSize: '12px',
-              cursor: 'pointer',
-              outline: 'none',
-              backgroundColor: '#FFFFFF',
-            }}
-          >
-            {(Object.entries(SORT_LABELS) as [SortOption, string][]).map(([value, label]) => (
-              <option key={value} value={value}>{label}</option>
-            ))}
-          </select>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <select
+              value={sort}
+              onChange={(event) => setSort(event.target.value as SortOption)}
+              aria-label="Sort products"
+              disabled={isLoadingCategories}
+              style={{
+                flexShrink: 0,
+                padding: '7px 10px',
+                border: '1px solid #E5E7EB',
+                borderRadius: '8px',
+                fontSize: '12px',
+                cursor: 'pointer',
+                outline: 'none',
+                backgroundColor: '#FFFFFF',
+              }}
+            >
+              {(Object.entries(SORT_LABELS) as [SortOption, string][]).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
 
-          <button
-            type="button"
-            onClick={() => setFilterOpen(true)}
-            aria-label="Open filters"
-            style={{
-              flexShrink: 0,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-              padding: '7px 12px',
-              border: activeFilterCount > 0 ? '1px solid #111827' : '1px solid #E5E7EB',
-              borderRadius: '8px',
-              backgroundColor: activeFilterCount > 0 ? '#111827' : '#FFFFFF',
-              color: activeFilterCount > 0 ? '#FFFFFF' : '#374151',
-              fontSize: '12px',
-              fontWeight: 500,
-              cursor: 'pointer',
-              transition: 'all 150ms ease',
-            }}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <line x1="4" y1="6" x2="20" y2="6" />
-              <line x1="8" y1="12" x2="16" y2="12" />
-              <line x1="11" y1="18" x2="13" y2="18" />
-            </svg>
-            Filter{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
-          </button>
+            <button
+              type="button"
+              onClick={() => setFilterOpen(true)}
+              aria-label="Open filters"
+              style={{
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '7px 12px',
+                border: activeFilterCount > 0 ? '1px solid #111827' : '1px solid #E5E7EB',
+                borderRadius: '8px',
+                backgroundColor: activeFilterCount > 0 ? '#111827' : '#FFFFFF',
+                color: activeFilterCount > 0 ? '#FFFFFF' : '#374151',
+                fontSize: '12px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'all 150ms ease',
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="4" y1="6" x2="20" y2="6" />
+                <line x1="8" y1="12" x2="16" y2="12" />
+                <line x1="11" y1="18" x2="13" y2="18" />
+              </svg>
+              Filter{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -399,7 +469,7 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
       ) : null}
 
       {isLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" style={{ display: 'grid', gap: '20px 16px' }}>
+        <div className={gridClassName} style={{ display: 'grid', gap: '20px 16px', transition: 'all 280ms ease-out' }}>
           {Array.from({ length: PAGE_SIZE }).map((_, index) => <ProductCardSkeleton key={index} />)}
         </div>
       ) : null}
@@ -418,14 +488,15 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
 
       {!isLoading && !errorMessage && visibleProducts.length > 0 ? (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" style={{ display: 'grid', gap: '20px 16px' }}>
+          <div className={gridClassName} style={{ display: 'grid', gap: '20px 16px', transition: 'all 280ms ease-out' }}>
             {visibleProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onClick={handleProductClick}
-                isNew={newProductIds.has(product.id)}
-              />
+              <div key={product.id} style={{ minWidth: 0, transition: 'all 280ms ease-out' }}>
+                <ProductCard
+                  product={product}
+                  onClick={handleProductClick}
+                  isNew={newProductIds.has(product.id)}
+                />
+              </div>
             ))}
           </div>
 

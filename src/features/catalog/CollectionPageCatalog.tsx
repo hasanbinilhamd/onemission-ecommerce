@@ -262,12 +262,12 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
       style={{
         maxWidth: '100%',
         margin: '0 auto',
-        padding: '20px 20px 72px',
+        padding: '20px 0px 72px',
         boxSizing: 'border-box',
       }}
       className="sm:px-8"
     >
-      <div style={{ marginBottom: '28px' }}>
+      <div style={{ marginBottom: '28px' }} className="px-5">
         <p
           style={{
             margin: '0 0 5px',
@@ -294,7 +294,7 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
         ) : null}
       </div>
 
-      <div style={{ marginBottom: '28px' }}>
+      <div style={{ marginBottom: '28px' }} className="px-5">
         <div style={{ position: 'relative', marginBottom: '14px' }}>
           <svg
             width="15"
@@ -463,7 +463,7 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
       </div>
 
       {!isLoading && !errorMessage ? (
-        <p style={{ margin: '0 0 20px', fontSize: '12px', color: '#9CA3AF' }}>
+        <p style={{ margin: '0 20px 20px', fontSize: '12px', color: '#9CA3AF' }}>
           {filtered.length} {filtered.length === 1 ? 'product' : 'products'}
         </p>
       ) : null}
@@ -495,8 +495,6 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
                   product={product}
                   onClick={handleProductClick}
                   isNew={newProductIds.has(product.id)}
-                  appearance="collection"
-                  imageOnly={gridMode === 3}
                 />
               </div>
             ))}

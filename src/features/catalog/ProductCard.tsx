@@ -232,6 +232,7 @@ export const ProductCard = memo(function ProductCard({
             overflow: 'hidden',
             transition: 'opacity 230ms ease-out, max-height 230ms ease-out',
           }}
+          className="px-3"
         >
           {product.category && (
             <p

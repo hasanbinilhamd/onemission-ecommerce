@@ -31,9 +31,9 @@ const GRID_MODE_OPTIONS: Array<{ mode: GridMode; label: string; iconColumns: num
   { mode: 3, label: '6 columns', iconColumns: 3 },
 ];
 const GRID_MODE_CLASSES: Record<GridMode, string> = {
-  1: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
-  2: 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
-  3: 'grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6',
+  1: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-5 gap-x-0',
+  2: 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-y-5 gap-x-0',
+  3: 'grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-y-1 md:gap-y-5 gap-x-1 md:gap-x-0',
 };
 
 function countActiveFilters(filters: FilterState): number {
@@ -379,18 +379,17 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
                   aria-pressed={active}
                   onClick={() => setGridMode(option.mode)}
                   style={{
-                    width: '34px',
-                    height: '34px',
-                    border: active ? '1px solid #111827' : '1px solid #E5E7EB',
-                    borderRadius: '8px',
-                    backgroundColor: active ? '#111827' : '#FFFFFF',
-                    color: active ? '#FFFFFF' : '#374151',
+                    // border: active ? '1px solid #111827' : '1px solid #E5E7EB',
+                    // borderRadius: '8px',
+                    // backgroundColor: active ? '#111827' : '#FFFFFF',
+                    color: active ? '#374151' : '#aaaaaa',
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
                     transition: 'background-color 180ms ease, color 180ms ease, border-color 180ms ease',
                   }}
+                  className="w-6 h-6 md:w-8 md:h-8"
                 >
                   <span
                     aria-hidden="true"
@@ -469,7 +468,7 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
       ) : null}
 
       {isLoading ? (
-        <div className={gridClassName} style={{ display: 'grid', gap: '20px 16px', transition: 'all 280ms ease-out' }}>
+        <div className={gridClassName} style={{ display: 'grid', transition: 'all 280ms ease-out' }}>
           {Array.from({ length: PAGE_SIZE }).map((_, index) => <ProductCardSkeleton key={index} />)}
         </div>
       ) : null}
@@ -488,7 +487,7 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
 
       {!isLoading && !errorMessage && visibleProducts.length > 0 ? (
         <>
-          <div className={gridClassName} style={{ display: 'grid', gap: '20px 16px', transition: 'all 280ms ease-out' }}>
+          <div className={gridClassName} style={{ display: 'grid', transition: 'all 280ms ease-out' }}>
             {visibleProducts.map((product) => (
               <div key={product.id} style={{ minWidth: 0, transition: 'all 280ms ease-out' }}>
                 <ProductCard

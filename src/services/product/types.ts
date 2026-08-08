@@ -101,6 +101,14 @@ export interface CommerceProductGalleryItemApiDto {
   sortOrder: number;
 }
 
+export interface CommerceProductShowcaseItemApiDto {
+  id: string;
+  mediaType: 'image' | 'video';
+  mediaUrl: string;
+  sortOrder: number;
+  active: boolean;
+}
+
 export interface CommerceProductDetailApiDto {
   id: string;
   slug: string;
@@ -118,6 +126,7 @@ export interface CommerceProductDetailApiDto {
   reviewCount: number;
   gallery: string[];
   galleryMedia?: CommerceProductGalleryItemApiDto[];
+  productShowcaseItems?: CommerceProductShowcaseItemApiDto[];
   category: {
     id: string;
     name: string;

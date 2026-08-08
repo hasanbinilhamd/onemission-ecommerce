@@ -1,4 +1,4 @@
-import type { Category, Product, ProductGalleryItem, Variant } from '../../types';
+import type { Category, Product, ProductGalleryItem, ProductShowcaseItem, Variant } from '../../types';
 import type {
   CommerceCategoryApiDto,
   CommerceProductCardApiDto,
@@ -65,6 +65,22 @@ export function mapCommerceProductGalleryItem(dto: CommerceProductGalleryItemApi
     mediaType: dto.mediaType,
     mediaUrl: dto.mediaUrl,
     sortOrder: dto.sortOrder,
+  };
+}
+
+export function mapCommerceProductShowcaseItem(dto: {
+  id: string;
+  mediaType: 'image' | 'video';
+  mediaUrl: string;
+  sortOrder: number;
+  active?: boolean;
+}): ProductShowcaseItem {
+  return {
+    id: dto.id,
+    mediaType: dto.mediaType,
+    mediaUrl: dto.mediaUrl,
+    sortOrder: dto.sortOrder,
+    active: dto.active ?? true,
   };
 }
 
@@ -140,6 +156,9 @@ export function mapCommerceProductDetail(dto: CommerceProductDetailApiDto): Prod
     reviewCount: dto.reviewCount,
     images: galleryItems.filter((item) => item.mediaType === 'image').map((item) => item.mediaUrl),
     galleryItems,
+    productShowcaseItems: Array.isArray(dto.productShowcaseItems)
+      ? dto.productShowcaseItems.map(mapCommerceProductShowcaseItem)
+      : [],
     category: {
       id: dto.category.id,
       name: dto.category.name,

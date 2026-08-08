@@ -31,6 +31,14 @@ export interface ProductGalleryItem {
   sortOrder: number;
 }
 
+export interface ProductShowcaseItem {
+  id: string;
+  mediaType: 'image' | 'video';
+  mediaUrl: string;
+  sortOrder: number;
+  active: boolean;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -49,6 +57,7 @@ export interface Product {
   /** Ordered gallery images derived from galleryItems for compatibility. */
   images?: string[];
   galleryItems?: ProductGalleryItem[];
+  productShowcaseItems?: ProductShowcaseItem[];
   category?: Category;
   variants?: Variant[];
   tags?: string[];

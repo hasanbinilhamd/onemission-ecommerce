@@ -8,6 +8,7 @@ import { EmptyState } from '../components/shared/EmptyState';
 import { LoadingSkeleton } from '../components/shared/LoadingSkeleton';
 import { productService } from '../services/product';
 import { ProductMediaGallery } from '../features/product/ProductMediaGallery';
+import { ProductShowcaseSection } from '../features/product/ProductShowcaseSection';
 import { CustomerReviewsSection, RatingStars } from '../features/reviews';
 import { formatCurrency } from '../utils/formatting';
 import { useCartStore } from '../stores';
@@ -469,7 +470,7 @@ function ProductDetailContent() {
         <div style={{ width: '120px' }} />
       </div>
 
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0px 24px 80px' }}>
+      <div style={{ width: '100%', padding: '0px 24px 80px', boxSizing: 'border-box' }}>
         <div className="lg:grid lg:grid-cols-5 lg:gap-12">
           <div className="lg:col-span-3" style={{ marginBottom: '32px' }}>
             <ProductMediaGallery product={product} />
@@ -638,6 +639,8 @@ function ProductDetailContent() {
             <SizeGuideContent imageUrl={product.sizeGuideImageUrl} />
           </AccordionSection>
         </div>
+
+        <ProductShowcaseSection items={product.productShowcaseItems} productName={product.name} />
 
         <CustomerReviewsSection product={product} />
 

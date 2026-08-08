@@ -232,7 +232,9 @@ export function ProductMediaGallery({ product }: { product: Product }) {
                 className="product-media-thumbnail-scroller"
                 style={{
                   display: 'grid',
-                  gap: '10px',
+                  // gap: '10px',
+                  textAlign: 'center',
+                  justifyContent: 'end',
                   maxHeight: '620px',
                   overflowY: 'auto',
                   alignContent: 'start',
@@ -244,25 +246,42 @@ export function ProductMediaGallery({ product }: { product: Product }) {
                   const isActive = index === activeIndex;
                   return (
                     <button
+                      className="relative flex items-center justify-center"
                       key={item.id}
                       type="button"
                       onClick={() => setActiveIndex(index)}
                       aria-label={`View media ${index + 1}`}
                       style={{
                         position: 'relative',
-                        width: '96px',
-                        height: '120px',
-                        borderRadius: '10px',
-                        overflow: 'hidden',
+                        width: '66px',
+                        height: '90px',
+                        overflow: 'visible',
                         padding: 0,
-                        border: isActive ? '2px solid #111827' : '1px solid #E5E7EB',
-                        backgroundColor: '#f1f1f4',
+                        opacity: isActive ? 1 : 0.4,
+                        transform: isActive ? 'scale(1)' : 'scale(0.96)',
                         cursor: 'pointer',
-                        transition: 'border-color 200ms ease, transform 200ms ease',
+                        transition: `
+                          opacity 650ms cubic-bezier(0.4, 0, 0.2, 1),
+                          transform 650ms cubic-bezier(0.4, 0, 0.2, 1)
+                        `,
                         flexShrink: 0,
                       }}
                     >
-                      <ProductMediaSurface item={item} alt={`${product.name} media ${index + 1}`} mode="thumbnail" />
+                      {isActive && (
+                        <div className="
+                          absolute left-0 top-1/2
+                          h-1.5 w-1.5
+                          -translate-x-2 -translate-y-1/2
+                          rounded-full bg-[#111827]
+                          transition-all duration-650
+                        " />
+                      )}
+
+                      <ProductMediaSurface
+                        item={item}
+                        alt={`${product.name} media ${index + 1}`}
+                        mode="thumbnail"
+                      />
                     </button>
                   );
                 })}
@@ -275,7 +294,7 @@ export function ProductMediaGallery({ product }: { product: Product }) {
               position: 'relative',
               width: '100%',
               minHeight: '620px',
-              borderRadius: '12px',
+              // borderRadius: '12px',
               overflow: 'hidden',
               backgroundColor: '#f1f1f4',
               border: '1px solid #F3F4F6',
@@ -302,7 +321,7 @@ export function ProductMediaGallery({ product }: { product: Product }) {
               scrollSnapType: 'x mandatory',
               scrollBehavior: 'smooth',
               WebkitOverflowScrolling: 'touch',
-              borderRadius: '12px',
+              // borderRadius: '12px',
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
             }}
@@ -319,7 +338,7 @@ export function ProductMediaGallery({ product }: { product: Product }) {
                   scrollSnapStop: 'always',
                   backgroundColor: '#f1f1f4',
                   border: '1px solid #F3F4F6',
-                  borderRadius: '12px',
+                  // borderRadius: '12px',
                   overflow: 'hidden',
                 }}
               >

@@ -469,13 +469,13 @@ function ProductDetailContent() {
         <div style={{ width: '120px' }} />
       </div>
 
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px 80px' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0px 24px 80px' }}>
         <div className="lg:grid lg:grid-cols-5 lg:gap-12">
           <div className="lg:col-span-3" style={{ marginBottom: '32px' }}>
             <ProductMediaGallery product={product} />
           </div>
 
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 md:pt-8">
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
               {product.category && (
                 <span style={{ fontSize: '11px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9CA3AF' }}>

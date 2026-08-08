@@ -218,6 +218,7 @@ export function ProductMediaGallery({ product }: { product: Product }) {
         width: isDesktop ? '100%' : '100vw',
         marginLeft: isDesktop ? undefined : 'calc(50% - 50vw)',
         marginRight: isDesktop ? undefined : 'calc(50% - 50vw)',
+        marginTop: isDesktop ? '32px' : undefined,
       }}
     >
       {isDesktop ? (

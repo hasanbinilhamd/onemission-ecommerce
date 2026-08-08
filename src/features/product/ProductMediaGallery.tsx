@@ -263,7 +263,10 @@ export function ProductMediaGallery({ product }: { product: Product }) {
                         width: '66px',
                         height: '90px',
                         overflow: 'visible',
+                        // borderRadius: '10px',
                         padding: 0,
+                        // border: isActive ? '1.8px solid #111827' : '1px solid #E5E7EB',
+                        backgroundColor: '#f1f1f4',
                         opacity: isActive ? 1 : 0.4,
                         transform: isActive ? 'scale(1)' : 'scale(0.96)',
                         cursor: 'pointer',
@@ -278,7 +281,7 @@ export function ProductMediaGallery({ product }: { product: Product }) {
                         <div className="
                           absolute left-0 top-1/2
                           h-1.5 w-1.5
-                          -translate-x-2 -translate-y-1/2
+                          -translate-x-4 -translate-y-1/2
                           rounded-full bg-[#111827]
                           transition-all duration-650
                         " />

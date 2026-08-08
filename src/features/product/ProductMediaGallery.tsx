@@ -213,7 +213,13 @@ export function ProductMediaGallery({ product }: { product: Product }) {
   }
 
   return (
-    <div style={{ width: '100%' }}>
+    <div
+      style={{
+        width: isDesktop ? '100%' : '100vw',
+        marginLeft: isDesktop ? undefined : 'calc(50% - 50vw)',
+        marginRight: isDesktop ? undefined : 'calc(50% - 50vw)',
+      }}
+    >
       {isDesktop ? (
         <div
           style={{

@@ -239,7 +239,7 @@ export function ProductMediaGallery({ product }: { product: Product }) {
                 className="product-media-thumbnail-scroller"
                 style={{
                   display: 'grid',
-                  // gap: '10px',
+                  gap: '8px',
                   textAlign: 'center',
                   justifyContent: 'end',
                   maxHeight: '620px',

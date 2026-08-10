@@ -61,6 +61,32 @@ function matchesSize(product: Product, sizes: string[]): boolean {
   }) ?? false;
 }
 
+function hasVariantFilterData(product: Product): boolean {
+  return product.variants?.some((variant) => Boolean(variant.color || variant.size)) ?? false;
+}
+
+async function loadVariantFilterDetails(products: Product[]): Promise<Product[]> {
+  return Promise.all(products.map(async (product) => {
+    if (!product.hasVariants || hasVariantFilterData(product)) {
+      return product;
+    }
+
+    try {
+      const detail = await productService.getProductDetail(product.slug);
+      if (!detail || !hasVariantFilterData(detail)) {
+        return product;
+      }
+
+      return {
+        ...product,
+        variants: detail.variants,
+      };
+    } catch {
+      return product;
+    }
+  }));
+}
+
 function getDefaultGridMode(): GridMode {
   if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) {
     return 2;
@@ -151,7 +177,8 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
         maxPrice: filters.maxPrice < 999999 ? filters.maxPrice : undefined,
       });
 
-      setServerProducts(response.products);
+      const productsWithVariantFilters = await loadVariantFilterDetails(response.products);
+      setServerProducts(productsWithVariantFilters);
     } catch {
       setErrorMessage('Unable to load products right now. Please try again.');
     } finally {

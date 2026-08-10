@@ -117,7 +117,7 @@ function ProductMediaSurface({
   mode?: MediaSurfaceMode;
 }) {
   const isPreview = mode === 'preview';
-  const objectFit = 'contain';
+  const objectFit = 'cover';
   const objectPosition = isPreview ? 'center top' : 'center center';
 
   if (item.mediaType === 'video') {

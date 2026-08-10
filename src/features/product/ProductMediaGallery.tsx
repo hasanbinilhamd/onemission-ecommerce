@@ -117,7 +117,7 @@ function ProductMediaSurface({
   mode?: MediaSurfaceMode;
 }) {
   const isPreview = mode === 'preview';
-  const objectFit = 'cover';
+  const objectFit = 'contain';
   const objectPosition = isPreview ? 'center top' : 'center center';
 
   if (item.mediaType === 'video') {
@@ -303,7 +303,7 @@ export function ProductMediaGallery({ product }: { product: Product }) {
             style={{
               position: 'relative',
               width: '100%',
-              minHeight: '620px',
+              aspectRatio: '4 / 5',
               // borderRadius: '12px',
               overflow: 'hidden',
               backgroundColor: '#f1f1f4',

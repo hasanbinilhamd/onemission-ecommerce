@@ -101,7 +101,7 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
   const [serverProducts, setServerProducts] = useState<Product[]>([]);
   const [categoryChips, setCategoryChips] = useState<CategoryChip[]>([ALL_CHIP]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const [, setIsLoadingCategories] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [newProductIds, setNewProductIds] = useState<ReadonlySet<string>>(new Set());
   const [gridMode, setGridMode] = useState<GridMode>(readStoredGridMode);
@@ -445,32 +445,10 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
               </button>
             </div>
 
-            <select
-              value={sort}
-              onChange={(event) => setSort(event.target.value as SortOption)}
-              aria-label="Sort products"
-              disabled={isLoadingCategories}
-              style={{
-                flexShrink: 0,
-                height: '30px',
-                padding: '6px 8px',
-                border: '1px solid #E5E7EB',
-                borderRadius: '8px',
-                fontSize: '12px',
-                cursor: 'pointer',
-                outline: 'none',
-                backgroundColor: '#FFFFFF',
-              }}
-            >
-              {(Object.entries(SORT_LABELS) as [SortOption, string][]).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
-
             <button
               type="button"
               onClick={() => setFilterOpen(true)}
-              aria-label="Open filters"
+              aria-label="Open filter and sort"
               style={{
                 flexShrink: 0,
                 display: 'flex',
@@ -493,7 +471,7 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
                 <line x1="8" y1="12" x2="16" y2="12" />
                 <line x1="11" y1="18" x2="13" y2="18" />
               </svg>
-              Filter{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+              Filter & Sort{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
             </button>
           </div>
         </div>
@@ -584,6 +562,9 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
         onReset={handleResetFilters}
         availableColors={availableColors}
         availableSizes={availableSizes}
+        sort={sort}
+        sortOptions={(Object.entries(SORT_LABELS) as [SortOption, string][]).map(([value, label]) => ({ value, label }))}
+        onSortChange={(value) => setSort(value as SortOption)}
       />
     </section>
   );

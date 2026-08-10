@@ -10,6 +10,9 @@ interface FilterDrawerProps {
   onReset: () => void;
   availableColors: string[];
   availableSizes: string[];
+  sort?: string;
+  sortOptions?: Array<{ value: string; label: string }>;
+  onSortChange?: (sort: string) => void;
 }
 
 function toggleItem(arr: string[], item: string): string[] {
@@ -24,14 +27,20 @@ export function FilterDrawer({
   onReset,
   availableColors,
   availableSizes,
+  sort = '',
+  sortOptions = [],
+  onSortChange,
 }: FilterDrawerProps) {
   const [draft, setDraft] = useState<FilterState>(filters);
+  const [draftSort, setDraftSort] = useState(sort);
+  const hasSortControls = Boolean(onSortChange && sortOptions.length > 0);
 
   useEffect(() => {
     if (open) {
       setDraft(filters);
+      setDraftSort(sort);
     }
-  }, [filters, open]);
+  }, [filters, open, sort]);
 
   const toggleColor = (color: string) => {
     setDraft(d => ({ ...d, colors: toggleItem(d.colors, color) }));
@@ -43,6 +52,9 @@ export function FilterDrawer({
 
   const handleApply = () => {
     onApply(draft);
+    if (hasSortControls && draftSort) {
+      onSortChange?.(draftSort);
+    }
     onClose();
   };
 
@@ -89,8 +101,34 @@ export function FilterDrawer({
   );
 
   return (
-    <Drawer open={open} onClose={onClose} position="bottom" title="Filter">
+    <Drawer open={open} onClose={onClose} position="bottom" title={hasSortControls ? 'Filter & Sort' : 'Filter'}>
       <div style={{ padding: '16px 20px 24px' }}>
+        {hasSortControls ? (
+          <div style={{ marginBottom: '24px' }}>
+            {sectionTitle('Sort')}
+            <select
+              value={draftSort}
+              onChange={event => setDraftSort(event.target.value)}
+              aria-label="Sort products"
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                border: '1px solid #E5E7EB',
+                borderRadius: '8px',
+                fontSize: '13px',
+                cursor: 'pointer',
+                outline: 'none',
+                backgroundColor: '#FFFFFF',
+                boxSizing: 'border-box',
+              }}
+            >
+              {sortOptions.map(option => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
+        ) : null}
+
         <div style={{ marginBottom: '24px' }}>
           {sectionTitle('Color')}
           {availableColors.length > 0 ? (
@@ -162,7 +200,7 @@ export function FilterDrawer({
             onClick={handleApply}
             style={{ flex: 2, padding: '12px', border: 'none', borderRadius: '6px', backgroundColor: '#111827', color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
           >
-            Apply Filters
+            {hasSortControls ? 'Apply Filter & Sort' : 'Apply Filters'}
           </button>
         </div>
       </div>

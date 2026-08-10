@@ -268,7 +268,7 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
       }}
       className="sm:px-8"
     >
-      <div style={{ marginBottom: '28px' }} className="px-5">
+      <div className="px-5 mb-3 sm:mb-5">
         <p
           style={{
             margin: '0 0 5px',
@@ -407,10 +407,8 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
                 </button>
               );
             })}
-          </div>
 
-          <div className="flex flex-wrap sm:flex-nowrap items-center justify-end gap-2">
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+            <div className='sm:flex hidden ml-2' style={{ alignItems: 'center', gap: '6px', flexShrink: 0 }}>
               <span style={{ fontSize: '12px', fontWeight: 500, color: '#374151' }}>Model</span>
               <button
                 type="button"
@@ -444,7 +442,46 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
                 />
               </button>
             </div>
+          </div>
 
+          <div className='flex sm:hidden' style={{ alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+            <span style={{ fontSize: '12px', fontWeight: 500, color: '#374151' }}>Model</span>
+            <button
+              type="button"
+              role="switch"
+              aria-label="Model"
+              aria-checked={modelViewEnabled}
+              onClick={() => setModelViewEnabled((current) => !current)}
+              style={{
+                width: '30px',
+                height: '16px',
+                border: modelViewEnabled ? '1px solid #111827' : '1px solid #D1D5DB',
+                borderRadius: '999px',
+                backgroundColor: modelViewEnabled ? '#111827' : '#FFFFFF',
+                padding: '2px',
+                cursor: 'pointer',
+                transition: 'background-color 160ms ease, border-color 160ms ease',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: modelViewEnabled ? 'flex-end' : 'flex-start',
+              }}
+            >
+              <span
+                aria-hidden="true"
+                style={{
+                  width: '10px',
+                  height: '10px',
+                  borderRadius: '999px',
+                  backgroundColor: modelViewEnabled ? '#FFFFFF' : '#9CA3AF',
+                  transition: 'background-color 160ms ease',
+                }}
+              />
+            </button>
+          </div>
+
+          <div className="flex flex-wrap sm:flex-nowrap items-center justify-end gap-2">
+            
+            
             <button
               type="button"
               onClick={() => setFilterOpen(true)}

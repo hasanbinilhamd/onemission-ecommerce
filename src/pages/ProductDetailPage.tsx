@@ -652,7 +652,7 @@ function ProductDetailContent() {
             {renderProductAccordion()}
           </div>
 
-          <div className="lg:col-span-5">
+          <div className="lg:col-span-3">
             <ProductShowcaseSection items={product.productShowcaseItems} productName={product.name} />
           </div>
 

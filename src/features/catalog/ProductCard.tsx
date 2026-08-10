@@ -30,6 +30,7 @@ interface ProductCardProps {
   isNew?: boolean;
   appearance?: 'default' | 'collection' | 'featured';
   imageOnly?: boolean;
+  modelViewEnabled?: boolean;
 }
 
 export const ProductCard = memo(function ProductCard({
@@ -38,6 +39,7 @@ export const ProductCard = memo(function ProductCard({
   isNew = false,
   appearance = 'default',
   imageOnly = false,
+  modelViewEnabled = false,
 }: ProductCardProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -80,7 +82,7 @@ export const ProductCard = memo(function ProductCard({
   }, [product.id, product.imageUrl]);
 
   useEffect(() => {
-    if (!supportsHoverPreview || !hasDedicatedHoverImage) {
+    if ((!supportsHoverPreview && !modelViewEnabled) || !hasDedicatedHoverImage) {
       setHoverImageReady(false);
       return undefined;
     }
@@ -105,9 +107,11 @@ export const ProductCard = memo(function ProductCard({
     return () => {
       isActive = false;
     };
-  }, [hasDedicatedHoverImage, hoverSrc, supportsHoverPreview]);
+  }, [hasDedicatedHoverImage, hoverSrc, modelViewEnabled, supportsHoverPreview]);
 
-  const showHoverImage = supportsHoverPreview && isHovered && hoverImageReady && hasDedicatedHoverImage;
+  const showHoverImage = hoverImageReady
+    && hasDedicatedHoverImage
+    && (modelViewEnabled ? !isHovered : supportsHoverPreview && isHovered);
 
   const handleWishlistClick = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();

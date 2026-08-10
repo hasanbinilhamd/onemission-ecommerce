@@ -105,6 +105,7 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [newProductIds, setNewProductIds] = useState<ReadonlySet<string>>(new Set());
   const [gridMode, setGridMode] = useState<GridMode>(readStoredGridMode);
+  const [modelViewEnabled, setModelViewEnabled] = useState(false);
 
   const debouncedSearch = useDebounce(search, 300);
 
@@ -409,6 +410,41 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', flexShrink: 0 }}>
+              <span style={{ fontSize: '12px', fontWeight: 500, color: '#374151' }}>Model</span>
+              <button
+                type="button"
+                role="switch"
+                aria-label="Model"
+                aria-checked={modelViewEnabled}
+                onClick={() => setModelViewEnabled((current) => !current)}
+                style={{
+                  width: '34px',
+                  height: '18px',
+                  border: modelViewEnabled ? '1px solid #111827' : '1px solid #D1D5DB',
+                  borderRadius: '999px',
+                  backgroundColor: modelViewEnabled ? '#111827' : '#FFFFFF',
+                  padding: '2px',
+                  cursor: 'pointer',
+                  transition: 'background-color 160ms ease, border-color 160ms ease',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: modelViewEnabled ? 'flex-end' : 'flex-start',
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: '12px',
+                    height: '12px',
+                    borderRadius: '999px',
+                    backgroundColor: modelViewEnabled ? '#FFFFFF' : '#9CA3AF',
+                    transition: 'background-color 160ms ease',
+                  }}
+                />
+              </button>
+            </div>
+
             <select
               value={sort}
               onChange={(event) => setSort(event.target.value as SortOption)}
@@ -496,6 +532,7 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
                   isNew={newProductIds.has(product.id)}
                   appearance="collection"
                   imageOnly={gridMode === 3}
+                  modelViewEnabled={modelViewEnabled}
                 />
               </div>
             ))}

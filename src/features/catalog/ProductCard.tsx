@@ -158,7 +158,7 @@ export const ProductCard = memo(function ProductCard({
           style={{
             position: 'relative',
             width: '100%',
-            paddingBottom: '133%',
+            paddingBottom: '125%',
             overflow: 'hidden',
             backgroundColor: imageSurfaceBackground,
             marginBottom: imageOnly ? 0 : '10px',
@@ -171,7 +171,7 @@ export const ProductCard = memo(function ProductCard({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              padding: '12px',
+              padding: 0,
             }}
           >
             <div
@@ -193,7 +193,7 @@ export const ProductCard = memo(function ProductCard({
                   inset: 0,
                   width: '100%',
                   height: '100%',
-                  objectFit: 'contain',
+                  objectFit: 'cover',
                   objectPosition: 'center center',
                   opacity: showHoverImage ? 0 : 1,
                   transition: 'opacity 300ms ease',
@@ -213,7 +213,7 @@ export const ProductCard = memo(function ProductCard({
                     inset: 0,
                     width: '100%',
                     height: '100%',
-                    objectFit: 'contain',
+                    objectFit: 'cover',
                     objectPosition: 'center center',
                     opacity: showHoverImage ? 1 : 0,
                     transition: 'opacity 300ms ease',

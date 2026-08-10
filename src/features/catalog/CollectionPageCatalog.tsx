@@ -364,7 +364,7 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
           ))}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+        <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-x-3 gap-y-2">
           <div
             role="group"
             aria-label="Product grid layout"
@@ -390,7 +390,7 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
                     cursor: 'pointer',
                     transition: 'background-color 180ms ease, color 180ms ease, border-color 180ms ease',
                   }}
-                  className="w-6 h-6 md:w-8 md:h-8"
+                  className="w-6 h-6 md:w-7 md:h-7"
                 >
                   <span
                     aria-hidden="true"
@@ -409,8 +409,8 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
             })}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', flexShrink: 0 }}>
+          <div className="flex flex-wrap sm:flex-nowrap items-center justify-end gap-2">
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
               <span style={{ fontSize: '12px', fontWeight: 500, color: '#374151' }}>Model</span>
               <button
                 type="button"
@@ -419,8 +419,8 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
                 aria-checked={modelViewEnabled}
                 onClick={() => setModelViewEnabled((current) => !current)}
                 style={{
-                  width: '34px',
-                  height: '18px',
+                  width: '30px',
+                  height: '16px',
                   border: modelViewEnabled ? '1px solid #111827' : '1px solid #D1D5DB',
                   borderRadius: '999px',
                   backgroundColor: modelViewEnabled ? '#111827' : '#FFFFFF',
@@ -435,8 +435,8 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
                 <span
                   aria-hidden="true"
                   style={{
-                    width: '12px',
-                    height: '12px',
+                    width: '10px',
+                    height: '10px',
                     borderRadius: '999px',
                     backgroundColor: modelViewEnabled ? '#FFFFFF' : '#9CA3AF',
                     transition: 'background-color 160ms ease',
@@ -452,7 +452,8 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
               disabled={isLoadingCategories}
               style={{
                 flexShrink: 0,
-                padding: '7px 10px',
+                height: '30px',
+                padding: '6px 8px',
                 border: '1px solid #E5E7EB',
                 borderRadius: '8px',
                 fontSize: '12px',
@@ -475,7 +476,8 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
                 display: 'flex',
                 alignItems: 'center',
                 gap: '5px',
-                padding: '7px 12px',
+                height: '30px',
+                padding: '6px 10px',
                 border: activeFilterCount > 0 ? '1px solid #111827' : '1px solid #E5E7EB',
                 borderRadius: '8px',
                 backgroundColor: activeFilterCount > 0 ? '#111827' : '#FFFFFF',

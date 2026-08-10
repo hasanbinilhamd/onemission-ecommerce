@@ -376,6 +376,42 @@ function ProductDetailContent() {
     });
   }, [addItem, availableStock, isOutOfStock, product, qty, selectedVariant]);
 
+  const renderProductAccordion = () => {
+    if (!product) return null;
+
+    return (
+      <div style={{ marginTop: '56px', borderTop: '1px solid #F3F4F6', maxWidth: '720px' }}>
+        {hasDescriptionSection ? (
+          <AccordionSection title="Description">
+            <p>{product.longDescription}</p>
+          </AccordionSection>
+        ) : null}
+
+        {hasMaterialsSection ? (
+          <AccordionSection title="Materials">
+            <p>{product.materials}</p>
+          </AccordionSection>
+        ) : null}
+
+        {hasCareSection ? (
+          <AccordionSection title="Care Instructions">
+            <p>{product.care}</p>
+          </AccordionSection>
+        ) : null}
+
+        {hasShippingSection ? (
+          <AccordionSection title="Shipping Information">
+            <p>{product.shipping}</p>
+          </AccordionSection>
+        ) : null}
+
+        <AccordionSection title="Size Guide">
+          <SizeGuideContent imageUrl={product.sizeGuideImageUrl} />
+        </AccordionSection>
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#fff', padding: '24px 20px' }}>
@@ -471,12 +507,12 @@ function ProductDetailContent() {
       </div>
 
       <div style={{ width: '100%', padding: '0px 24px 80px', boxSizing: 'border-box' }}>
-        <div className="lg:grid lg:grid-cols-5 lg:gap-12">
+        <div className="lg:grid lg:grid-cols-5 lg:gap-12 lg:items-start">
           <div className="lg:col-span-3" style={{ marginBottom: '32px' }}>
             <ProductMediaGallery product={product} />
           </div>
 
-          <div className="lg:col-span-2 md:pt-8">
+          <div className="lg:col-span-2 md:pt-8 lg:sticky lg:top-[104px] lg:self-start">
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
               {product.category && (
                 <span style={{ fontSize: '11px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9CA3AF' }}>
@@ -607,42 +643,23 @@ function ProductDetailContent() {
               {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
             </button>
 
+            <div className="hidden lg:block">
+              {renderProductAccordion()}
+            </div>
+          </div>
+
+          <div className="lg:hidden">
+            {renderProductAccordion()}
+          </div>
+
+          <div className="lg:col-span-5">
+            <ProductShowcaseSection items={product.productShowcaseItems} productName={product.name} />
+          </div>
+
+          <div className="lg:col-span-3">
+            <CustomerReviewsSection product={product} />
           </div>
         </div>
-
-        <div style={{ marginTop: '56px', borderTop: '1px solid #F3F4F6', maxWidth: '720px' }}>
-          {hasDescriptionSection ? (
-            <AccordionSection title="Description">
-              <p>{product.longDescription}</p>
-            </AccordionSection>
-          ) : null}
-
-          {hasMaterialsSection ? (
-            <AccordionSection title="Materials">
-              <p>{product.materials}</p>
-            </AccordionSection>
-          ) : null}
-
-          {hasCareSection ? (
-            <AccordionSection title="Care Instructions">
-              <p>{product.care}</p>
-            </AccordionSection>
-          ) : null}
-
-          {hasShippingSection ? (
-            <AccordionSection title="Shipping Information">
-              <p>{product.shipping}</p>
-            </AccordionSection>
-          ) : null}
-
-          <AccordionSection title="Size Guide">
-            <SizeGuideContent imageUrl={product.sizeGuideImageUrl} />
-          </AccordionSection>
-        </div>
-
-        <ProductShowcaseSection items={product.productShowcaseItems} productName={product.name} />
-
-        <CustomerReviewsSection product={product} />
 
         {relatedProducts.length > 0 && (
           <div style={{ marginTop: '72px' }}>

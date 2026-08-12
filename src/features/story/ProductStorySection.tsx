@@ -323,7 +323,7 @@ export function ProductStorySection(props: ProductStorySectionProps) {
       style={{
         position: 'relative',
         background: '#FFFFFF',
-        padding: 'clamp(72px, 10vw, 120px) 0 clamp(16px, 3vw, 40px)',
+        padding: 'clamp(72px, 10vw, 120px) 0 clamp(16px, 6vw, 100px)',
         outline: 'none',
         overflow: 'hidden',
       }}
@@ -449,7 +449,7 @@ export function ProductStorySection(props: ProductStorySectionProps) {
                     <div
                       style={{
                         width: '100%',
-                        height: '85%',
+                        height: '80%',
                         aspectRatio: '1 / 1',
                         display: 'flex',
                         justifyContent: 'center',

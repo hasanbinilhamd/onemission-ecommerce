@@ -4,6 +4,7 @@ import { Button, Modal } from '../../components/shared';
 import { IMAGE_PLACEHOLDER } from '../../app/constants';
 import type { CommerceOrderDetail, CommerceOrderProduct, CommerceOrderReturnRequest, CommerceOrderTimelineEntry } from '../../types';
 import { formatCurrency, formatDate } from '../../utils/formatting';
+import { productService } from '../../services/product';
 import { TopBackNavigation } from '../navigation';
 import { OrderPaymentStatusBadge, OrderStatusBadge } from './OrderStatusBadge';
 
@@ -303,6 +304,7 @@ export function OrderDetailView({
   const [returnResolution, setReturnResolution] = useState<'REFUND' | 'REPLACEMENT'>('REFUND');
   const [returnItemQuantities, setReturnItemQuantities] = useState<Record<string, number>>({});
   const [replacementSelections, setReplacementSelections] = useState<Record<string, string>>({});
+  const [replacementVariantOptions, setReplacementVariantOptions] = useState<Record<string, Array<{ id: string; label: string; productId: string }>>>({});
   const [returnDescription, setReturnDescription] = useState('');
   const [returnAttachments, setReturnAttachments] = useState<string[]>([]);
   const [returnAttachmentNames, setReturnAttachmentNames] = useState<string[]>([]);
@@ -314,9 +316,31 @@ export function OrderDetailView({
       Object.fromEntries((order.items || []).map((item) => [item.id, item.quantity > 0 ? 1 : 0])),
     );
     setReplacementSelections(
-      Object.fromEntries((order.items || []).map((item) => [item.id, item.id])),
+      Object.fromEntries((order.items || []).map((item) => [item.id, item.variantId])),
     );
   }, [isReturnModalOpen, order.items]);
+
+  useEffect(() => {
+    if (!isReturnModalOpen || returnResolution !== 'REPLACEMENT') return;
+    let mounted = true;
+    const loadReplacementVariants = async () => {
+      const productIds = Array.from(new Set((order.items || []).map((item) => item.productId).filter(Boolean)));
+      await productService.ensureProductDetailsLoadedByIds(productIds);
+      if (!mounted) return;
+      const nextOptions: Record<string, Array<{ id: string; label: string; productId: string }>> = {};
+      productIds.forEach((productId) => {
+        const product = productService.getCachedProductById(productId);
+        nextOptions[productId] = (product?.variants || []).map((variant) => ({
+          id: variant.id,
+          productId,
+          label: [variant.color, variant.size].filter(Boolean).join(' / ') || variant.variantName || variant.sku,
+        }));
+      });
+      setReplacementVariantOptions(nextOptions);
+    };
+    void loadReplacementVariants();
+    return () => { mounted = false; };
+  }, [isReturnModalOpen, order.items, returnResolution]);
 
   const sortedTimeline = [...order.timeline]
     .sort((left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime())
@@ -381,11 +405,11 @@ export function OrderDetailView({
       items: selectedItems,
       replacementItems: returnResolution === 'REPLACEMENT'
         ? selectedItems.map((item) => {
-            const replacementOrderItem = order.items.find((entry) => entry.id === (replacementSelections[item.orderItemId] || item.orderItemId)) || order.items.find((entry) => entry.id === item.orderItemId);
+            const originalOrderItem = order.items.find((entry) => entry.id === item.orderItemId);
             return {
               originalOrderItemId: item.orderItemId,
-              replacementProductId: replacementOrderItem?.productId || '',
-              replacementVariantId: replacementOrderItem?.variantId || '',
+              replacementProductId: originalOrderItem?.productId || '',
+              replacementVariantId: replacementSelections[item.orderItemId] || originalOrderItem?.variantId || '',
               replacementQuantity: item.quantity,
               replacementNote: '',
             };
@@ -847,17 +871,20 @@ Refund could not be processed yet. Our team will follow up manually.
                       className="w-full rounded-2xl border border-neutral-200 px-4 py-2 text-sm outline-none focus:border-neutral-900"
                     />
                     {returnResolution === 'REPLACEMENT' ? (
+                      <>
                       <select
-                        value={replacementSelections[item.id] || item.id}
+                        value={replacementSelections[item.id] || item.variantId}
                         onChange={(event) => setReplacementSelections((current) => ({ ...current, [item.id]: event.target.value }))}
                         className="w-full rounded-2xl border border-neutral-200 px-4 py-2 text-sm outline-none focus:border-neutral-900"
                       >
-                        {order.items.map((replacementOption) => (
+                        {(replacementVariantOptions[item.productId]?.length ? replacementVariantOptions[item.productId] : [{ id: item.variantId, productId: item.productId, label: item.variantName }]).map((replacementOption) => (
                           <option key={replacementOption.id} value={replacementOption.id}>
-                            Replace with {replacementOption.productName} / {replacementOption.variantName}
+                            Replace with {item.productName} / {replacementOption.label}
                           </option>
                         ))}
                       </select>
+                      <p className="m-0 text-xs text-neutral-500">Replacement Qty: {returnItemQuantities[item.id] ?? 0}</p>
+                      </>
                     ) : null}
                   </div>
                 </div>

@@ -164,6 +164,7 @@ export function FeaturedProductsSection({
         }}
       >
         <div
+          className="mt-10 md:mt-0"
           style={{
             display: 'grid',
             gap: '12px',

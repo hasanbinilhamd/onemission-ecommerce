@@ -597,6 +597,7 @@ export interface CommerceOrderReturnRequest {
   reason: string;
   description: string;
   status: string;
+  resolution?: 'REFUND' | 'REPLACEMENT';
   rejectReason: string;
   refundStatus: string;
   refundReference: string;
@@ -619,6 +620,12 @@ export interface CommerceOrderReturnRequest {
   refundApprovedAt: string | null;
   refundProcessingAt: string | null;
   refundCompletedAt: string | null;
+  receivedAt?: string | null;
+  inspectedAt?: string | null;
+  inspectionResult?: string;
+  manualRefundReference?: string;
+  financeTransactionId?: string;
+  replacementStatus?: string;
   lastRefundAttemptAt?: string | null;
   rejectedAt: string | null;
   timeline: CommerceRefundTimelineEntry[];

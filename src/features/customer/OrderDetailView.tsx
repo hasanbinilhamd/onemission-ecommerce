@@ -12,7 +12,7 @@ interface OrderDetailViewProps {
   backLabel?: string;
   onBack?: () => void;
   onCancelOrder?: (input: { reason: string }) => Promise<void>;
-  onRequestReturn?: (input: { reason: string; description: string; attachments: string[] }) => Promise<void>;
+  onRequestReturn?: (input: { reason: string; description: string; attachments: string[]; resolution: 'REFUND' | 'REPLACEMENT' }) => Promise<void>;
   onOpenReview?: (item: CommerceOrderProduct) => void;
   reviewSubmittingItemId?: string;
   isMutating?: boolean;
@@ -112,14 +112,17 @@ function getReturnStatusLabel(returnRequest: CommerceOrderReturnRequest | null) 
     return 'None';
   }
 
-  if (returnRequest.refundStatus === 'COMPLETED') return 'Refund Completed';
-  if (returnRequest.refundStatus === 'PROCESSING') return 'Refund Processing';
-  if (returnRequest.refundStatus === 'APPROVED') return 'Refund Approved';
-  if (returnRequest.refundStatus === 'FAILED') return 'Refund Failed';
-  if (returnRequest.refundStatus === 'REJECTED') return 'Refund Rejected';
-  if (returnRequest.refundStatus === 'REQUESTED') return 'Refund Requested';
-  if (returnRequest.status === 'APPROVED') return 'Approved';
-  if (returnRequest.status === 'REJECTED') return 'Rejected';
+  if (returnRequest.status === 'COMPLETED') return 'Completed';
+  if (returnRequest.refundStatus === 'PAID') return 'Refund Paid';
+  if (returnRequest.status === 'REFUND_PENDING') return 'Refund Pending';
+  if (returnRequest.status === 'REPLACEMENT_PENDING') return 'Replacement Pending';
+  if (returnRequest.status === 'REPLACEMENT_SENT') return 'Replacement Sent';
+  if (returnRequest.status === 'INSPECTION_FAILED') return 'Inspection Failed';
+  if (returnRequest.status === 'INSPECTING') return 'Inspection';
+  if (returnRequest.status === 'RECEIVED') return 'Item Received';
+  if (returnRequest.status === 'AWAITING_RETURN') return 'Please Return Item';
+  if (returnRequest.status === 'REJECTED' || returnRequest.refundStatus === 'REJECTED') return 'Rejected';
+  if (returnRequest.status === 'REQUESTED' || returnRequest.refundStatus === 'REQUESTED') return 'Return Requested';
   return 'Pending Review';
 }
 
@@ -297,6 +300,7 @@ export function OrderDetailView({
   const [cancelReason, setCancelReason] = useState('');
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
   const [returnReason, setReturnReason] = useState('Wrong Size');
+  const [returnResolution, setReturnResolution] = useState<'REFUND' | 'REPLACEMENT'>('REFUND');
   const [returnDescription, setReturnDescription] = useState('');
   const [returnAttachments, setReturnAttachments] = useState<string[]>([]);
   const [returnAttachmentNames, setReturnAttachmentNames] = useState<string[]>([]);
@@ -352,10 +356,12 @@ export function OrderDetailView({
       reason: returnReason,
       description: returnDescription.trim(),
       attachments: returnAttachments,
+      resolution: returnResolution,
     });
 
     setIsReturnModalOpen(false);
     setReturnReason('Wrong Size');
+    setReturnResolution('REFUND');
     setReturnDescription('');
     setReturnAttachments([]);
     setReturnAttachmentNames([]);
@@ -609,13 +615,16 @@ export function OrderDetailView({
       </div>
 
       {order.returnRequest ? (
-        <SectionCard icon={<Package size={18} />} title="Refund">
+        <SectionCard icon={<Package size={18} />} title="Return">
           <DetailRow label="Status" value={getReturnStatusLabel(order.returnRequest)} />
           <DetailRow label="Request Type" value={order.returnRequest.requestType || 'PRODUCT_RETURN'} />
+          <DetailRow label="Resolution" value={order.returnRequest.resolution || 'REFUND'} />
           <DetailRow label="Reason" value={order.returnRequest.reason || '—'} />
           <DetailRow label="Description" value={order.returnRequest.description || '—'} />
           <DetailRow label="Refund Status" value={order.returnRequest.refundStatus || 'NONE'} />
-          <DetailRow label="Refund Amount" value={formatCurrency(order.returnRequest.refundAmount || order.grandTotal, order.currency)} />
+          {order.returnRequest.resolution !== 'REPLACEMENT' ? (
+            <DetailRow label="Refund Amount" value={Number(order.returnRequest.refundAmount || 0) > 0 ? formatCurrency(order.returnRequest.refundAmount, order.currency) : '—'} />
+          ) : null}
           <DetailRow label="Requested At" value={formatDateTime(order.returnRequest.refundRequestedAt || order.returnRequest.requestedAt)} />
           <DetailRow label="Approved At" value={formatDateTime(order.returnRequest.refundApprovedAt || order.returnRequest.approvedAt)} />
           <DetailRow label="Processing At" value={formatDateTime(order.returnRequest.refundProcessingAt)} />
@@ -625,17 +634,17 @@ export function OrderDetailView({
           ) : null}
           {order.returnRequest.refundStatus === 'PROCESSING' ? (
             <div className="rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-700">
-              Refund is being processed by the payment gateway.
+Refund is being reviewed by our team.
             </div>
           ) : null}
           {order.returnRequest.refundStatus === 'COMPLETED' ? (
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-              Funds have been returned successfully.
+Refund has been paid successfully.
             </div>
           ) : null}
           {order.returnRequest.refundStatus === 'FAILED' ? (
             <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              Refund could not be processed yet. Our team may retry it.
+Refund could not be processed yet. Our team will follow up manually.
             </div>
           ) : null}
           {order.returnRequest.timeline?.length ? (
@@ -742,6 +751,29 @@ export function OrderDetailView({
 
       <Modal open={isReturnModalOpen} onClose={() => setIsReturnModalOpen(false)} title="Request Return">
         <div className="grid gap-4">
+          <div className="grid gap-2">
+            <label className="text-sm font-medium text-neutral-900">
+              Resolution
+            </label>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setReturnResolution('REFUND')}
+                className={`rounded-2xl border px-4 py-3 text-left text-sm ${returnResolution === 'REFUND' ? 'border-neutral-950 bg-neutral-950 text-white' : 'border-neutral-200 text-neutral-700'}`}
+              >
+                <span className="block font-semibold">Refund</span>
+                <span className="block text-xs opacity-75">Request money back.</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setReturnResolution('REPLACEMENT')}
+                className={`rounded-2xl border px-4 py-3 text-left text-sm ${returnResolution === 'REPLACEMENT' ? 'border-neutral-950 bg-neutral-950 text-white' : 'border-neutral-200 text-neutral-700'}`}
+              >
+                <span className="block font-semibold">Replacement</span>
+                <span className="block text-xs opacity-75">Request item exchange/replacement.</span>
+              </button>
+            </div>
+          </div>
           <div className="grid gap-2">
             <label className="text-sm font-medium text-neutral-900" htmlFor="return-reason-select">
               Reason

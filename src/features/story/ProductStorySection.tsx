@@ -449,7 +449,7 @@ export function ProductStorySection(props: ProductStorySectionProps) {
                     <div
                       style={{
                         width: '100%',
-                        height: '65%',
+                        height: '85%',
                         aspectRatio: '1 / 1',
                         display: 'flex',
                         justifyContent: 'center',

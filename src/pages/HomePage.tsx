@@ -1038,7 +1038,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
         />
       </section>
 
-      {brandVideo ? (
+      {/* {brandVideo ? (
         <section
           aria-label="Brand video section"
           style={{
@@ -1066,7 +1066,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
             }}
           />
         </section>
-      ) : null}
+      ) : null} */}
 
       <ProductStorySection items={productStoryItems} backgroundImage={heroGradients[resolvedActiveIndex]} />
       <FeaturedProductsSection onProductSelect={onProductSelect} />

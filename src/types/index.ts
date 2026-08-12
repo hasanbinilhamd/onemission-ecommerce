@@ -587,6 +587,13 @@ export interface CommerceRefundAttempt {
   updatedAt: string;
 }
 
+export interface CommerceOrderReturnItem {
+  id: string;
+  orderItemId: string;
+  quantity: number;
+  orderItem?: CommerceOrderProduct | null;
+}
+
 export interface CommerceOrderReturnRequest {
   id: string;
   orderId: string;
@@ -598,6 +605,7 @@ export interface CommerceOrderReturnRequest {
   description: string;
   status: string;
   resolution?: 'REFUND' | 'REPLACEMENT';
+  items?: CommerceOrderReturnItem[];
   rejectReason: string;
   refundStatus: string;
   refundReference: string;

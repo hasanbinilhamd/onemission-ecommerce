@@ -89,7 +89,7 @@ export function OrderDetailPage() {
     }
   }, [getValidAccessToken, order]);
 
-  const handleRequestReturn = useCallback(async (input: { reason: string; description: string; attachments: string[]; resolution: 'REFUND' | 'REPLACEMENT' }) => {
+  const handleRequestReturn = useCallback(async (input: { reason: string; description: string; attachments: string[]; resolution: 'REFUND' | 'REPLACEMENT'; items: Array<{ orderItemId: string; quantity: number }> }) => {
     if (!order) return;
 
     setIsMutatingOrder(true);

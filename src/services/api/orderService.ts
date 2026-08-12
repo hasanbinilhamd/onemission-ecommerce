@@ -181,7 +181,7 @@ export async function cancelCustomerOrder(
 
 export async function createReturnRequest(
   orderId: string,
-  payload: { reason: string; description: string; attachments: string[]; resolution?: 'REFUND' | 'REPLACEMENT'; email?: string },
+  payload: { reason: string; description: string; attachments: string[]; resolution?: 'REFUND' | 'REPLACEMENT'; items?: Array<{ orderItemId: string; quantity: number }>; email?: string },
   accessToken = '',
 ): Promise<CommerceOrderDetail> {
   return fetchJson<CommerceOrderDetail>(`/orders/${encodeURIComponent(orderId)}/return-request`, {

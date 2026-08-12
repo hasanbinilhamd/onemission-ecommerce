@@ -1,5 +1,5 @@
 import { Mail, MapPin, Package, Truck } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Button, Modal } from '../../components/shared';
 import { IMAGE_PLACEHOLDER } from '../../app/constants';
 import type { CommerceOrderDetail, CommerceOrderProduct, CommerceOrderReturnRequest, CommerceOrderTimelineEntry } from '../../types';
@@ -12,7 +12,7 @@ interface OrderDetailViewProps {
   backLabel?: string;
   onBack?: () => void;
   onCancelOrder?: (input: { reason: string }) => Promise<void>;
-  onRequestReturn?: (input: { reason: string; description: string; attachments: string[]; resolution: 'REFUND' | 'REPLACEMENT' }) => Promise<void>;
+  onRequestReturn?: (input: { reason: string; description: string; attachments: string[]; resolution: 'REFUND' | 'REPLACEMENT'; items: Array<{ orderItemId: string; quantity: number }> }) => Promise<void>;
   onOpenReview?: (item: CommerceOrderProduct) => void;
   reviewSubmittingItemId?: string;
   isMutating?: boolean;
@@ -301,10 +301,18 @@ export function OrderDetailView({
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
   const [returnReason, setReturnReason] = useState('Wrong Size');
   const [returnResolution, setReturnResolution] = useState<'REFUND' | 'REPLACEMENT'>('REFUND');
+  const [returnItemQuantities, setReturnItemQuantities] = useState<Record<string, number>>({});
   const [returnDescription, setReturnDescription] = useState('');
   const [returnAttachments, setReturnAttachments] = useState<string[]>([]);
   const [returnAttachmentNames, setReturnAttachmentNames] = useState<string[]>([]);
   const [returnFormError, setReturnFormError] = useState('');
+
+  useEffect(() => {
+    if (!isReturnModalOpen) return;
+    setReturnItemQuantities(
+      Object.fromEntries((order.items || []).map((item) => [item.id, item.quantity > 0 ? 1 : 0])),
+    );
+  }, [isReturnModalOpen, order.items]);
 
   const sortedTimeline = [...order.timeline]
     .sort((left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime())
@@ -352,16 +360,27 @@ export function OrderDetailView({
       return;
     }
 
+    const selectedItems = Object.entries(returnItemQuantities)
+      .map(([orderItemId, quantity]) => ({ orderItemId, quantity: Number(quantity || 0) }))
+      .filter((item) => item.quantity > 0);
+
+    if (selectedItems.length === 0) {
+      setReturnFormError('Please select at least one item to return.');
+      return;
+    }
+
     await onRequestReturn({
       reason: returnReason,
       description: returnDescription.trim(),
       attachments: returnAttachments,
       resolution: returnResolution,
+      items: selectedItems,
     });
 
     setIsReturnModalOpen(false);
     setReturnReason('Wrong Size');
     setReturnResolution('REFUND');
+    setReturnItemQuantities({});
     setReturnDescription('');
     setReturnAttachments([]);
     setReturnAttachmentNames([]);
@@ -621,6 +640,19 @@ export function OrderDetailView({
           <DetailRow label="Resolution" value={order.returnRequest.resolution || 'REFUND'} />
           <DetailRow label="Reason" value={order.returnRequest.reason || '—'} />
           <DetailRow label="Description" value={order.returnRequest.description || '—'} />
+          {order.returnRequest.items?.length ? (
+            <div className="rounded-2xl border border-neutral-200 p-4">
+              <p className="m-0 mb-3 text-sm font-semibold text-neutral-950">Return Items</p>
+              <div className="grid gap-2">
+                {order.returnRequest.items.map((entry) => (
+                  <div key={entry.id} className="flex items-center justify-between gap-3 text-sm">
+                    <span>{entry.orderItem?.productName || entry.orderItemId}</span>
+                    <span className="font-semibold">Qty {entry.quantity}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
           <DetailRow label="Refund Status" value={order.returnRequest.refundStatus || 'NONE'} />
           {order.returnRequest.resolution !== 'REPLACEMENT' ? (
             <DetailRow label="Refund Amount" value={Number(order.returnRequest.refundAmount || 0) > 0 ? formatCurrency(order.returnRequest.refundAmount, order.currency) : '—'} />
@@ -772,6 +804,32 @@ Refund could not be processed yet. Our team will follow up manually.
                 <span className="block font-semibold">Replacement</span>
                 <span className="block text-xs opacity-75">Request item exchange/replacement.</span>
               </button>
+            </div>
+          </div>
+          <div className="grid gap-2">
+            <label className="text-sm font-medium text-neutral-900">
+              Items to Return
+            </label>
+            <div className="grid gap-2">
+              {(order.items || []).map((item) => (
+                <div key={item.id} className="grid gap-3 rounded-2xl border border-neutral-200 p-3 sm:grid-cols-[1fr_120px] sm:items-center">
+                  <div>
+                    <p className="m-0 text-sm font-semibold text-neutral-950">{item.productName}</p>
+                    <p className="m-0 text-xs text-neutral-500">{item.variantName} · Purchased {item.quantity}</p>
+                  </div>
+                  <input
+                    type="number"
+                    min={0}
+                    max={item.quantity}
+                    value={returnItemQuantities[item.id] ?? 0}
+                    onChange={(event) => {
+                      const nextQuantity = Math.max(0, Math.min(item.quantity, Number(event.target.value || 0)));
+                      setReturnItemQuantities((current) => ({ ...current, [item.id]: nextQuantity }));
+                    }}
+                    className="w-full rounded-2xl border border-neutral-200 px-4 py-2 text-sm outline-none focus:border-neutral-900"
+                  />
+                </div>
+              ))}
             </div>
           </div>
           <div className="grid gap-2">

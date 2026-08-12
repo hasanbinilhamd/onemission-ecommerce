@@ -89,7 +89,7 @@ export function OrderDetailPage() {
     }
   }, [getValidAccessToken, order]);
 
-  const handleRequestReturn = useCallback(async (input: { reason: string; description: string; attachments: string[]; resolution: 'REFUND' | 'REPLACEMENT'; items: Array<{ orderItemId: string; quantity: number }> }) => {
+  const handleRequestReturn = useCallback(async (input: { reason: string; description: string; attachments: string[]; resolution: 'REFUND' | 'REPLACEMENT'; items: Array<{ orderItemId: string; quantity: number }>; replacementItems?: Array<{ originalOrderItemId: string; replacementProductId: string; replacementVariantId: string; replacementQuantity: number; replacementNote?: string }> }) => {
     if (!order) return;
 
     setIsMutatingOrder(true);

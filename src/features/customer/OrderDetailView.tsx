@@ -12,7 +12,7 @@ interface OrderDetailViewProps {
   backLabel?: string;
   onBack?: () => void;
   onCancelOrder?: (input: { reason: string }) => Promise<void>;
-  onRequestReturn?: (input: { reason: string; description: string; attachments: string[]; resolution: 'REFUND' | 'REPLACEMENT'; items: Array<{ orderItemId: string; quantity: number }> }) => Promise<void>;
+  onRequestReturn?: (input: { reason: string; description: string; attachments: string[]; resolution: 'REFUND' | 'REPLACEMENT'; items: Array<{ orderItemId: string; quantity: number }>; replacementItems?: Array<{ originalOrderItemId: string; replacementProductId: string; replacementVariantId: string; replacementQuantity: number; replacementNote?: string }> }) => Promise<void>;
   onOpenReview?: (item: CommerceOrderProduct) => void;
   reviewSubmittingItemId?: string;
   isMutating?: boolean;
@@ -302,6 +302,7 @@ export function OrderDetailView({
   const [returnReason, setReturnReason] = useState('Wrong Size');
   const [returnResolution, setReturnResolution] = useState<'REFUND' | 'REPLACEMENT'>('REFUND');
   const [returnItemQuantities, setReturnItemQuantities] = useState<Record<string, number>>({});
+  const [replacementSelections, setReplacementSelections] = useState<Record<string, string>>({});
   const [returnDescription, setReturnDescription] = useState('');
   const [returnAttachments, setReturnAttachments] = useState<string[]>([]);
   const [returnAttachmentNames, setReturnAttachmentNames] = useState<string[]>([]);
@@ -311,6 +312,9 @@ export function OrderDetailView({
     if (!isReturnModalOpen) return;
     setReturnItemQuantities(
       Object.fromEntries((order.items || []).map((item) => [item.id, item.quantity > 0 ? 1 : 0])),
+    );
+    setReplacementSelections(
+      Object.fromEntries((order.items || []).map((item) => [item.id, item.id])),
     );
   }, [isReturnModalOpen, order.items]);
 
@@ -375,12 +379,25 @@ export function OrderDetailView({
       attachments: returnAttachments,
       resolution: returnResolution,
       items: selectedItems,
+      replacementItems: returnResolution === 'REPLACEMENT'
+        ? selectedItems.map((item) => {
+            const replacementOrderItem = order.items.find((entry) => entry.id === (replacementSelections[item.orderItemId] || item.orderItemId)) || order.items.find((entry) => entry.id === item.orderItemId);
+            return {
+              originalOrderItemId: item.orderItemId,
+              replacementProductId: replacementOrderItem?.productId || '',
+              replacementVariantId: replacementOrderItem?.variantId || '',
+              replacementQuantity: item.quantity,
+              replacementNote: '',
+            };
+          })
+        : [],
     });
 
     setIsReturnModalOpen(false);
     setReturnReason('Wrong Size');
     setReturnResolution('REFUND');
     setReturnItemQuantities({});
+    setReplacementSelections({});
     setReturnDescription('');
     setReturnAttachments([]);
     setReturnAttachmentNames([]);
@@ -817,17 +834,32 @@ Refund could not be processed yet. Our team will follow up manually.
                     <p className="m-0 text-sm font-semibold text-neutral-950">{item.productName}</p>
                     <p className="m-0 text-xs text-neutral-500">{item.variantName} · Purchased {item.quantity}</p>
                   </div>
-                  <input
-                    type="number"
-                    min={0}
-                    max={item.quantity}
-                    value={returnItemQuantities[item.id] ?? 0}
-                    onChange={(event) => {
-                      const nextQuantity = Math.max(0, Math.min(item.quantity, Number(event.target.value || 0)));
-                      setReturnItemQuantities((current) => ({ ...current, [item.id]: nextQuantity }));
-                    }}
-                    className="w-full rounded-2xl border border-neutral-200 px-4 py-2 text-sm outline-none focus:border-neutral-900"
-                  />
+                  <div className="grid gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      max={item.quantity}
+                      value={returnItemQuantities[item.id] ?? 0}
+                      onChange={(event) => {
+                        const nextQuantity = Math.max(0, Math.min(item.quantity, Number(event.target.value || 0)));
+                        setReturnItemQuantities((current) => ({ ...current, [item.id]: nextQuantity }));
+                      }}
+                      className="w-full rounded-2xl border border-neutral-200 px-4 py-2 text-sm outline-none focus:border-neutral-900"
+                    />
+                    {returnResolution === 'REPLACEMENT' ? (
+                      <select
+                        value={replacementSelections[item.id] || item.id}
+                        onChange={(event) => setReplacementSelections((current) => ({ ...current, [item.id]: event.target.value }))}
+                        className="w-full rounded-2xl border border-neutral-200 px-4 py-2 text-sm outline-none focus:border-neutral-900"
+                      >
+                        {order.items.map((replacementOption) => (
+                          <option key={replacementOption.id} value={replacementOption.id}>
+                            Replace with {replacementOption.productName} / {replacementOption.variantName}
+                          </option>
+                        ))}
+                      </select>
+                    ) : null}
+                  </div>
                 </div>
               ))}
             </div>

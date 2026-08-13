@@ -52,9 +52,9 @@ export function InitialLoadingScreen() {
       }}
     >
       <div className="w-full max-w-[360px] text-center">
-        <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.36em] text-white/55">
+        {/* <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.36em] text-white/55">
           One Mission
-        </p>
+        </p> */}
         <img
           src={ONEMISSION_LOGO_URL}
           alt="ONEMISSION"

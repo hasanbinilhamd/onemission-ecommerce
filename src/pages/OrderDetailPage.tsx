@@ -5,7 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button, EmptyState, LoadingSkeleton } from '../components/shared';
 import { OrderDetailView, useAuthenticatedCustomer } from '../features/customer';
 import { WriteReviewModal, type WriteReviewSubmitInput } from '../features/reviews';
-import { cancelCustomerOrder, createReturnRequest, getOrderByNumber } from '../services/api/orderService';
+import { cancelCustomerOrder, confirmCustomerOrderReceived, createReturnRequest, getOrderByNumber } from '../services/api/orderService';
 import { productService } from '../services/product';
 import { createProductReview } from '../services/api/reviewService';
 import type { CommerceOrderDetail, CommerceOrderProduct } from '../types';
@@ -108,6 +108,22 @@ export function OrderDetailPage() {
     }
   }, [getValidAccessToken, order]);
 
+  const handleConfirmReceived = useCallback(async () => {
+    if (!order) return;
+
+    setIsMutatingOrder(true);
+    try {
+      const accessToken = await getValidAccessToken();
+      const updatedOrder = await confirmCustomerOrderReceived(order.id, accessToken || '');
+      setOrder(updatedOrder);
+      setActionFeedback({ tone: 'success', message: 'Order completed. Thank you for confirming receipt.' });
+    } catch (error) {
+      setActionFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Order receipt could not be confirmed right now.' });
+    } finally {
+      setIsMutatingOrder(false);
+    }
+  }, [getValidAccessToken, order]);
+
 
   const handleCreateReview = useCallback(async (input: WriteReviewSubmitInput) => {
     if (!order || !reviewItem) return;
@@ -202,6 +218,7 @@ export function OrderDetailPage() {
         onBack={() => navigate(ROUTES.ACCOUNT_ORDERS)}
         onCancelOrder={handleCancelOrder}
         onRequestReturn={handleRequestReturn}
+        onConfirmReceived={handleConfirmReceived}
         onOpenReview={(item) => setReviewItem(item)}
         reviewSubmittingItemId={isSubmittingReview ? reviewItem?.id || '' : ''}
         isMutating={isMutatingOrder || isSubmittingReview}

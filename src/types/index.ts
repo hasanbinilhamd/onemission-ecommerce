@@ -674,12 +674,14 @@ export interface CommerceOrderDetail {
   actions: {
     canCancel: boolean;
     canRequestReturn: boolean;
+    canConfirmReceived?: boolean;
   };
   returnPolicy: {
     returnWindowDays: number;
     deliveredAt: string | null;
     returnWindowEndsAt: string | null;
   };
+  customerReceivedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -14,6 +14,7 @@ interface OrderDetailViewProps {
   onBack?: () => void;
   onCancelOrder?: (input: { reason: string }) => Promise<void>;
   onRequestReturn?: (input: { reason: string; description: string; attachments: string[]; resolution: 'REFUND' | 'REPLACEMENT'; items: Array<{ orderItemId: string; quantity: number }>; replacementItems?: Array<{ originalOrderItemId: string; replacementProductId: string; replacementVariantId: string; replacementQuantity: number; replacementNote?: string }> }) => Promise<void>;
+  onConfirmReceived?: () => Promise<void>;
   onOpenReview?: (item: CommerceOrderProduct) => void;
   reviewSubmittingItemId?: string;
   isMutating?: boolean;
@@ -182,6 +183,13 @@ function getCustomerTimelinePresentation(entry: CommerceOrderTimelineEntry): Cus
         noteLines,
         visible: true,
       };
+    case 'CUSTOMER_CONFIRMED_RECEIPT':
+      return {
+        title: 'Order Completed',
+        description: 'You confirmed that your package has arrived and is in your possession.',
+        noteLines,
+        visible: true,
+      };
     case 'CANCELLED':
       return {
         title: 'Cancelled',
@@ -293,6 +301,7 @@ export function OrderDetailView({
   onBack,
   onCancelOrder,
   onRequestReturn,
+  onConfirmReceived,
   onOpenReview,
   reviewSubmittingItemId = '',
   isMutating = false,
@@ -341,6 +350,10 @@ export function OrderDetailView({
     void loadReplacementVariants();
     return () => { mounted = false; };
   }, [isReturnModalOpen, order.items, returnResolution]);
+
+  const canConfirmReceived = Boolean(order.actions?.canConfirmReceived && onConfirmReceived);
+  const isOrderCompleted = String(order.status || '').trim().toUpperCase() === 'COMPLETED';
+  const hasCustomerReceivedConfirmation = Boolean(order.customerReceivedAt);
 
   const sortedTimeline = [...order.timeline]
     .sort((left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime())
@@ -529,6 +542,26 @@ export function OrderDetailView({
           </div>
         </div>
       </section>
+
+      {canConfirmReceived ? (
+        <section className="rounded-3xl border border-neutral-200 bg-white p-5 sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="m-0 text-lg font-semibold text-neutral-950">Have you received your order?</h2>
+              <p className="mt-2 text-sm leading-6 text-neutral-600">
+                Please confirm that your package has arrived and is in your possession.
+              </p>
+            </div>
+            <Button type="button" onClick={() => void onConfirmReceived?.()} disabled={isMutating}>
+              {isMutating ? 'Confirming...' : "Yes, I've received my order"}
+            </Button>
+          </div>
+        </section>
+      ) : isOrderCompleted || hasCustomerReceivedConfirmation ? (
+        <section className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-sm font-medium text-emerald-700 sm:p-6">
+          Order completed.
+        </section>
+      ) : null}
 
       <SectionCard icon={<Package size={18} />} title="Products">
         <div className="hidden md:block">

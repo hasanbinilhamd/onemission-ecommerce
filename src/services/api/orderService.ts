@@ -179,6 +179,18 @@ export async function cancelCustomerOrder(
   }, options.accessToken || '');
 }
 
+export async function confirmCustomerOrderReceived(
+  orderId: string,
+  accessToken = '',
+): Promise<CommerceOrderDetail> {
+  return fetchJson<CommerceOrderDetail>(`/orders/${encodeURIComponent(orderId)}/confirm-received`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  }, accessToken);
+}
+
 export async function createReturnRequest(
   orderId: string,
   payload: { reason: string; description: string; attachments: string[]; resolution?: 'REFUND' | 'REPLACEMENT'; items?: Array<{ orderItemId: string; quantity: number }>; replacementItems?: Array<{ originalOrderItemId: string; replacementProductId: string; replacementVariantId: string; replacementQuantity: number; replacementNote?: string }>; email?: string },

@@ -5,6 +5,7 @@ import { HERO_THEMES, createHeroGradient } from '../features/hero/theme';
 import { ProductStorySection, PRODUCT_STORY_ITEMS, type ProductStoryItem } from '../features/story';
 import { FeaturedProductsSection } from '../features/featured';
 import { HomepageFooter } from '../features/footer';
+import { ShopeeMarketplaceSection } from '../features/marketplace';
 import {
   type WebsiteBrandVideo,
   type WebsiteHeroItem as WebsiteHeroCmsItem,
@@ -1074,6 +1075,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
 
       <ProductStorySection items={productStoryItems} backgroundImage={heroGradients[resolvedActiveIndex]} />
       <FeaturedProductsSection onProductSelect={onProductSelect} />
+      <ShopeeMarketplaceSection />
       <HomepageFooter />
     </div>
   );

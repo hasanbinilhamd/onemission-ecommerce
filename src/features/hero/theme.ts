@@ -3,13 +3,16 @@ export type HeroTheme = {
   accentColor: string;
 };
 
-export const HERO_GRADIENT_TOP = '#0A0A0A' as const;
-export const HERO_GRADIENT_MIDDLE = '#536878' as const;
-export const HERO_GRADIENT_BOTTOM = '#E5E4E2' as const;
+export const HERO_GRADIENT_TOP = '#0b151e' as const;
+export const HERO_GRADIENT_MIDDLE = '#1d3a4c' as const;
+export const HERO_GRADIENT_BOTTOM = '#e1e6ea' as const;
+// export const HERO_GRADIENT_TOP = '#0A0A0A' as const;
+// export const HERO_GRADIENT_MIDDLE = '#536878' as const;
+// export const HERO_GRADIENT_BOTTOM = '#E5E4E2' as const;
 
 export function createHeroGradient(accentColor: string): string {
   void accentColor;
-  return `linear-gradient(180deg, ${HERO_GRADIENT_TOP} 0%, ${HERO_GRADIENT_MIDDLE} 52%, ${HERO_GRADIENT_BOTTOM} 100%)`;
+  return `linear-gradient(180deg, ${HERO_GRADIENT_TOP} 12%, ${HERO_GRADIENT_MIDDLE} 46%, ${HERO_GRADIENT_BOTTOM} 100%)`;
 }
 
 export const HERO_THEMES: readonly HeroTheme[] = [

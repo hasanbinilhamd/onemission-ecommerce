@@ -6,7 +6,6 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { ProductCardSkeleton } from '../../components/shared/LoadingSkeleton';
 import { ProductCard } from '../catalog';
 import { productService } from '../../services/product';
-import { FEATURED_PRODUCTS, type FeaturedProduct } from './featuredProducts';
 
 const FEATURED_PRODUCTS_LIMIT = 4;
 const FEATURED_SECTION_BACKGROUND = '#FFFFFF';
@@ -17,34 +16,10 @@ const FEATURED_SECTION_BUTTON_HOVER = 'rgba(17,24,39,0.06)';
 
 interface FeaturedProductsSectionProps {
   onProductSelect: (slug: string) => void;
-  items?: readonly FeaturedProduct[];
-}
-
-function mapFeaturedProducts(config: readonly FeaturedProduct[]): Product[] {
-  return config
-    .filter((item) => item.enabled)
-    .sort((left, right) => left.displayOrder - right.displayOrder)
-    .reduce<Product[]>((products, item) => {
-      const product = productService.getCachedProductById(item.productId);
-      if (!product) {
-        return products;
-      }
-
-      products.push({
-        ...product,
-        imageUrl: item.imageOverride || product.imageUrl,
-        name: item.titleOverride || product.name,
-        description: item.subtitleOverride || product.description,
-        shortDescription: item.subtitleOverride || product.shortDescription,
-      });
-
-      return products;
-    }, []);
 }
 
 export function FeaturedProductsSection({
   onProductSelect,
-  items = FEATURED_PRODUCTS,
 }: FeaturedProductsSectionProps) {
   const navigate = useNavigate();
   const sectionRef = useRef<HTMLElement | null>(null);
@@ -52,13 +27,6 @@ export function FeaturedProductsSection({
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
-
-  const enabledItems = useMemo(() => {
-    return items
-      .filter((item) => item.enabled)
-      .sort((left, right) => left.displayOrder - right.displayOrder)
-      .slice(0, FEATURED_PRODUCTS_LIMIT);
-  }, [items]);
 
   useEffect(() => {
     const sectionElement = sectionRef.current;
@@ -91,14 +59,17 @@ export function FeaturedProductsSection({
       setErrorMessage(null);
 
       try {
-        await productService.ensureProductsLoaded(enabledItems.map((item) => item.productId));
-        const products = mapFeaturedProducts(enabledItems);
+        const response = await productService.getProducts({
+          page: 1,
+          limit: FEATURED_PRODUCTS_LIMIT,
+          sort: 'newest',
+        });
 
         if (isCancelled) {
           return;
         }
 
-        setFeaturedProducts(products);
+        setFeaturedProducts(response.products.slice(0, FEATURED_PRODUCTS_LIMIT));
       } catch {
         if (isCancelled) {
           return;
@@ -117,7 +88,7 @@ export function FeaturedProductsSection({
     return () => {
       isCancelled = true;
     };
-  }, [enabledItems]);
+  }, []);
 
   const handleSeeMore = useCallback(() => {
     navigate(ROUTES.COLLECTION);

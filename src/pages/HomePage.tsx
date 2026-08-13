@@ -6,11 +6,15 @@ import { ProductStorySection, PRODUCT_STORY_ITEMS, type ProductStoryItem } from 
 import { FeaturedProductsSection } from '../features/featured';
 import { HomepageFooter } from '../features/footer';
 import {
-  websiteService,
   type WebsiteBrandVideo,
   type WebsiteHeroItem as WebsiteHeroCmsItem,
   type WebsiteProductStoryItem as WebsiteProductStoryCmsItem,
 } from '../services/api/websiteService';
+import {
+  getHomepageContentForInitialExperience,
+  getPreloadedHeroAssetMap,
+  ONEMISSION_LOGO_URL,
+} from '../features/homepage/initialHomepageResources';
 
 type HeroMediaType = 'image' | 'video';
 
@@ -317,7 +321,7 @@ const HeroCarouselImages = memo(function HeroCarouselImages({
   onPointerCancel: (event: ReactPointerEvent<HTMLDivElement>) => void;
 }) {
   const [failedVideoMedia, setFailedVideoMedia] = useState<Record<string, boolean>>({});
-  const [loadedMedia, setLoadedMedia] = useState<Record<string, boolean>>({});
+  const [loadedMedia, setLoadedMedia] = useState<Record<string, boolean>>(() => getPreloadedHeroAssetMap());
   const activeVideoRef = useRef<HTMLVideoElement | null>(null);
   const preloadedMediaRef = useRef<Set<string>>(new Set());
 
@@ -338,7 +342,7 @@ const HeroCarouselImages = memo(function HeroCarouselImages({
   }, []);
 
   useEffect(() => {
-    setLoadedMedia({});
+    setLoadedMedia(getPreloadedHeroAssetMap());
     setFailedVideoMedia({});
     preloadedMediaRef.current.clear();
   }, [isMobile, items]);
@@ -458,7 +462,7 @@ const HeroCarouselImages = memo(function HeroCarouselImages({
         const poster = getHeroPoster(imageItem, isMobile);
         const blurMedia = getHeroBlurMedia(imageItem, isMobile);
         const mediaKey = `${imageItem.desktopUrl}-${imageItem.mobileUrl}-${index}`;
-        const displayImageSource = role === 'center' ? poster : blurMedia;
+        const displayImageSource = role === 'center' && imageItem.mediaType === 'image' ? mediaSource : role === 'center' ? poster : blurMedia;
         const hasValidImageSource = isValidHeroAssetUrl(displayImageSource);
         const hasValidVideoSource = isValidHeroAssetUrl(mediaSource);
         const shouldRenderVideo = role === 'center'
@@ -602,7 +606,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
 
     const loadWebsiteContent = async () => {
       try {
-        const response = await websiteService.getHomepageContent();
+        const response = await getHomepageContentForInitialExperience();
         if (isCancelled) {
           return;
         }
@@ -888,7 +892,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
             }}
           >
             <img
-              src="https://ik.imagekit.io/edyl3oplm/Onemission/logos/AMAN_ONEMISSION.png?updatedAt=1782542636942"
+              src={ONEMISSION_LOGO_URL}
               alt="ONEMISSION"
               className="h-8 md:h-14 w-auto"
             />

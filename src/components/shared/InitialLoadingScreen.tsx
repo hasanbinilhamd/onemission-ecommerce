@@ -1,62 +1,35 @@
-import { useEffect, useRef, useState } from 'react';
-
-function getInitialReadinessPromise(): Promise<unknown> {
-  const nextPaint = new Promise<void>((resolve) => {
-    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-  });
-
-  const fontsReady = typeof document !== 'undefined' && 'fonts' in document
-    ? document.fonts.ready.catch(() => undefined)
-    : Promise.resolve();
-
-  return Promise.all([nextPaint, fontsReady]);
-}
+import { useEffect, useState } from 'react';
+import { ONEMISSION_LOGO_URL, prepareInitialApplicationExperience } from '../../features/homepage/initialHomepageResources';
 
 export function InitialLoadingScreen() {
   const [progress, setProgress] = useState(0);
   const [isExiting, setIsExiting] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
-  const readyRef = useRef(false);
-  const frameRef = useRef<number | null>(null);
 
   useEffect(() => {
     let mounted = true;
-    let currentProgress = 0;
-    const startedAt = performance.now();
 
-    void getInitialReadinessPromise().then(() => {
+    const updateProgress = (_stage: string, value: number) => {
       if (!mounted) return;
-      readyRef.current = true;
-    });
-
-    const animate = (timestamp: number) => {
-      if (!mounted) return;
-
-      const elapsed = Math.max(0, timestamp - startedAt);
-      const boundedTarget = Math.min(92, 16 + (1 - Math.exp(-elapsed / 720)) * 76);
-      const target = readyRef.current ? 100 : boundedTarget;
-      const smoothing = readyRef.current ? 0.34 : 0.08;
-
-      currentProgress += (target - currentProgress) * smoothing;
-
-      if (readyRef.current && currentProgress >= 99.35) {
-        currentProgress = 100;
-        setProgress(100);
-        setIsExiting(true);
-        return;
-      }
-
-      setProgress((previous) => Math.max(previous, Math.min(99, Math.floor(currentProgress))));
-      frameRef.current = requestAnimationFrame(animate);
+      setProgress((current) => Math.max(current, Math.min(100, Math.floor(value))));
     };
 
-    frameRef.current = requestAnimationFrame(animate);
+    void prepareInitialApplicationExperience(updateProgress)
+      .catch(() => {
+        updateProgress('ready', 100);
+      })
+      .finally(() => {
+        if (!mounted) return;
+        setProgress(100);
+        setIsExiting(true);
+
+        if (typeof performance !== 'undefined' && typeof performance.mark === 'function') {
+          performance.mark('om_homepage_reveal_ready');
+        }
+      });
 
     return () => {
       mounted = false;
-      if (frameRef.current !== null) {
-        cancelAnimationFrame(frameRef.current);
-      }
     };
   }, []);
 
@@ -82,9 +55,12 @@ export function InitialLoadingScreen() {
         <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.36em] text-white/55">
           One Mission
         </p>
-        <h1 className="mt-4 text-[clamp(2.35rem,12vw,4.5rem)] font-semibold leading-none tracking-[-0.07em] text-white">
-          ONEMISSION
-        </h1>
+        <img
+          src={ONEMISSION_LOGO_URL}
+          alt="ONEMISSION"
+          className="mx-auto mt-5 h-auto w-[min(72vw,260px)]"
+          draggable={false}
+        />
         <p className="mt-4 text-xs font-medium uppercase tracking-[0.22em] text-white/45">
           Preparing your experience
         </p>
@@ -92,7 +68,7 @@ export function InitialLoadingScreen() {
         <div className="mt-10" aria-hidden="true">
           <div className="h-[3px] overflow-hidden rounded-full bg-white/15">
             <div
-              className="h-full rounded-full bg-white transition-[width] duration-150 ease-out motion-reduce:transition-none"
+              className="h-full rounded-full bg-white transition-[width] duration-300 ease-out motion-reduce:transition-none"
               style={{ width: `${progress}%` }}
             />
           </div>

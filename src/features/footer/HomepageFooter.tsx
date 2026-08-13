@@ -55,7 +55,7 @@ const NAVIGATION_LINKS: readonly FooterLinkItem[] = [
 ] as const;
 
 const SUPPORT_LINKS: readonly FooterLinkItem[] = [
-  { label: 'FAQ', href: 'mailto:hello@onemissionclo.com?subject=FAQ', isExternal: true },
+  { label: 'FAQ', href: ROUTES.FAQ },
   { label: 'Track Order', href: ROUTES.TRACK_ORDER },
   // { label: 'Returns', href: 'mailto:hello@onemissionclo.com?subject=Returns', isExternal: true },
   { label: 'Privacy Policy', href: ROUTES.PRIVACY },

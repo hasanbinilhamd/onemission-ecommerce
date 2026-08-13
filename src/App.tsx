@@ -10,6 +10,7 @@ import { NavigationThemeProvider, RouteScrollRestoration, type NavigationTheme }
 const CollectionPage = lazy(() => import('./pages/CollectionPage').then((module) => ({ default: module.CollectionPage })));
 const TermsPage = lazy(() => import('./pages/TermsPage').then((module) => ({ default: module.TermsPage })));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then((module) => ({ default: module.PrivacyPage })));
+const FaqPage = lazy(() => import('./pages/FaqPage').then((module) => ({ default: module.FaqPage })));
 const ProductDetailPage = lazy(() => import('./pages/ProductDetailPage').then((module) => ({ default: module.ProductDetailPage })));
 const CartPage = lazy(() => import('./pages/CartPage').then((module) => ({ default: module.CartPage })));
 const CheckoutPage = lazy(() => import('./pages/CheckoutPage').then((module) => ({ default: module.CheckoutPage })));
@@ -214,6 +215,7 @@ function App() {
             <Route path="/collections" element={<CollectionPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/faq" element={<FaqPage />} />
             <Route path="/product/:slug" element={<ProductDetailPage />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />

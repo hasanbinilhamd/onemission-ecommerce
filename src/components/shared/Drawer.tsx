@@ -82,7 +82,7 @@ function panelStyle(position: DrawerPosition, width: DrawerWidth, mobileFullScre
       bottom: 0,
       width: mobileFullScreen && isMobile ? '100vw' : DRAWER_WIDTHS[width],
       maxWidth: '100vw',
-      height: mobileFullScreen && isMobile ? '100vh' : undefined,
+      height: mobileFullScreen && isMobile ? '100dvh' : undefined,
       boxShadow: mobileFullScreen && isMobile ? 'none' : '-8px 0 48px rgba(0,0,0,0.18)',
     };
   }
@@ -93,7 +93,7 @@ function panelStyle(position: DrawerPosition, width: DrawerWidth, mobileFullScre
     left: 0,
     right: 0,
     bottom: 0,
-    maxHeight: '90vh',
+    maxHeight: '90dvh',
     borderRadius: '16px 16px 0 0',
     boxShadow: '0 -8px 48px rgba(0,0,0,0.18)',
   };
@@ -197,6 +197,8 @@ export function Drawer({
                 fontWeight: 600,
                 color: '#111827',
                 flex: 1,
+                minWidth: 0,
+                overflowWrap: 'break-word',
               }}
             >
               {title}
@@ -247,7 +249,7 @@ export function Drawer({
         </div>
 
         {/* ── Content ── */}
-        <div style={{ flex: 1, overflowY: 'auto' }}>{children}</div>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain' }}>{children}</div>
       </div>
     </>
   );

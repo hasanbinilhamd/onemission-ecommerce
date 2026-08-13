@@ -57,7 +57,21 @@ export function WriteReviewModal({
   };
 
   return (
-    <Modal open={open} onClose={isSubmitting ? () => undefined : onClose} title="Write Review">
+    <Modal
+      open={open}
+      onClose={isSubmitting ? () => undefined : onClose}
+      title="Write Review"
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button type="button" onClick={() => void handleSubmit()} disabled={isSubmitting}>
+            {isSubmitting ? 'Submitting...' : 'Submit'}
+          </Button>
+        </>
+      }
+    >
       <div className="grid gap-4">
         <div>
           <p className="m-0 text-sm font-semibold text-neutral-950">{item?.productName || 'Product Review'}</p>
@@ -126,15 +140,6 @@ export function WriteReviewModal({
             {errorMessage}
           </div>
         ) : null}
-
-        <div className="flex justify-end gap-3">
-          <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
-            Cancel
-          </Button>
-          <Button type="button" onClick={() => void handleSubmit()} disabled={isSubmitting}>
-            {isSubmitting ? 'Submitting...' : 'Submit'}
-          </Button>
-        </div>
       </div>
     </Modal>
   );

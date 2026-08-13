@@ -260,7 +260,7 @@ export function CatalogDrawer({ open, openMode = 'animated', onClose, onProductS
       overlayColor="rgba(8, 15, 26, 0.22)"
       overlayOpacity={0.72}
       panelStyleOverrides={{
-        maxHeight: 'min(88vh, 980px)',
+        maxHeight: 'min(88dvh, 980px)',
         borderRadius: '28px 28px 0 0',
         boxShadow: '0 -20px 60px rgba(0,0,0,0.24)',
       }}

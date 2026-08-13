@@ -187,7 +187,7 @@ export function FilterDrawer({
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ position: 'sticky', bottom: 0, display: 'flex', gap: '10px', margin: '0 -20px -24px', padding: '12px 20px max(16px, env(safe-area-inset-bottom))', borderTop: '1px solid #F3F4F6', backgroundColor: '#fff' }}>
           <button
             type="button"
             onClick={handleReset}

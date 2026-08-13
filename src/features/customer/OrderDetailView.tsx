@@ -827,7 +827,21 @@ Refund could not be processed yet. Our team will follow up manually.
         </SectionCard>
       </div>
 
-      <Modal open={isCancelModalOpen} onClose={() => setIsCancelModalOpen(false)} title="Cancel Order?">
+      <Modal
+        open={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        title="Cancel Order?"
+        footer={
+          <>
+            <Button type="button" variant="secondary" onClick={() => setIsCancelModalOpen(false)}>
+              Keep Order
+            </Button>
+            <Button type="button" onClick={() => void handleSubmitCancelOrder()} disabled={isMutating || !cancelReason.trim()}>
+              Cancel Order
+            </Button>
+          </>
+        }
+      >
         <div className="grid gap-4">
           <p className="m-0 text-sm leading-6 text-neutral-600">
             Are you sure you want to cancel this order? This action cannot be undone.
@@ -844,18 +858,24 @@ Refund could not be processed yet. Our team will follow up manually.
               className="w-full rounded-2xl border border-neutral-200 px-4 py-3 text-sm outline-none focus:border-neutral-900"
             />
           </div>
-          <div className="flex gap-3 justify-end">
-            <Button type="button" variant="secondary" onClick={() => setIsCancelModalOpen(false)}>
-              Keep Order
-            </Button>
-            <Button type="button" onClick={() => void handleSubmitCancelOrder()} disabled={isMutating || !cancelReason.trim()}>
-              Cancel Order
-            </Button>
-          </div>
         </div>
       </Modal>
 
-      <Modal open={isReturnModalOpen} onClose={() => setIsReturnModalOpen(false)} title="Request Return">
+      <Modal
+        open={isReturnModalOpen}
+        onClose={() => setIsReturnModalOpen(false)}
+        title="Request Return"
+        footer={
+          <>
+            <Button type="button" variant="secondary" onClick={() => setIsReturnModalOpen(false)}>
+              Keep Order
+            </Button>
+            <Button type="button" onClick={() => void handleSubmitReturnRequest()} disabled={isMutating}>
+              Submit
+            </Button>
+          </>
+        }
+      >
         <div className="grid gap-4">
           <div className="grid gap-2">
             <label className="text-sm font-medium text-neutral-900">
@@ -978,14 +998,6 @@ Refund could not be processed yet. Our team will follow up manually.
               {returnFormError}
             </div>
           ) : null}
-          <div className="flex gap-3 justify-end">
-            <Button type="button" variant="secondary" onClick={() => setIsReturnModalOpen(false)}>
-              Keep Order
-            </Button>
-            <Button type="button" onClick={() => void handleSubmitReturnRequest()} disabled={isMutating}>
-              Submit
-            </Button>
-          </div>
         </div>
       </Modal>
     </div>

@@ -664,19 +664,25 @@ export function PaymentPendingPage() {
         </div>
       </div>
 
-      <Modal open={isCancelModalOpen} onClose={() => setIsCancelModalOpen(false)} title="Cancel Checkout?">
-        <div className="grid gap-4">
-          <p className="m-0 text-sm leading-6 text-neutral-600">
-            Are you sure you want to cancel this checkout?
-          </p>
-          <div className="flex justify-end gap-3">
+      <Modal
+        open={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        title="Cancel Checkout?"
+        footer={
+          <>
             <Button type="button" variant="secondary" onClick={() => setIsCancelModalOpen(false)}>
               Keep Waiting
             </Button>
             <Button type="button" onClick={() => void handleCancelCheckout()} disabled={isSubmitting}>
               Cancel
             </Button>
-          </div>
+          </>
+        }
+      >
+        <div className="grid gap-4">
+          <p className="m-0 text-sm leading-6 text-neutral-600">
+            Are you sure you want to cancel this checkout?
+          </p>
         </div>
       </Modal>
     </div>

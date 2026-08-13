@@ -83,7 +83,7 @@ export function MiniCartDrawer() {
         </div>
 
         {!isEmpty && (
-          <div style={{ borderTop: '1px solid #F3F4F6', padding: '18px 20px 20px', flexShrink: 0, backgroundColor: '#fff' }}>
+          <div style={{ position: 'sticky', bottom: 0, borderTop: '1px solid #F3F4F6', padding: '18px 20px max(20px, env(safe-area-inset-bottom))', flexShrink: 0, backgroundColor: '#fff' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
               <p style={summaryLabelStyle}>Number of Items</p>
               <p style={summaryValueStyle}>{totalItems}</p>

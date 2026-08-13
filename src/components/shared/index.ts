@@ -8,6 +8,7 @@ export { Badge } from './Badge';
 export type { BadgeVariant } from './Badge';
 
 export { Modal } from './Modal';
+export { InitialLoadingScreen } from './InitialLoadingScreen';
 
 export { Drawer } from './Drawer';
 export type { DrawerPosition, DrawerWidth } from './Drawer';

@@ -4,6 +4,7 @@ import { Toaster } from 'sonner';
 import { MainLayout } from './layouts/MainLayout';
 import { ROUTES } from './app/config/routes';
 import { HomePage } from './pages/HomePage';
+import { InitialLoadingScreen } from './components/shared';
 import { FloatingNavigation } from './features/cart';
 import { NavigationThemeProvider, RouteScrollRestoration, type NavigationTheme } from './features/navigation';
 
@@ -203,6 +204,7 @@ function App() {
   return (
     <NavigationThemeProvider theme={navigationTheme}>
       <>
+        <InitialLoadingScreen />
         <RouteScrollRestoration />
         <Suspense fallback={null}>
           <Routes>

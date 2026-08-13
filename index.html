@@ -5,6 +5,81 @@
     <link rel="icon" type="image/svg+xml" href="public/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ONEMISSION — VALUES MATTER</title>
+    <style>
+      html,
+      body,
+      #root {
+        margin: 0;
+        min-height: 100%;
+        background: #0a0a0a;
+      }
+
+      .om-initial-shell {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        min-height: 100dvh;
+        padding: max(1.5rem, env(safe-area-inset-top)) 1.5rem max(1.5rem, env(safe-area-inset-bottom));
+        box-sizing: border-box;
+        background: #0a0a0a;
+        color: #ffffff;
+        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        text-align: center;
+      }
+
+      .om-initial-brand-kicker {
+        margin: 0;
+        color: rgba(255,255,255,0.55);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.36em;
+        text-transform: uppercase;
+      }
+
+      .om-initial-brand {
+        margin: 1rem 0 0;
+        color: #ffffff;
+        font-size: clamp(2.35rem, 12vw, 4.5rem);
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: -0.07em;
+      }
+
+      .om-initial-bar {
+        width: min(100%, 360px);
+        height: 3px;
+        margin-top: 2.5rem;
+        overflow: hidden;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.15);
+      }
+
+      .om-initial-bar::before {
+        content: "";
+        display: block;
+        width: 42%;
+        height: 100%;
+        border-radius: inherit;
+        background: #ffffff;
+        animation: om-initial-progress 900ms ease-in-out infinite alternate;
+      }
+
+      @keyframes om-initial-progress {
+        from { transform: translateX(-90%); }
+        to { transform: translateX(240%); }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .om-initial-bar::before {
+          animation: none;
+          width: 55%;
+        }
+      }
+    </style>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -16,7 +91,15 @@
     />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="om-initial-shell" role="status" aria-label="Loading OneMission experience">
+        <div>
+          <p class="om-initial-brand-kicker">One Mission</p>
+          <h1 class="om-initial-brand">ONEMISSION</h1>
+          <div class="om-initial-bar" aria-hidden="true"></div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

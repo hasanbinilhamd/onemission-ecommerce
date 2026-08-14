@@ -6,6 +6,9 @@ import { ROUTES } from './app/config/routes';
 import { HomePage } from './pages/HomePage';
 import { InitialLoadingScreen } from './components/shared';
 import { FloatingNavigation } from './features/cart';
+import { EarlyAccessGate } from './features/early-access';
+import { getEarlyAccessStatus } from './services/api/earlyAccessService';
+import { prepareInitialApplicationExperience, type InitialPreloadProgressHandler } from './features/homepage/initialHomepageResources';
 import { NavigationThemeProvider, RouteScrollRestoration, type NavigationTheme } from './features/navigation';
 
 const CollectionPage = lazy(() => import('./pages/CollectionPage').then((module) => ({ default: module.CollectionPage })));
@@ -125,6 +128,8 @@ function resolveHomepageNavigationTheme(): NavigationTheme {
     : 'dark';
 }
 
+type EarlyAccessPhase = 'booting' | 'gated' | 'unlocking' | 'ready';
+
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -133,6 +138,9 @@ function App() {
   const [navigationTheme, setNavigationTheme] = useState<NavigationTheme>(() => (
     location.pathname === '/' ? resolveHomepageNavigationTheme() : 'dark'
   ));
+  const [earlyAccessPhase, setEarlyAccessPhase] = useState<EarlyAccessPhase>('booting');
+  const [earlyAccessChapter, setEarlyAccessChapter] = useState('CHAPTER 01');
+  const [loadingInstance, setLoadingInstance] = useState(0);
 
   const isHome = location.pathname === '/';
 
@@ -192,6 +200,36 @@ function App() {
     navigate(ROUTES.COLLECTION);
   }, [navigate]);
 
+  const prepareInitialBoot = useCallback(async (onProgress: InitialPreloadProgressHandler) => {
+    onProgress('boot', 10);
+    try {
+      const status = await getEarlyAccessStatus();
+      setEarlyAccessChapter(status.chapter || 'CHAPTER 01');
+
+      if (status.enabled && !status.authenticated) {
+        onProgress('ready', 100);
+        setEarlyAccessPhase('gated');
+        return;
+      }
+
+      await prepareInitialApplicationExperience(onProgress);
+      setEarlyAccessPhase('ready');
+    } catch {
+      onProgress('ready', 100);
+      setEarlyAccessPhase('gated');
+    }
+  }, []);
+
+  const prepareUnlockedExperience = useCallback(async (onProgress: InitialPreloadProgressHandler) => {
+    await prepareInitialApplicationExperience(onProgress);
+    setEarlyAccessPhase('ready');
+  }, []);
+
+  const handleEarlyAccessUnlocked = useCallback(() => {
+    setEarlyAccessPhase('unlocking');
+    setLoadingInstance((current) => current + 1);
+  }, []);
+
   const renderHomePage = useCallback(() => (
     <HomePage
       activeIndex={heroIndex}
@@ -201,10 +239,20 @@ function App() {
     />
   ), [handleCollectionSelect, handleProductSelect, heroIndex]);
 
+  const shouldShowInitialLoading = earlyAccessPhase === 'booting' || earlyAccessPhase === 'unlocking';
+  const loadingPrepare = earlyAccessPhase === 'unlocking' ? prepareUnlockedExperience : prepareInitialBoot;
+
   return (
     <NavigationThemeProvider theme={navigationTheme}>
       <>
-        <InitialLoadingScreen />
+        {shouldShowInitialLoading ? (
+          <InitialLoadingScreen key={loadingInstance} prepare={loadingPrepare} />
+        ) : null}
+        {earlyAccessPhase === 'gated' ? (
+          <EarlyAccessGate chapter={earlyAccessChapter} onUnlocked={handleEarlyAccessUnlocked} />
+        ) : null}
+        {earlyAccessPhase === 'ready' ? (
+          <>
         <RouteScrollRestoration />
         <Suspense fallback={null}>
           <Routes>
@@ -260,6 +308,8 @@ function App() {
           <SearchOverlay />
         </Suspense>
         <Toaster position="top-center" richColors />
+          </>
+        ) : null}
       </>
     </NavigationThemeProvider>
   );

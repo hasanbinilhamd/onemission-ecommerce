@@ -1,10 +1,17 @@
-import { initializeCache } from '../lib/cache.js';
+import crypto from 'node:crypto';
+import { cache, initializeCache } from '../lib/cache.js';
 
 const DEFAULT_HQ_UPSTREAM_URL = 'https://onemission-world.vercel.app/api';
+const EARLY_ACCESS_COOKIE_NAME = 'om_early_access';
+const EARLY_ACCESS_SESSION_TTL_SECONDS = 60 * 60 * 24 * 14;
+const EARLY_ACCESS_RATE_LIMIT_SECONDS = 10 * 60;
+const EARLY_ACCESS_RATE_LIMIT_MAX_ATTEMPTS = 8;
 
 void initializeCache();
 
 const ALLOWED_PUBLIC_PATTERNS = [
+  /^early-access\/status$/,
+  /^early-access\/verify$/,
   /^commerce\/categories$/,
   /^commerce\/products$/,
   /^commerce\/products\/featured$/,
@@ -73,6 +80,167 @@ function isAllowedPublicPath(pathname) {
   return ALLOWED_PUBLIC_PATTERNS.some((pattern) => pattern.test(pathname));
 }
 
+function base64UrlEncode(value) {
+  return Buffer.from(value).toString('base64url');
+}
+
+function base64UrlDecode(value) {
+  return Buffer.from(String(value || ''), 'base64url').toString('utf8');
+}
+
+function getEarlyAccessSessionSecret() {
+  return String(
+    process.env.EARLY_ACCESS_SESSION_SECRET
+    || process.env.SESSION_SECRET
+    || process.env.UPSTASH_REDIS_REST_TOKEN
+    || 'onemission-early-access-development-secret',
+  );
+}
+
+function signEarlyAccessPayload(payload) {
+  return crypto.createHmac('sha256', getEarlyAccessSessionSecret()).update(payload).digest('base64url');
+}
+
+function serializeCookie(name, value, options = {}) {
+  const parts = [`${name}=${value}`];
+  if (options.maxAge !== undefined) parts.push(`Max-Age=${options.maxAge}`);
+  parts.push(`Path=${options.path || '/'}`);
+  parts.push('HttpOnly');
+  parts.push('SameSite=Lax');
+  if (process.env.NODE_ENV === 'production') parts.push('Secure');
+  return parts.join('; ');
+}
+
+function parseCookies(req) {
+  const header = String(req.headers.cookie || '');
+  return header.split(';').reduce((cookies, part) => {
+    const [rawName, ...rawValue] = part.trim().split('=');
+    if (!rawName) return cookies;
+    cookies[rawName] = decodeURIComponent(rawValue.join('=') || '');
+    return cookies;
+  }, {});
+}
+
+function clearEarlyAccessCookie(res) {
+  res.setHeader('Set-Cookie', serializeCookie(EARLY_ACCESS_COOKIE_NAME, '', { maxAge: 0 }));
+}
+
+function createEarlyAccessCookie({ chapter, revision }) {
+  const expiresAt = Date.now() + EARLY_ACCESS_SESSION_TTL_SECONDS * 1000;
+  const payload = base64UrlEncode(JSON.stringify({ chapter, revision, expiresAt }));
+  const signature = signEarlyAccessPayload(payload);
+  return serializeCookie(EARLY_ACCESS_COOKIE_NAME, `${payload}.${signature}`, { maxAge: EARLY_ACCESS_SESSION_TTL_SECONDS });
+}
+
+function readEarlyAccessSession(req) {
+  const raw = parseCookies(req)[EARLY_ACCESS_COOKIE_NAME] || '';
+  const [payload, signature] = raw.split('.');
+  if (!payload || !signature) return null;
+
+  const expectedSignature = signEarlyAccessPayload(payload);
+  const signatureBuffer = Buffer.from(signature);
+  const expectedBuffer = Buffer.from(expectedSignature);
+  if (signatureBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)) {
+    return null;
+  }
+
+  try {
+    const session = JSON.parse(base64UrlDecode(payload));
+    if (!session?.expiresAt || Number(session.expiresAt) <= Date.now()) return null;
+    return session;
+  } catch {
+    return null;
+  }
+}
+
+function isEarlyAccessSessionValid(req, status) {
+  if (!status?.enabled) return true;
+  const session = readEarlyAccessSession(req);
+  return Boolean(session && session.chapter === status.chapter && session.revision === status.revision);
+}
+
+function extractIp(req) {
+  const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+  return forwarded || String(req.headers['x-real-ip'] || req.socket?.remoteAddress || 'unknown');
+}
+
+async function enforceEarlyAccessRateLimit(req) {
+  const key = `early-access:verify:${extractIp(req)}`;
+  const current = Number(await cache.get(key) || 0);
+  if (current >= EARLY_ACCESS_RATE_LIMIT_MAX_ATTEMPTS) {
+    return false;
+  }
+  await cache.set(key, String(current + 1), { ttl: EARLY_ACCESS_RATE_LIMIT_SECONDS });
+  return true;
+}
+
+async function fetchEarlyAccessStatus() {
+  const upstreamUrl = `${getUpstreamBaseUrl()}/public/early-access/status`;
+  const response = await fetch(upstreamUrl, { headers: { Accept: 'application/json' } });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload?.error || 'Early Access status could not be loaded.');
+  }
+  return payload;
+}
+
+async function verifyEarlyAccessPassword(password) {
+  const upstreamUrl = `${getUpstreamBaseUrl()}/public/early-access/verify`;
+  const response = await fetch(upstreamUrl, {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(payload?.error || 'Early Access password could not be verified.');
+    error.statusCode = response.status;
+    throw error;
+  }
+  return payload;
+}
+
+async function handleEarlyAccessRoute(req, res, publicPath) {
+  if (publicPath === 'early-access/status') {
+    const status = await fetchEarlyAccessStatus();
+    const authenticated = isEarlyAccessSessionValid(req, status);
+    if (!status.enabled) clearEarlyAccessCookie(res);
+    res.status(200).json({ enabled: Boolean(status.enabled), chapter: status.chapter || 'CHAPTER 01', authenticated });
+    return true;
+  }
+
+  if (publicPath === 'early-access/verify') {
+    if (req.method !== 'POST') {
+      res.status(405).json({ error: 'Method not allowed.' });
+      return true;
+    }
+
+    const allowed = await enforceEarlyAccessRateLimit(req);
+    if (!allowed) {
+      res.status(429).json({ error: 'Too many attempts. Please try again later.' });
+      return true;
+    }
+
+    const body = await readRequestBody(req);
+    const payload = body ? JSON.parse(Buffer.isBuffer(body) ? body.toString('utf8') : String(body)) : {};
+    const verified = await verifyEarlyAccessPassword(payload.password || '');
+    res.setHeader('Set-Cookie', createEarlyAccessCookie({ chapter: verified.chapter, revision: verified.revision }));
+    res.status(200).json({ success: true, enabled: Boolean(verified.enabled), chapter: verified.chapter || 'CHAPTER 01' });
+    return true;
+  }
+
+  return false;
+}
+
+async function ensureEarlyAccessAllowed(req, res, publicPath) {
+  if (publicPath.startsWith('early-access/')) return true;
+  const status = await fetchEarlyAccessStatus();
+  if (!status.enabled) return true;
+  if (isEarlyAccessSessionValid(req, status)) return true;
+  res.status(423).json({ error: 'Early Access is required.', code: 'EARLY_ACCESS_REQUIRED' });
+  return false;
+}
+
 async function readRequestBody(req) {
   if (req.method === 'GET' || req.method === 'HEAD') {
     return undefined;
@@ -113,8 +281,16 @@ export default async function handler(req, res) {
     const fallbackPath = url.pathname.replace(/^\/api\/?/, '').replace(/^\/+|\/+$/g, '');
     const publicPath = pathSegments.length > 0 ? pathSegments.join('/') : fallbackPath;
 
+    if (await handleEarlyAccessRoute(req, res, publicPath)) {
+      return;
+    }
+
     if (!publicPath || !isAllowedPublicPath(publicPath)) {
       res.status(404).json({ error: 'Commerce public API route was not found.' });
+      return;
+    }
+
+    if (!(await ensureEarlyAccessAllowed(req, res, publicPath))) {
       return;
     }
 

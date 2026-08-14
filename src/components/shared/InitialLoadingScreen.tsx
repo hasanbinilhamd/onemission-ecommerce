@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react';
-import { ONEMISSION_LOGO_URL, prepareInitialApplicationExperience } from '../../features/homepage/initialHomepageResources';
+import { ONEMISSION_LOGO_URL, prepareInitialApplicationExperience, type InitialPreloadProgressHandler } from '../../features/homepage/initialHomepageResources';
 
-export function InitialLoadingScreen() {
+interface InitialLoadingScreenProps {
+  prepare?: (onProgress: InitialPreloadProgressHandler) => Promise<void>;
+  onComplete?: () => void;
+}
+
+export function InitialLoadingScreen({ prepare = prepareInitialApplicationExperience, onComplete }: InitialLoadingScreenProps) {
   const [progress, setProgress] = useState(0);
   const [isExiting, setIsExiting] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
@@ -9,12 +14,12 @@ export function InitialLoadingScreen() {
   useEffect(() => {
     let mounted = true;
 
-    const updateProgress = (_stage: string, value: number) => {
+    const updateProgress: InitialPreloadProgressHandler = (_stage, value) => {
       if (!mounted) return;
       setProgress((current) => Math.max(current, Math.min(100, Math.floor(value))));
     };
 
-    void prepareInitialApplicationExperience(updateProgress)
+    void prepare(updateProgress)
       .catch(() => {
         updateProgress('ready', 100);
       })
@@ -31,7 +36,7 @@ export function InitialLoadingScreen() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [onComplete, prepare]);
 
   if (isHidden) return null;
 
@@ -48,13 +53,13 @@ export function InitialLoadingScreen() {
       aria-live="polite"
       aria-label="Loading OneMission experience"
       onTransitionEnd={() => {
-        if (isExiting) setIsHidden(true);
+        if (isExiting) {
+          setIsHidden(true);
+          onComplete?.();
+        }
       }}
     >
       <div className="w-full max-w-[360px] text-center">
-        {/* <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.36em] text-white/55">
-          One Mission
-        </p> */}
         <img
           src={ONEMISSION_LOGO_URL}
           alt="ONEMISSION"

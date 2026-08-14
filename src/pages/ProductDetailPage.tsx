@@ -469,7 +469,7 @@ function ProductDetailContent() {
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
           borderBottom: '1px solid #F3F4F6',
-          padding: '0 15px',
+          padding: '0 24px',
           height: '80px',
           display: 'flex',
           alignItems: 'center',
@@ -507,7 +507,7 @@ function ProductDetailContent() {
         <div style={{ width: '120px' }} />
       </div>
 
-      <div style={{ width: '100%', padding: '0px 24px 80px', boxSizing: 'border-box' }}>
+      <div style={{ width: '100%', padding: '0px 14px 80px', boxSizing: 'border-box' }}>
         <div className="lg:grid lg:grid-cols-5 lg:gap-12 lg:items-start">
           <div className="lg:col-span-3" style={{ marginBottom: '32px' }}>
             <ProductMediaGallery product={product} />

@@ -3,9 +3,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { CatalogLayer } from '../features/catalog';
 import { HERO_THEMES, createHeroGradient } from '../features/hero/theme';
 import { ProductStorySection, PRODUCT_STORY_ITEMS, type ProductStoryItem } from '../features/story';
-import { FeaturedProductsSection } from '../features/featured';
 import { HomepageFooter } from '../features/footer';
-import { ShopeeMarketplaceSection } from '../features/marketplace';
 import {
   type WebsiteBrandVideo,
   type WebsiteHeroItem as WebsiteHeroCmsItem,
@@ -1074,7 +1072,75 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
       ) : null} */}
 
       <ProductStorySection items={productStoryItems} backgroundImage={heroGradients[resolvedActiveIndex]} />
-      <FeaturedProductsSection onProductSelect={onProductSelect} />
+
+      {/* FeaturedProductsSection is intentionally disabled for now.
+          Keep the component/code available so it can be re-enabled later if needed. */}
+      <section
+        aria-label="Discover the OneMission collection"
+        style={{
+          backgroundColor: '#FFFFFF',
+          color: '#111827',
+          padding: 'clamp(44px, 8vw, 84px) 20px',
+        }}
+      >
+        <div
+          style={{
+            width: 'min(100%, 920px)',
+            margin: '0 auto',
+            display: 'grid',
+            justifyItems: 'center',
+            gap: '18px',
+            textAlign: 'center',
+          }}
+        >
+          <p
+            style={{
+              margin: 0,
+              fontFamily: "'Chakra Petch', sans-serif",
+              fontSize: '12px',
+              fontWeight: 600,
+              letterSpacing: '0.22em',
+              textTransform: 'uppercase',
+              color: 'rgba(17,24,39,0.56)',
+            }}
+          >
+            Collection
+          </p>
+          <h2
+            style={{
+              margin: 0,
+              maxWidth: '720px',
+              fontFamily: "'SF-Pro-Display', sans-serif",
+              fontSize: 'clamp(34px, 6vw, 72px)',
+              lineHeight: 0.98,
+              letterSpacing: '-0.045em',
+              fontWeight: 500,
+            }}
+          >
+            Discover Our Collection
+          </h2>
+          <p
+            style={{
+              margin: 0,
+              maxWidth: '520px',
+              fontSize: '16px',
+              lineHeight: 1.8,
+              color: 'rgba(17,24,39,0.66)',
+            }}
+          >
+            Explore the latest OneMission products and discover the complete collection.
+          </p>
+          <button
+            type="button"
+            onClick={onCollectionSelect}
+            className="mt-2 inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-neutral-950 px-6 py-3 text-sm font-semibold uppercase tracking-[0.08em] text-white transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2"
+          >
+            Explore Collection
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+      </section>
+
       {/* <ShopeeMarketplaceSection /> */}
       <HomepageFooter />
     </div>

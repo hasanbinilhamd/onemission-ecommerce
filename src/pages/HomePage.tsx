@@ -1077,10 +1077,11 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
           Keep the component/code available so it can be re-enabled later if needed. */}
       <section
         aria-label="Discover the OneMission collection"
+        className="pt-0 pb-16"
         style={{
           backgroundColor: '#FFFFFF',
           color: '#111827',
-          padding: 'clamp(44px, 8vw, 84px) 20px',
+          padding: '0 20px',
         }}
       >
         <div

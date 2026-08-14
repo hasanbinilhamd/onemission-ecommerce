@@ -21,7 +21,7 @@ export function ProductShowcaseSection({ items = [], productName }: ProductShowc
   return (
     <section
       aria-label="Product Showcase"
-      className="w-screen lg:w-full ml-[calc(50%_-_50vw)] lg:ml-0 mr-[calc(50%_-_50vw)] lg:mr-0"
+      className="w-full sm:w-screen lg:w-full sm:ml-[calc(50%_-_50vw)] lg:ml-0 sm:mr-[calc(50%_-_50vw)] lg:mr-0"
       style={{
         marginTop: '56px',
       }}

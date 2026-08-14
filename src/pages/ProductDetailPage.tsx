@@ -469,7 +469,7 @@ function ProductDetailContent() {
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
           borderBottom: '1px solid #F3F4F6',
-          padding: '0 14px',
+          padding: '0 15px',
           height: '80px',
           display: 'flex',
           alignItems: 'center',

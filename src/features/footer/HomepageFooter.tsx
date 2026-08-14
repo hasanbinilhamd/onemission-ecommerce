@@ -348,8 +348,16 @@ export function HomepageFooter() {
               display: grid !important;
               gap: 0;
             }
-            .homepage-footer-logo {
-              width: min(78vw, 300px) !important;
+            .homepage-footer-main-grid,
+            .homepage-footer-left {
+              gap: 0 !important;
+            }
+            .homepage-footer-brand,
+            .homepage-footer-newsletter {
+              display: none !important;
+            }
+            .homepage-footer-bottom {
+              padding-top: 20px !important;
             }
           }
         `}
@@ -368,11 +376,11 @@ export function HomepageFooter() {
         }}
       >
         <div
-          className="grid gap-12 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:items-start"
+          className="homepage-footer-main-grid grid gap-12 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:items-start"
           style={{ gap: 'clamp(48px, 6vw, 88px)' }}
         >
-          <div style={{ display: 'grid', gap: 'clamp(32px, 4vw, 48px)' }}>
-            <div style={{ display: 'grid'}}>
+          <div className="homepage-footer-left" style={{ display: 'grid', gap: 'clamp(32px, 4vw, 48px)' }}>
+            <div className="homepage-footer-brand" style={{ display: 'grid'}}>
               <img
                 src={FOOTER_LOGO}
                 alt="ONEMISSION"
@@ -482,6 +490,7 @@ export function HomepageFooter() {
           </div>
 
           <div
+            className="homepage-footer-newsletter"
             style={{
               width: '100%',
               maxWidth: '420px',
@@ -604,7 +613,7 @@ export function HomepageFooter() {
         </div>
 
         <div
-          className="flex flex-col border-t pt-6 sm:flex-row sm:items-end justify-between"
+          className="homepage-footer-bottom flex flex-col border-t pt-6 sm:flex-row sm:items-end justify-between"
           style={{ borderColor: FOOTER_BORDER }}
         >
           <div style={{ display: 'grid', gap: '6px' }}>

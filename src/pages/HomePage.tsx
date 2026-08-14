@@ -1080,7 +1080,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
         style={{
           backgroundColor: '#FFFFFF',
           color: '#111827',
-          padding: '0 20px clamp(44px, 8vw, 84px) 20px',
+          padding: '0 20px clamp(64px, 10vw, 84px) 20px',
         }}
       >
         <div

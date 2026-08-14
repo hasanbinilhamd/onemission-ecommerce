@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, Instagram, Loader2, Music2, Youtube } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ChevronDown, Instagram, Loader2, Music2, Youtube } from 'lucide-react';
 import {
   useCallback,
   useEffect,
@@ -149,6 +149,45 @@ function FooterColumn({ title, children }: { title: string; children: ReactNode 
   );
 }
 
+function MobileFooterAccordion({ title, open, onToggle, children }: { title: string; open: boolean; onToggle: () => void; children: ReactNode }) {
+  return (
+    <div style={{ borderTop: `1px solid ${FOOTER_BORDER}` }}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        style={{
+          width: '100%',
+          minHeight: '48px',
+          border: 'none',
+          background: 'transparent',
+          color: FOOTER_TEXT,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+          padding: '14px 0',
+          cursor: 'pointer',
+        }}
+      >
+        <span style={{ fontSize: '12px', fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: FOOTER_SUBTLE }}>{title}</span>
+        <ChevronDown size={18} style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 180ms ease', color: FOOTER_MUTED, flexShrink: 0 }} />
+      </button>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateRows: open ? '1fr' : '0fr',
+          transition: 'grid-template-rows 220ms ease',
+        }}
+      >
+        <div style={{ overflow: 'hidden' }}>
+          <div style={{ display: 'grid', gap: '12px', padding: '2px 0 18px' }}>{children}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function NewsletterToast({ toastState }: { toastState: NewsletterToastState }) {
   if (!toastState) return null;
 
@@ -215,6 +254,8 @@ export function HomepageFooter() {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toastState, setToastState] = useState<NewsletterToastState>(null);
+  const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
+  const [mobileSupportOpen, setMobileSupportOpen] = useState(false);
 
   const newsletterDescription = useMemo(() => (
     'Receive product launches, stories, and exclusive updates.'
@@ -284,14 +325,48 @@ export function HomepageFooter() {
             color: rgba(255,255,255,0.45);
             opacity: 1;
           }
+          .homepage-footer-shell {
+            min-height: clamp(700px, 78vw, 850px);
+            padding: clamp(72px, 10vw, 116px) clamp(20px, 4vw, 48px) clamp(56px, 8vw, 72px);
+          }
+          .homepage-footer-desktop-links {
+            display: grid;
+          }
+          .homepage-footer-mobile-links {
+            display: none;
+          }
+          @media (max-width: 767px) {
+            .homepage-footer-shell {
+              min-height: auto;
+              padding: 40px 20px 28px;
+              gap: 34px !important;
+            }
+            .homepage-footer-desktop-links {
+              display: none !important;
+            }
+            .homepage-footer-mobile-links {
+              display: grid !important;
+              gap: 0;
+            }
+            .homepage-footer-main-grid,
+            .homepage-footer-left {
+              gap: 0 !important;
+            }
+            .homepage-footer-brand,
+            .homepage-footer-newsletter {
+              display: none !important;
+            }
+            .homepage-footer-bottom {
+              padding-top: 20px !important;
+            }
+          }
         `}
       </style>
       <NewsletterToast toastState={toastState} />
       <div
+        className="homepage-footer-shell"
         style={{
           position: 'relative',
-          minHeight: 'clamp(700px, 78vw, 850px)',
-          padding: 'clamp(72px, 10vw, 116px) clamp(20px, 4vw, 48px) clamp(56px, 8vw, 72px)',
           maxWidth: '1520px',
           margin: '0 auto',
           boxSizing: 'border-box',
@@ -301,14 +376,15 @@ export function HomepageFooter() {
         }}
       >
         <div
-          className="grid gap-12 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:items-start"
+          className="homepage-footer-main-grid grid gap-12 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:items-start"
           style={{ gap: 'clamp(48px, 6vw, 88px)' }}
         >
-          <div style={{ display: 'grid', gap: 'clamp(32px, 4vw, 48px)' }}>
-            <div style={{ display: 'grid'}}>
+          <div className="homepage-footer-left" style={{ display: 'grid', gap: 'clamp(32px, 4vw, 48px)' }}>
+            <div className="homepage-footer-brand" style={{ display: 'grid'}}>
               <img
                 src={FOOTER_LOGO}
                 alt="ONEMISSION"
+                className="homepage-footer-logo"
                 style={{
                   width: 'min(100%, 420px)',
                   height: 'auto',
@@ -329,7 +405,7 @@ export function HomepageFooter() {
               </p>
             </div>
 
-            <div className="grid gap-12 sm:grid-cols-2 xl:grid-cols-3" style={{ alignItems: 'start' }}>
+            <div className="homepage-footer-desktop-links gap-12 sm:grid-cols-2 xl:grid-cols-3" style={{ alignItems: 'start' }}>
               <FooterColumn title="Navigation">
                 {NAVIGATION_LINKS.map((item) => <FooterLink key={item.label} item={item} />)}
               </FooterColumn>
@@ -371,9 +447,50 @@ export function HomepageFooter() {
                 })}
               </FooterColumn>
             </div>
+
+            <div className="homepage-footer-mobile-links">
+              <MobileFooterAccordion title="Navigation" open={mobileNavigationOpen} onToggle={() => setMobileNavigationOpen((current) => !current)}>
+                {NAVIGATION_LINKS.map((item) => <FooterLink key={item.label} item={item} />)}
+              </MobileFooterAccordion>
+              <MobileFooterAccordion title="Support" open={mobileSupportOpen} onToggle={() => setMobileSupportOpen((current) => !current)}>
+                {SUPPORT_LINKS.map((item) => <FooterLink key={item.label} item={item} />)}
+              </MobileFooterAccordion>
+              <div style={{ borderTop: `1px solid ${FOOTER_BORDER}`, paddingTop: '16px', display: 'grid', gap: '14px' }}>
+                <p style={{ margin: 0, color: FOOTER_SUBTLE, fontSize: '12px', fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase' }}>Community</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                  {COMMUNITY_LINKS.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <a
+                        key={item.label}
+                        href={item.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={item.label}
+                        title={item.label}
+                        style={{
+                          width: '42px',
+                          height: '42px',
+                          borderRadius: '999px',
+                          border: `1px solid ${FOOTER_BORDER}`,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: FOOTER_MUTED,
+                          textDecoration: 'none',
+                        }}
+                      >
+                        <Icon size={18} strokeWidth={1.9} />
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           </div>
 
           <div
+            className="homepage-footer-newsletter"
             style={{
               width: '100%',
               maxWidth: '420px',
@@ -496,7 +613,7 @@ export function HomepageFooter() {
         </div>
 
         <div
-          className="flex flex-col border-t pt-6 sm:flex-row sm:items-end justify-between"
+          className="homepage-footer-bottom flex flex-col border-t pt-6 sm:flex-row sm:items-end justify-between"
           style={{ borderColor: FOOTER_BORDER }}
         >
           <div style={{ display: 'grid', gap: '6px' }}>

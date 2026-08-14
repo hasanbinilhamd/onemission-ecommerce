@@ -5,6 +5,7 @@ import { ROUTES } from '../app/config/routes';
 import { Button, EmptyState, Input, LoadingSkeleton } from '../components/shared';
 import { CustomerPageHeader, CustomerPageShell, OrderDetailView } from '../features/customer';
 import { NavigationThemeProvider } from '../features/navigation';
+import { HomepageFooter } from '../features/footer';
 import { findGuestOrder } from '../services/api/orderService';
 import type { CommerceOrderDetail } from '../types';
 import { isEmail, isRequired } from '../utils/validation';
@@ -148,6 +149,7 @@ export function TrackOrderPage() {
   return (
     <NavigationThemeProvider theme="dark">
       <TrackOrderPageContent />
+      <HomepageFooter />
     </NavigationThemeProvider>
   );
 }

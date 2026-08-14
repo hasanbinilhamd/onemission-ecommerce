@@ -15,6 +15,7 @@ import { useCartStore } from '../stores';
 import { useWishlist } from '../features/customer';
 import { DURATION, EASING } from '../utils/motion';
 import { NavigationThemeProvider, TopBackNavigation, useNavigationTheme } from '../features/navigation';
+import { HomepageFooter } from '../features/footer';
 
 function AccordionSection({ title, children }: { title: string; children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -690,6 +691,7 @@ export function ProductDetailPage() {
   return (
     <NavigationThemeProvider theme="dark">
       <ProductDetailContent />
+      <HomepageFooter />
     </NavigationThemeProvider>
   );
 }

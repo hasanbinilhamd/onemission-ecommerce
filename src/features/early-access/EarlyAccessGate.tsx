@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { Button } from '../../components/shared';
 import { ONEMISSION_LOGO_URL } from '../homepage/initialHomepageResources';
 import { verifyEarlyAccessPassword } from '../../services/api/earlyAccessService';
@@ -13,6 +13,7 @@ export function EarlyAccessGate({ chapter, onUnlocked }: EarlyAccessGateProps) {
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -57,15 +58,25 @@ export function EarlyAccessGate({ chapter, onUnlocked }: EarlyAccessGateProps) {
           <label className="text-xs font-semibold uppercase tracking-[0.16em] text-white/50" htmlFor="early-access-password">
             Access Password
           </label>
-          <input
-            id="early-access-password"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            className="h-12 w-full rounded-2xl border border-white/15 bg-white/10 px-4 text-center text-base font-semibold tracking-[0.12em] text-white outline-none transition-colors placeholder:text-white/25 focus:border-white/60"
-            placeholder="••••••••"
-            autoComplete="one-time-code"
-          />
+          <div className="relative">
+            <input
+              id="early-access-password"
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              className="h-12 w-full rounded-2xl border border-white/15 bg-white/10 px-4 pr-12 text-center text-base font-semibold tracking-[0.12em] text-white outline-none transition-colors placeholder:text-white/25 focus:border-white/60"
+              placeholder="••••••••"
+              autoComplete="one-time-code"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((current) => !current)}
+              className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl text-white/55 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+              aria-label={showPassword ? 'Hide access password' : 'Show access password'}
+            >
+              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
+          </div>
           {errorMessage ? (
             <p className="m-0 rounded-2xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-center text-sm text-red-100">
               {errorMessage}

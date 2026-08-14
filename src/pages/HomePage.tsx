@@ -1075,7 +1075,7 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
 
       <ProductStorySection items={productStoryItems} backgroundImage={heroGradients[resolvedActiveIndex]} />
       <FeaturedProductsSection onProductSelect={onProductSelect} />
-      <ShopeeMarketplaceSection />
+      {/* <ShopeeMarketplaceSection /> */}
       <HomepageFooter />
     </div>
   );

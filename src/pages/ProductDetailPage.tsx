@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, Heart, Minus, Plus, ShoppingCart } from 'lucide-react';
 import type { Product } from '../types';
 import { Button } from '../components/shared';
+import { ROUTES } from '../app/config/routes';
 import { ProductCard } from '../features/catalog/ProductCard';
 import { EmptyState } from '../components/shared/EmptyState';
 import { LoadingSkeleton } from '../components/shared/LoadingSkeleton';
@@ -12,10 +13,11 @@ import { ProductShowcaseSection } from '../features/product/ProductShowcaseSecti
 import { CustomerReviewsSection, RatingStars } from '../features/reviews';
 import { formatCurrency } from '../utils/formatting';
 import { useCartStore } from '../stores';
-import { useWishlist } from '../features/customer';
+import { useAuthenticatedCustomer, useWishlist } from '../features/customer';
 import { DURATION, EASING } from '../utils/motion';
 import { NavigationThemeProvider, TopBackNavigation, useNavigationTheme } from '../features/navigation';
 import { HomepageFooter } from '../features/footer';
+import { mapProductToWishlistItem, setPendingWishlistItem } from '../services/wishlist/wishlistStorage';
 
 function AccordionSection({ title, children }: { title: string; children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -217,6 +219,7 @@ function ProductDetailContent() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
   const { addItem } = useCartStore();
+  const { user } = useAuthenticatedCustomer();
   const { isWishlisted, toggleItem } = useWishlist();
   const { colors } = useNavigationTheme();
 
@@ -376,6 +379,23 @@ function ProductDetailContent() {
       quantity: Math.min(qty, Math.max(availableStock, 1)),
     });
   }, [addItem, availableStock, isOutOfStock, product, qty, selectedVariant]);
+
+  const handleWishlistClick = useCallback(() => {
+    if (!product) return;
+
+    if (!user) {
+      setPendingWishlistItem(mapProductToWishlistItem(product));
+      navigate(ROUTES.LOGIN, {
+        state: {
+          redirectTo: `${location.pathname}${location.search}${location.hash}`,
+          toastMessage: 'Please login to save this product to your wishlist.',
+        },
+      });
+      return;
+    }
+
+    toggleItem(product);
+  }, [location.hash, location.pathname, location.search, navigate, product, toggleItem, user]);
 
   const renderProductAccordion = () => {
     if (!product) return null;
@@ -550,7 +570,7 @@ function ProductDetailContent() {
               </p>
               <button
                 type="button"
-                onClick={() => toggleItem(product)}
+                onClick={handleWishlistClick}
                 aria-label={isWishlisted(product.id) ? 'Remove from wishlist' : 'Add to wishlist'}
                 style={{
                   width: '42px',

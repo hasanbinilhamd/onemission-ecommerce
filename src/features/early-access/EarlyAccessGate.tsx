@@ -44,7 +44,7 @@ export function EarlyAccessGate({ chapter, onUnlocked }: EarlyAccessGateProps) {
       }}
     >
       <section className="w-full max-w-sm text-center" aria-label="Early Access">
-        <img src={ONEMISSION_LOGO_URL} alt="ONEMISSION" className="mx-auto h-auto w-[min(70vw,240px)]" draggable={false} />
+        <img src={ONEMISSION_LOGO_URL} alt="ONEMISSION" className="mx-auto h-auto w-[min(50vw,180px)]" draggable={false} />
         <p className="mt-8 text-[11px] font-semibold uppercase tracking-[0.34em] text-white/45">{chapter || 'CHAPTER 01'}</p>
         <h1 className="mt-3 text-[clamp(2rem,11vw,3.8rem)] font-semibold uppercase leading-none tracking-[-0.06em]">
           Early Access
@@ -71,7 +71,7 @@ export function EarlyAccessGate({ chapter, onUnlocked }: EarlyAccessGateProps) {
               {errorMessage}
             </p>
           ) : null}
-          <Button type="submit" className="mt-2 h-12 gap-2 rounded-2xl" disabled={isSubmitting}>
+          <Button type="submit" className="bg-transparent mt-2 h-12 gap-2 rounded-2xl" disabled={isSubmitting}>
             {isSubmitting ? 'Checking...' : 'Enter'}
             <ArrowRight className="h-4 w-4" />
           </Button>

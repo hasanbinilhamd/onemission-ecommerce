@@ -87,6 +87,7 @@ export class HQShippingProvider implements ShippingProvider {
       body: JSON.stringify({
         originDistrict: DEFAULT_ORIGIN_DISTRICT_ID,
         destinationDistrict: address.districtId,
+        destinationPostalCode: address.postalCode,
         weight: address.weightGrams ?? 1000,
         courier: 'all',
       }),

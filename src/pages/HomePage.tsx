@@ -1014,7 +1014,9 @@ export function HomePage({ activeIndex, onActiveIndexChange, onProductSelect, on
         />
       </section>
 
-      <CollectionPageCatalog onProductSelect={onProductSelect} mode="homepage" />
+      <div id="collection">
+        <CollectionPageCatalog onProductSelect={onProductSelect} mode="homepage" />
+      </div>
 
       {/* {brandVideo ? (
         <section

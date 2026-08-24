@@ -31,8 +31,8 @@ const GRID_MODE_OPTIONS: Array<{ mode: GridMode; label: string; iconColumns: num
   { mode: 3, label: '6 columns', iconColumns: 3 },
 ];
 const GRID_MODE_CLASSES: Record<GridMode, string> = {
-  1: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-5 md:gap-y-7 gap-x-0',
-  2: 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-y-5 md:gap-y-7 gap-x-0',
+  1: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-5 md:gap-y-7 gap-x-1',
+  2: 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-y-5 md:gap-y-7 gap-x-1',
   3: 'grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1',
 };
 

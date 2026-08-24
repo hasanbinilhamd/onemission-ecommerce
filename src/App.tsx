@@ -197,8 +197,16 @@ function App() {
   }, [heroIndex, navigate]);
 
   const handleCollectionSelect = useCallback(() => {
+    if (isHome) {
+      const collectionSection = document.getElementById('collection');
+      if (collectionSection) {
+        collectionSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+    }
+
     navigate(ROUTES.COLLECTION);
-  }, [navigate]);
+  }, [isHome, navigate]);
 
   const prepareInitialBoot = useCallback(async (onProgress: InitialPreloadProgressHandler) => {
     onProgress('boot', 10);

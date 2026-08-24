@@ -31,8 +31,8 @@ const GRID_MODE_OPTIONS: Array<{ mode: GridMode; label: string; iconColumns: num
   { mode: 3, label: '6 columns', iconColumns: 3 },
 ];
 const GRID_MODE_CLASSES: Record<GridMode, string> = {
-  1: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-5 md:gap-y-7 gap-x-0',
-  2: 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-y-5 md:gap-y-7 gap-x-0',
+  1: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-5 md:gap-y-7 gap-x-1',
+  2: 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-y-5 md:gap-y-7 gap-x-1',
   3: 'grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1',
 };
 
@@ -109,9 +109,10 @@ function readStoredGridMode(): GridMode {
 interface CollectionPageCatalogProps {
   onProductSelect: (slug: string) => void;
   collectionDescription?: string;
+  mode?: 'standalone' | 'homepage';
 }
 
-export function CollectionPageCatalog({ onProductSelect, collectionDescription = '' }: CollectionPageCatalogProps) {
+export function CollectionPageCatalog({ onProductSelect, collectionDescription = '', mode = 'standalone' }: CollectionPageCatalogProps) {
   const visibleCountRef = useRef(PAGE_SIZE);
 
   const [search, setSearch] = useState('');
@@ -133,6 +134,7 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
   const [gridMode, setGridMode] = useState<GridMode>(readStoredGridMode);
   const [modelViewEnabled, setModelViewEnabled] = useState(false);
 
+  const isHomepageMode = mode === 'homepage';
   const debouncedSearch = useDebounce(search, 300);
 
   useEffect(() => {
@@ -286,88 +288,93 @@ export function CollectionPageCatalog({ onProductSelect, collectionDescription =
 
   return (
     <section
-      aria-label="Collection page catalog"
+      aria-label={isHomepageMode ? "Homepage collection products" : "Collection page catalog"}
       style={{
         maxWidth: '100%',
         margin: '0 auto',
-        padding: '20px 0px 72px',
+        padding: isHomepageMode ? 'clamp(28px, 5vw, 56px) 0px 72px' : '20px 0px 72px',
         boxSizing: 'border-box',
+        backgroundColor: '#FFFFFF',
       }}
       className="sm:px-8"
     >
-      <div className="px-5 mb-3 sm:mb-5">
-        <p
-          style={{
-            margin: '0 0 5px',
-            fontSize: '12px',
-            fontWeight: 600,
-            letterSpacing: '0.18em',
-            textTransform: 'uppercase',
-            color: '#6B7280',
-          }}
-        >
-          Collection
-        </p>
-        {collectionDescription ? (
+      {!isHomepageMode ? (
+        <div className="px-5 mb-3 sm:mb-5">
           <p
             style={{
+              margin: '0 0 5px',
               fontSize: '12px',
-              lineHeight: 1.7,
-              color: '#4B5563',
+              fontWeight: 600,
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              color: '#6B7280',
             }}
-            className="max-w-full sm:max-w-[80%]"
           >
-            {collectionDescription}
+            Collection
           </p>
-        ) : null}
-      </div>
-
-      <div style={{ marginBottom: '28px' }} className="px-5">
-        <div style={{ position: 'relative', marginBottom: '14px' }}>
-          <svg
-            width="15"
-            height="15"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#9CA3AF"
-            strokeWidth="2"
-            style={{
-              position: 'absolute',
-              left: '12px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              pointerEvents: 'none',
-            }}
-          >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input
-            type="search"
-            placeholder="Search products…"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            aria-label="Search products"
-            style={{
-              width: '100%',
-              height: 'clamp(40px, 4.2vw, 44px)',
-              padding: '0 12px 0 36px',
-              border: '1px solid #E5E7EB',
-              borderRadius: '10px',
-              fontSize: '14px',
-              outline: 'none',
-              boxSizing: 'border-box',
-              transition: 'border-color 150ms ease',
-              backgroundColor: '#FFFFFF',
-            }}
-            onFocus={(event) => {
-              event.currentTarget.style.borderColor = '#111827';
-            }}
-            onBlur={(event) => {
-              event.currentTarget.style.borderColor = '#E5E7EB';
-            }}
-          />
+          {collectionDescription ? (
+            <p
+              style={{
+                fontSize: '12px',
+                lineHeight: 1.7,
+                color: '#4B5563',
+              }}
+              className="max-w-full sm:max-w-[80%]"
+            >
+              {collectionDescription}
+            </p>
+          ) : null}
         </div>
+      ) : null}
+
+      <div style={{ marginBottom: isHomepageMode ? '22px' : '28px' }} className="px-5">
+        {!isHomepageMode ? (
+          <div style={{ position: 'relative', marginBottom: '14px' }}>
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#9CA3AF"
+              strokeWidth="2"
+              style={{
+                position: 'absolute',
+                left: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                pointerEvents: 'none',
+              }}
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="search"
+              placeholder="Search products…"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              aria-label="Search products"
+              style={{
+                width: '100%',
+                height: 'clamp(40px, 4.2vw, 44px)',
+                padding: '0 12px 0 36px',
+                border: '1px solid #E5E7EB',
+                borderRadius: '10px',
+                fontSize: '14px',
+                outline: 'none',
+                boxSizing: 'border-box',
+                transition: 'border-color 150ms ease',
+                backgroundColor: '#FFFFFF',
+              }}
+              onFocus={(event) => {
+                event.currentTarget.style.borderColor = '#111827';
+              }}
+              onBlur={(event) => {
+                event.currentTarget.style.borderColor = '#E5E7EB';
+              }}
+            />
+          </div>
+        ) : null}
 
         <div
           style={{

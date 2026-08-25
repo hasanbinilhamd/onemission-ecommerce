@@ -12,7 +12,6 @@ import { getEarlyAccessStatus } from './services/api/earlyAccessService';
 import { prepareInitialApplicationExperience, type InitialPreloadProgressHandler } from './features/homepage/initialHomepageResources';
 import { NavigationThemeProvider, RouteScrollRestoration, type NavigationTheme } from './features/navigation';
 
-const CollectionPage = lazy(() => import('./pages/CollectionPage').then((module) => ({ default: module.CollectionPage })));
 const MissionPage = lazy(() => import('./pages/MissionPage').then((module) => ({ default: module.MissionPage })));
 const JournalPage = lazy(() => import('./pages/JournalPage').then((module) => ({ default: module.JournalPage })));
 const DonatePage = lazy(() => import('./pages/DonatePage').then((module) => ({ default: module.DonatePage })));
@@ -140,20 +139,20 @@ function App() {
   const previousPathRef = useRef(location.pathname);
   const [heroIndex, setHeroIndex] = useState(() => readHomeExperienceSnapshot()?.heroIndex ?? 0);
   const [navigationTheme, setNavigationTheme] = useState<NavigationTheme>(() => (
-    location.pathname === '/' ? resolveHomepageNavigationTheme() : 'dark'
+    location.pathname === '/' || location.pathname === '/shop' ? resolveHomepageNavigationTheme() : 'dark'
   ));
   const [earlyAccessPhase, setEarlyAccessPhase] = useState<EarlyAccessPhase>('booting');
   const [earlyAccessChapter, setEarlyAccessChapter] = useState('CHAPTER 01');
   const [loadingInstance, setLoadingInstance] = useState(0);
 
-  const isHome = location.pathname === '/';
+  const isHomeOrShop = location.pathname === '/' || location.pathname === '/shop';
 
   useEffect(() => {
     const previousPath = previousPathRef.current;
     const requestedRestore = Boolean(location.state?.restoreCatalog);
     const cameFromProductDetail = previousPath.startsWith('/product/');
 
-    if (isHome && (requestedRestore || cameFromProductDetail)) {
+    if (isHomeOrShop && (requestedRestore || cameFromProductDetail)) {
       const snapshot = readHomeExperienceSnapshot();
       if (snapshot) {
         setHeroIndex(snapshot.heroIndex);
@@ -166,10 +165,10 @@ function App() {
     }
 
     previousPathRef.current = location.pathname;
-  }, [isHome, location.pathname, location.state]);
+  }, [isHomeOrShop, location.pathname, location.state]);
 
   useEffect(() => {
-    if (!isHome) {
+    if (!isHomeOrShop) {
       setNavigationTheme('dark');
       return undefined;
     }
@@ -189,7 +188,7 @@ function App() {
       window.removeEventListener('scroll', updateNavigationTheme);
       window.removeEventListener('resize', updateNavigationTheme);
     };
-  }, [isHome]);
+  }, [isHomeOrShop]);
 
   const handleProductSelect = useCallback((slug: string) => {
     persistHomeExperienceSnapshot({
@@ -201,7 +200,7 @@ function App() {
   }, [heroIndex, navigate]);
 
   const handleCollectionSelect = useCallback(() => {
-    if (isHome) {
+    if (isHomeOrShop) {
       const collectionSection = document.getElementById('collection');
       if (collectionSection) {
         collectionSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -209,8 +208,8 @@ function App() {
       }
     }
 
-    navigate(ROUTES.COLLECTION);
-  }, [isHome, navigate]);
+    navigate(ROUTES.SHOP);
+  }, [isHomeOrShop, navigate]);
 
   const prepareInitialBoot = useCallback(async (onProgress: InitialPreloadProgressHandler) => {
     onProgress('boot', 10);
@@ -289,7 +288,7 @@ function App() {
                 element={<MainLayout>{renderHomePage()}</MainLayout>}
               />
               <Route path="/mission" element={<MissionPage />} />
-              <Route path="/shop" element={<CollectionPage />} />
+              <Route path="/shop" element={<MainLayout>{renderHomePage()}</MainLayout>} />
               <Route path="/journal" element={<JournalPage />} />
               <Route path="/donate" element={<DonatePage />} />
             </Route>

@@ -91,7 +91,7 @@ export function FeaturedProductsSection({
   }, []);
 
   const handleSeeMore = useCallback(() => {
-    navigate(ROUTES.COLLECTION);
+    navigate(ROUTES.SHOP);
   }, [navigate]);
 
   const mobileScrollerStyles = useMemo(() => ({

@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../app/config/routes';
 import { CollectionHeroSection } from '../features/catalog/CollectionHeroSection';
 import { CollectionPageCatalog } from '../features/catalog/CollectionPageCatalog';
-import { TopBackNavigation } from '../features/navigation';
 import { HomepageFooter } from '../features/footer';
 import { websiteService, type WebsiteCollectionHero } from '../services/api/websiteService';
 
@@ -43,7 +41,6 @@ export function CollectionPage() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF' }}>
-      <TopBackNavigation label="Back to Home" fallbackTo={ROUTES.HOME} />
       <CollectionHeroSection hero={collectionHero} isLoading={isCollectionHeroLoading} />
       <CollectionPageCatalog onProductSelect={handleProductSelect} collectionDescription={collectionHero?.description || ''} />
       <HomepageFooter />

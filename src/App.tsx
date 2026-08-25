@@ -2,6 +2,7 @@ import { lazy, Suspense, useState, useEffect, useCallback, useRef } from 'react'
 import { Navigate, Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { MainLayout } from './layouts/MainLayout';
+import { MovementLayout } from './layouts/MovementLayout';
 import { ROUTES } from './app/config/routes';
 import { HomePage } from './pages/HomePage';
 import { InitialLoadingScreen } from './components/shared';
@@ -12,6 +13,9 @@ import { prepareInitialApplicationExperience, type InitialPreloadProgressHandler
 import { NavigationThemeProvider, RouteScrollRestoration, type NavigationTheme } from './features/navigation';
 
 const CollectionPage = lazy(() => import('./pages/CollectionPage').then((module) => ({ default: module.CollectionPage })));
+const MissionPage = lazy(() => import('./pages/MissionPage').then((module) => ({ default: module.MissionPage })));
+const JournalPage = lazy(() => import('./pages/JournalPage').then((module) => ({ default: module.JournalPage })));
+const DonatePage = lazy(() => import('./pages/DonatePage').then((module) => ({ default: module.DonatePage })));
 const TermsPage = lazy(() => import('./pages/TermsPage').then((module) => ({ default: module.TermsPage })));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then((module) => ({ default: module.PrivacyPage })));
 const FaqPage = lazy(() => import('./pages/FaqPage').then((module) => ({ default: module.FaqPage })));
@@ -257,20 +261,41 @@ function App() {
           <InitialLoadingScreen key={loadingInstance} prepare={loadingPrepare} />
         ) : null}
         {earlyAccessPhase === 'gated' ? (
-          <EarlyAccessGate chapter={earlyAccessChapter} onUnlocked={handleEarlyAccessUnlocked} />
+          <>
+            <RouteScrollRestoration />
+            <Suspense fallback={null}>
+              <Routes>
+                {/* Early Access now protects only the Shop/ecommerce experience.
+                    Movement pages stay public while Shop keeps its existing gate. */}
+                <Route element={<MovementLayout />}>
+                  <Route path="/" element={<MainLayout>{renderHomePage()}</MainLayout>} />
+                  <Route path="/mission" element={<MissionPage />} />
+                  <Route path="/journal" element={<JournalPage />} />
+                  <Route path="/donate" element={<DonatePage />} />
+                </Route>
+                <Route path="*" element={<EarlyAccessGate chapter={earlyAccessChapter} onUnlocked={handleEarlyAccessUnlocked} />} />
+              </Routes>
+            </Suspense>
+          </>
         ) : null}
         {earlyAccessPhase === 'ready' ? (
           <>
         <RouteScrollRestoration />
         <Suspense fallback={null}>
           <Routes>
-            <Route
-              path="/"
-              element={<MainLayout>{renderHomePage()}</MainLayout>}
-            />
+            <Route element={<MovementLayout />}>
+              <Route
+                path="/"
+                element={<MainLayout>{renderHomePage()}</MainLayout>}
+              />
+              <Route path="/mission" element={<MissionPage />} />
+              <Route path="/shop" element={<CollectionPage />} />
+              <Route path="/journal" element={<JournalPage />} />
+              <Route path="/donate" element={<DonatePage />} />
+            </Route>
 
-            <Route path="/collection" element={<CollectionPage />} />
-            <Route path="/collections" element={<CollectionPage />} />
+            <Route path="/collection" element={<Navigate to={ROUTES.SHOP} replace />} />
+            <Route path="/collections" element={<Navigate to={ROUTES.SHOP} replace />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/faq" element={<FaqPage />} />

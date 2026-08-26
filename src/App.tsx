@@ -15,6 +15,7 @@ import { NavigationThemeProvider, RouteScrollRestoration, type NavigationTheme }
 
 const MissionPage = lazy(() => import('./pages/MissionPage').then((module) => ({ default: module.MissionPage })));
 const JournalPage = lazy(() => import('./pages/JournalPage').then((module) => ({ default: module.JournalPage })));
+const JournalStoryPage = lazy(() => import('./pages/JournalStoryPage').then((module) => ({ default: module.JournalStoryPage })));
 const DonatePage = lazy(() => import('./pages/DonatePage').then((module) => ({ default: module.DonatePage })));
 const TermsPage = lazy(() => import('./pages/TermsPage').then((module) => ({ default: module.TermsPage })));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then((module) => ({ default: module.PrivacyPage })));
@@ -273,6 +274,7 @@ function App() {
                   <Route path="/journal" element={<JournalPage />} />
                   <Route path="/donate" element={<DonatePage />} />
                 </Route>
+                <Route path="/journal/:slug" element={<JournalStoryPage />} />
                 <Route path="*" element={<EarlyAccessGate chapter={earlyAccessChapter} onUnlocked={handleEarlyAccessUnlocked} />} />
               </Routes>
             </Suspense>
@@ -294,6 +296,7 @@ function App() {
               <Route path="/donate" element={<DonatePage />} />
             </Route>
 
+            <Route path="/journal/:slug" element={<JournalStoryPage />} />
             <Route path="/collection" element={<Navigate to={ROUTES.SHOP} replace />} />
             <Route path="/collections" element={<Navigate to={ROUTES.SHOP} replace />} />
             <Route path="/terms" element={<TermsPage />} />

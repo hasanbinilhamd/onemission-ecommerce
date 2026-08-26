@@ -5,6 +5,7 @@ import { MainLayout } from './layouts/MainLayout';
 import { MovementLayout } from './layouts/MovementLayout';
 import { ROUTES } from './app/config/routes';
 import { HomePage } from './pages/HomePage';
+import { ShopPage } from './pages/ShopPage';
 import { InitialLoadingScreen } from './components/shared';
 import { FloatingNavigation } from './features/cart';
 import { EarlyAccessGate } from './features/early-access';
@@ -139,20 +140,20 @@ function App() {
   const previousPathRef = useRef(location.pathname);
   const [heroIndex, setHeroIndex] = useState(() => readHomeExperienceSnapshot()?.heroIndex ?? 0);
   const [navigationTheme, setNavigationTheme] = useState<NavigationTheme>(() => (
-    location.pathname === '/' || location.pathname === '/shop' ? resolveHomepageNavigationTheme() : 'dark'
+    location.pathname === '/shop' ? resolveHomepageNavigationTheme() : 'dark'
   ));
   const [earlyAccessPhase, setEarlyAccessPhase] = useState<EarlyAccessPhase>('booting');
   const [earlyAccessChapter, setEarlyAccessChapter] = useState('CHAPTER 01');
   const [loadingInstance, setLoadingInstance] = useState(0);
 
-  const isHomeOrShop = location.pathname === '/' || location.pathname === '/shop';
+  const isShop = location.pathname === '/shop';
 
   useEffect(() => {
     const previousPath = previousPathRef.current;
     const requestedRestore = Boolean(location.state?.restoreCatalog);
     const cameFromProductDetail = previousPath.startsWith('/product/');
 
-    if (isHomeOrShop && (requestedRestore || cameFromProductDetail)) {
+    if (isShop && (requestedRestore || cameFromProductDetail)) {
       const snapshot = readHomeExperienceSnapshot();
       if (snapshot) {
         setHeroIndex(snapshot.heroIndex);
@@ -165,10 +166,10 @@ function App() {
     }
 
     previousPathRef.current = location.pathname;
-  }, [isHomeOrShop, location.pathname, location.state]);
+  }, [isShop, location.pathname, location.state]);
 
   useEffect(() => {
-    if (!isHomeOrShop) {
+    if (!isShop) {
       setNavigationTheme('dark');
       return undefined;
     }
@@ -188,7 +189,7 @@ function App() {
       window.removeEventListener('scroll', updateNavigationTheme);
       window.removeEventListener('resize', updateNavigationTheme);
     };
-  }, [isHomeOrShop]);
+  }, [isShop]);
 
   const handleProductSelect = useCallback((slug: string) => {
     persistHomeExperienceSnapshot({
@@ -200,7 +201,7 @@ function App() {
   }, [heroIndex, navigate]);
 
   const handleCollectionSelect = useCallback(() => {
-    if (isHomeOrShop) {
+    if (isShop) {
       const collectionSection = document.getElementById('collection');
       if (collectionSection) {
         collectionSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -209,7 +210,7 @@ function App() {
     }
 
     navigate(ROUTES.SHOP);
-  }, [isHomeOrShop, navigate]);
+  }, [isShop, navigate]);
 
   const prepareInitialBoot = useCallback(async (onProgress: InitialPreloadProgressHandler) => {
     onProgress('boot', 10);
@@ -241,8 +242,8 @@ function App() {
     setLoadingInstance((current) => current + 1);
   }, []);
 
-  const renderHomePage = useCallback(() => (
-    <HomePage
+  const renderShopPage = useCallback(() => (
+    <ShopPage
       activeIndex={heroIndex}
       onActiveIndexChange={setHeroIndex}
       onProductSelect={handleProductSelect}
@@ -267,7 +268,7 @@ function App() {
                 {/* Early Access now protects only the Shop/ecommerce experience.
                     Movement pages stay public while Shop keeps its existing gate. */}
                 <Route element={<MovementLayout />}>
-                  <Route path="/" element={<MainLayout>{renderHomePage()}</MainLayout>} />
+                  <Route path="/" element={<MainLayout><HomePage /></MainLayout>} />
                   <Route path="/mission" element={<MissionPage />} />
                   <Route path="/journal" element={<JournalPage />} />
                   <Route path="/donate" element={<DonatePage />} />
@@ -285,10 +286,10 @@ function App() {
             <Route element={<MovementLayout />}>
               <Route
                 path="/"
-                element={<MainLayout>{renderHomePage()}</MainLayout>}
+                element={<MainLayout><HomePage /></MainLayout>}
               />
               <Route path="/mission" element={<MissionPage />} />
-              <Route path="/shop" element={<MainLayout>{renderHomePage()}</MainLayout>} />
+              <Route path="/shop" element={<MainLayout>{renderShopPage()}</MainLayout>} />
               <Route path="/journal" element={<JournalPage />} />
               <Route path="/donate" element={<DonatePage />} />
             </Route>
@@ -330,7 +331,7 @@ function App() {
             <Route path="/orders/:orderNumber" element={<LegacyOrderRedirect />} />
             <Route path="/wishlist" element={<Navigate to="/account/wishlist" replace />} />
 
-            <Route path="*" element={<MainLayout>{renderHomePage()}</MainLayout>} />
+            <Route path="*" element={<MainLayout>{renderShopPage()}</MainLayout>} />
           </Routes>
         </Suspense>
 

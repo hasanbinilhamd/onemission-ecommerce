@@ -4,7 +4,7 @@ import { Toaster } from 'sonner';
 import { MainLayout } from './layouts/MainLayout';
 import { MovementLayout } from './layouts/MovementLayout';
 import { ROUTES } from './app/config/routes';
-import { HomePage } from './pages/HomePage';
+import { MovementHomePage } from './features/movement';
 import { ShopPage } from './pages/ShopPage';
 import { InitialLoadingScreen } from './components/shared';
 import { FloatingNavigation } from './features/cart';
@@ -268,7 +268,7 @@ function App() {
                 {/* Early Access now protects only the Shop/ecommerce experience.
                     Movement pages stay public while Shop keeps its existing gate. */}
                 <Route element={<MovementLayout />}>
-                  <Route path="/" element={<MainLayout><HomePage /></MainLayout>} />
+                  <Route path="/" element={<MainLayout><MovementHomePage /></MainLayout>} />
                   <Route path="/mission" element={<MissionPage />} />
                   <Route path="/journal" element={<JournalPage />} />
                   <Route path="/donate" element={<DonatePage />} />
@@ -286,7 +286,7 @@ function App() {
             <Route element={<MovementLayout />}>
               <Route
                 path="/"
-                element={<MainLayout><HomePage /></MainLayout>}
+                element={<MainLayout><MovementHomePage /></MainLayout>}
               />
               <Route path="/mission" element={<MissionPage />} />
               <Route path="/shop" element={<MainLayout>{renderShopPage()}</MainLayout>} />

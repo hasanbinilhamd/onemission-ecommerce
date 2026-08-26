@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { Home, Flag, ShoppingBag, Book, Heart } from 'lucide-react';
 import { ROUTES } from '../../app/config/routes';
 import { useNavigationTheme } from './NavigationThemeContext';
 
@@ -17,11 +18,11 @@ import { useNavigationTheme } from './NavigationThemeContext';
  */
 
 const PRIMARY_NAV_ITEMS = [
-  { label: 'HOME', to: ROUTES.HOME },
-  { label: 'MISSION', to: ROUTES.MISSION },
-  { label: 'SHOP', to: ROUTES.SHOP },
-  { label: 'JOURNAL', to: ROUTES.JOURNAL },
-  { label: 'DONATE', to: ROUTES.DONATE },
+  { label: 'HOME', to: ROUTES.HOME, icon: Home },
+  { label: 'MISSION', to: ROUTES.MISSION, icon: Flag },
+  { label: 'SHOP', to: ROUTES.SHOP, icon: ShoppingBag },
+  { label: 'JOURNAL', to: ROUTES.JOURNAL, icon: Book },
+  { label: 'DONATE', to: ROUTES.DONATE, icon: Heart },
 ] as const;
 
 const NAV_FONT_FAMILY = "'SF-Pro-Display', sans-serif";
@@ -68,35 +69,45 @@ export function PrimaryNavigation() {
       {/* Mobile/tablet: fixed bottom bar, five equal destinations */}
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-40 flex lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 flex lg:hidden items-center"
         style={{
           fontFamily: NAV_FONT_FAMILY,
           backgroundColor: colors.surfaceBackground,
           borderTop: `1px solid ${colors.surfaceBorder}`,
           boxShadow: colors.surfaceShadow,
           paddingBottom: 'env(safe-area-inset-bottom)',
+          height: 'calc(60px + env(safe-area-inset-bottom))',
         }}
       >
-        {PRIMARY_NAV_ITEMS.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end
-            className="flex-1 text-center"
-            style={({ isActive }) => ({
-              color: isActive ? colors.foreground : colors.muted,
-              fontSize: '10px',
-              fontWeight: 600,
-              letterSpacing: '0.12em',
-              lineHeight: 1,
-              textDecoration: 'none',
-              padding: '15px 4px 14px',
-              transition: 'color 150ms ease',
-            })}
-          >
-            {item.label}
-          </NavLink>
-        ))}
+        {PRIMARY_NAV_ITEMS.map((item) => {
+          const Icon = item.icon;
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end
+              className="flex-1 flex flex-col items-center justify-center h-full gap-[4px]"
+              style={({ isActive }) => ({
+                color: isActive ? colors.foreground : colors.muted,
+                textDecoration: 'none',
+                transition: 'color 150ms ease',
+              })}
+            >
+              <Icon size={20} strokeWidth={2} />
+              <span
+                style={{
+                  fontSize: '9px',
+                  fontWeight: 600,
+                  letterSpacing: '0.1em',
+                  lineHeight: 1,
+                  marginTop: '2px',
+                }}
+              >
+                {item.label}
+              </span>
+            </NavLink>
+          );
+        })}
       </nav>
     </>
   );

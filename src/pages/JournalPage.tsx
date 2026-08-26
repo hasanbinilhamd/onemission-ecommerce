@@ -1,10 +1,11 @@
 import { HomepageFooter } from '../features/footer';
 
 /**
- * HomePage — Phase 1 placeholder for the future Movement Homepage.
- * The ecommerce shopping experience has been moved to /shop.
+ * JournalPage — Phase 1 placeholder.
+ * Editorial content (stories, athletes, community, philosophy, mission updates)
+ * arrives in a later phase.
  */
-export function HomePage() {
+export function JournalPage() {
   return (
     <div
       style={{
@@ -21,10 +22,10 @@ export function HomePage() {
           One Mission
         </p>
         <h1 className="text-4xl font-bold uppercase tracking-[-0.04em] text-neutral-900 sm:text-6xl">
-          Movement Home
+          Journal
         </h1>
         <p className="max-w-sm text-sm leading-relaxed text-neutral-500">
-          The new movement experience is on its way. This page is a Phase 1 placeholder.
+          Stories, athletes, and community updates are on their way. This page is a Phase 1 placeholder.
         </p>
       </main>
       <HomepageFooter />

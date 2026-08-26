@@ -1,10 +1,11 @@
 import { HomepageFooter } from '../features/footer';
 
 /**
- * HomePage — Phase 1 placeholder for the future Movement Homepage.
- * The ecommerce shopping experience has been moved to /shop.
+ * DonatePage — Phase 1 placeholder.
+ * Verified causes and campaign support arrive in a later phase.
+ * No payment or donation business logic is implemented here.
  */
-export function HomePage() {
+export function DonatePage() {
   return (
     <div
       style={{
@@ -21,10 +22,10 @@ export function HomePage() {
           One Mission
         </p>
         <h1 className="text-4xl font-bold uppercase tracking-[-0.04em] text-neutral-900 sm:text-6xl">
-          Movement Home
+          Donate
         </h1>
         <p className="max-w-sm text-sm leading-relaxed text-neutral-500">
-          The new movement experience is on its way. This page is a Phase 1 placeholder.
+          Verified causes and campaigns are on their way. This page is a Phase 1 placeholder.
         </p>
       </main>
       <HomepageFooter />

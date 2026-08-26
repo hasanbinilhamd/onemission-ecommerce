@@ -857,7 +857,7 @@ export function ShopPage({ activeIndex, onActiveIndexChange, onProductSelect, on
           />
 
           <div
-            className="absolute top-6 left-4 sm:left-8"
+            className="absolute top-3 left-4 sm:left-8"
             style={{
               zIndex: 60,
               color: '#ffffff',

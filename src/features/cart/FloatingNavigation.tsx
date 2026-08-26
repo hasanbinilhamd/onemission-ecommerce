@@ -14,8 +14,6 @@ export function FloatingNavigation() {
     <div
       style={{
         position: 'fixed',
-        top: '16px',
-        right: '16px',
         zIndex: 50,
         display: 'flex',
         alignItems: 'center',
@@ -27,7 +25,7 @@ export function FloatingNavigation() {
         boxShadow: colors.surfaceShadow,
         transition: 'background-color 220ms ease, border-color 220ms ease, box-shadow 220ms ease, padding 220ms ease',
       }}
-      className="sm:right-8"
+      className="top-3 right-4 sm:right-8"
     >
       <SearchTrigger />
       <button

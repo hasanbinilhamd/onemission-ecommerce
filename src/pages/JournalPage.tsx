@@ -66,11 +66,11 @@ export function JournalPage() {
             One Mission
           </p>
           <h1 className="mt-4 text-5xl font-bold uppercase leading-none tracking-tight sm:text-7xl lg:text-8xl">
-            Journal
+            Impact
           </h1>
           <p className="mt-5 text-lg font-semibold uppercase tracking-tight text-neutral-400 sm:text-2xl">
-            The Stories
-            <span className="block">Behind The Movement.</span>
+            Real Impact.
+            <span className="block">Real Change.</span>
           </p>
         </section>
 
@@ -154,18 +154,23 @@ export function JournalPage() {
                     />
                     <div
                       aria-hidden="true"
-                      className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent"
+                      className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/10 transition-opacity duration-300"
                     />
-                    <span className="absolute left-3 top-3 rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white backdrop-blur-md">
+                    <span className="absolute left-4 top-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/90">
                       {story.category}
                     </span>
+                    <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 flex flex-col justify-end text-white">
+                      <h3 className="text-lg font-bold uppercase leading-tight tracking-tight drop-shadow-sm line-clamp-2">
+                        {story.title}
+                      </h3>
+                      <p className="mt-1.5 text-xs text-white/80 line-clamp-2 leading-relaxed">
+                        {story.description}
+                      </p>
+                      <p className="mt-2.5 text-[10px] font-semibold tracking-widest text-white/60 uppercase drop-shadow-sm">
+                        {story.date} · {story.readMinutes} min read
+                      </p>
+                    </div>
                   </div>
-                  <h3 className="mt-3 text-lg font-bold uppercase leading-tight tracking-tight text-neutral-900 transition-colors duration-150 group-hover:text-neutral-600 group-focus-visible:ring-2 group-focus-visible:ring-neutral-900">
-                    {story.title}
-                  </h3>
-                  <p className="mt-1 text-xs font-medium text-neutral-400">
-                    {story.date} · {story.readMinutes} min read
-                  </p>
                 </Link>
               </article>
             ))}

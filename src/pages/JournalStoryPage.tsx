@@ -21,7 +21,7 @@ export function JournalStoryPage() {
   if (!story) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-white px-4 text-center font-['SF-Pro-Display',_sans-serif]">
-        <TopBackNavigation label="Back to Journal" fallbackTo={ROUTES.JOURNAL} />
+        <TopBackNavigation label="Back to Impact" fallbackTo={ROUTES.JOURNAL} />
         <h1 className="text-3xl font-bold uppercase tracking-tight text-neutral-900">
           Story not found
         </h1>
@@ -29,7 +29,7 @@ export function JournalStoryPage() {
           This story does not exist or has been moved.
         </p>
         <Link to={ROUTES.JOURNAL}>
-          <Button>Back to Journal</Button>
+          <Button>Back to Impact</Button>
         </Link>
       </div>
     );
@@ -37,7 +37,7 @@ export function JournalStoryPage() {
 
   return (
     <div className="min-h-screen bg-white font-['SF-Pro-Display',_sans-serif] text-neutral-900">
-      <TopBackNavigation label="Back to Journal" fallbackTo={ROUTES.JOURNAL} />
+      <TopBackNavigation label="Back to Impact" fallbackTo={ROUTES.JOURNAL} />
 
       <article className="mx-auto max-w-3xl px-4 pt-24 sm:px-6 sm:pt-28">
         <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-400">

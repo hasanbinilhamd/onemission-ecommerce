@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { Check } from 'lucide-react';
+import { Check, ArrowRight } from 'lucide-react';
 import { Button, Input } from '../components/shared';
 import { HomepageFooter } from '../features/footer';
 import { ROUTES } from '../app/config/routes';
@@ -8,10 +8,6 @@ import {
   ACTIVE_CAMPAIGN,
   CUSTOM_AMOUNT_KEY,
   SUPPORT_PRESET_AMOUNTS,
-  SUPPORT_AREAS,
-  IMPACT_CARDS,
-  TRANSPARENCY_STATS,
-  COMPLETED_CAMPAIGNS,
 } from '../features/donate';
 
 /**
@@ -29,7 +25,7 @@ import {
 
 type PresetSelection = number | typeof CUSTOM_AMOUNT_KEY;
 
-function formatRupiah(value: number): string {
+export function formatRupiah(value: number): string {
   return `Rp${value.toLocaleString('id-ID')}`;
 }
 
@@ -81,6 +77,9 @@ export function DonatePage() {
   };
 
   const campaign = ACTIVE_CAMPAIGN;
+
+  // Recent 5 donors newest first
+  const recentDonors = [...campaign.donorsList].sort((a, b) => b.dateTimestamp - a.dateTimestamp).slice(0, 5);
 
   return (
     <div className="min-h-screen bg-white font-['SF-Pro-Display',_sans-serif] text-neutral-900">
@@ -140,30 +139,25 @@ export function DonatePage() {
                 </p>
                 <p className="mt-1 text-xl font-bold tracking-tight sm:text-2xl">
                   {formatRupiah(campaign.raised)}
-                  
+                  <span className="font-medium text-neutral-400"> of {formatRupiah(campaign.target)}</span>
                 </p>
-                <div className="flex items-center justify-between gap-1">
-                  <span className="text-sm font-medium text-neutral-400">
-                    of {formatRupiah(campaign.target)}
-                  </span>
-                  <div className="mt-1.5 text-sm font-bold text-neutral-900">{campaign.progressPercent}%</div>
-                </div>
                 <div
                   role="progressbar"
                   aria-valuenow={campaign.progressPercent}
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-label={`Campaign progress — ${campaign.progressPercent} percent`}
-                  className="mt-1 h-2 w-full overflow-hidden rounded-full bg-neutral-100"
+                  className="mt-3 h-2 w-full overflow-hidden rounded-full bg-neutral-100"
                 >
                   <div
                     className="h-full rounded-full bg-neutral-900"
                     style={{ width: `${campaign.progressPercent}%` }}
                   />
                 </div>
+                <div className="mt-1.5 text-sm font-bold text-neutral-900">{campaign.progressPercent}%</div>
 
-                <div className="mt-7 grid grid-cols-3 divide-neutral-200">
-                  <div className="pr-3 text-center">
+                <div className="mt-7 grid grid-cols-3 divide-x divide-neutral-200">
+                  <div className="pr-3">
                     <p className="text-2xl font-bold tracking-tight sm:text-3xl">
                       {campaign.donors.toLocaleString('id-ID')}
                     </p>
@@ -171,7 +165,7 @@ export function DonatePage() {
                       Donors
                     </p>
                   </div>
-                  <div className="px-0 sm:px-5 text-center">
+                  <div className="px-3 sm:px-5">
                     <p className="text-2xl font-bold tracking-tight sm:text-3xl">
                       {campaign.beneficiaries.toLocaleString('id-ID')}
                     </p>
@@ -179,13 +173,29 @@ export function DonatePage() {
                       Beneficiaries
                     </p>
                   </div>
-                  <div className="pl-3 sm:pl-5 text-center">
+                  <div className="pl-3 sm:pl-5">
                     <p className="text-2xl font-bold tracking-tight sm:text-3xl">{campaign.daysLeft}</p>
                     <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
                       Days Left
                     </p>
                   </div>
                 </div>
+              </div>
+
+              {/* ─── PARTNER / TRUST ──────────────────────────────────── */}
+              <div className="mt-8 border-t border-neutral-200 pt-6">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-400">
+                  Our Partner
+                </p>
+                <p className="mt-1.5 text-lg font-bold uppercase tracking-tight">
+                  {campaign.partner.name}
+                </p>
+                <p className="mt-0.5 text-sm font-medium text-neutral-500">
+                  {campaign.partner.tagline}
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-neutral-500">
+                  {campaign.partner.statement}
+                </p>
               </div>
 
               {/* ─── ONE CLEAR CTA ────────────────────────────────────── */}
@@ -198,31 +208,14 @@ export function DonatePage() {
               </Button>
             </div>
           </div>
-
-          {/* ─── PARTNER / TRUST ──────────────────────────────────── */}
-          <div className="mt-8 border-t border-neutral-200 pt-6">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-400">
-              Our Partner
-            </p>
-            <p className="mt-1.5 text-lg font-bold uppercase tracking-tight">
-              {campaign.partner.name}
-            </p>
-            <p className="mt-0.5 text-sm font-medium text-neutral-500">
-              {campaign.partner.tagline}
-            </p>
-            <p className="mt-2 text-sm leading-relaxed text-neutral-500">
-              {campaign.partner.statement}
-            </p>
-          </div>
         </section>
-
 
         {/* ─── SUPPORT INTERACTION (hidden until Donate Now) ────────────── */}
         {isSupportOpen && (
           <section
             id="donation-support"
             aria-label="Donation support"
-            className="mx-auto mt-10 max-w-5xl scroll-mt-20 px-4 sm:mt-20 sm:px-6 lg:px-8"
+            className="mx-auto mt-14 max-w-5xl scroll-mt-20 px-4 sm:mt-20 sm:px-6 lg:px-8"
           >
             {isSubmitted ? (
               <div
@@ -360,132 +353,84 @@ export function DonatePage() {
           </section>
         )}
 
-        {/* ─── WHERE YOUR SUPPORT GOES ──────────────────────────────────── */}
-        <section className="mx-auto mt-12 max-w-5xl px-4 sm:mt-20 sm:px-6 lg:px-8">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-neutral-400">
-            Transparency
-          </p>
-          <h2 className="mt-3 text-2xl font-bold uppercase tracking-tight sm:text-4xl">
-            Where Your Support Goes
-          </h2>
+        {/* ─── NAVIGATION LINKS TO DETAILS ─────────────────────────────── */}
+        <section className="mx-auto mt-14 max-w-5xl px-4 sm:mt-20 sm:px-6 lg:px-8">
+          <div className="flex flex-col border-t border-neutral-200">
+            <Link 
+              to={`/donate/${campaign.id}/story`}
+              className="flex items-center justify-between py-6 border-b border-neutral-200 group hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
+            >
+              <h3 className="text-lg font-bold uppercase tracking-tight sm:text-xl">
+                Cerita Penggalangan Dana
+              </h3>
+              <ArrowRight size={20} className="text-neutral-900 transition-transform group-hover:translate-x-1" />
+            </Link>
 
-          <div className="mt-8 grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-4">
-            {SUPPORT_AREAS.map((area) => {
-              const AreaIcon = area.icon;
-              return (
-                <div key={area.id} className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-700">
-                    <AreaIcon size={18} strokeWidth={2} />
-                  </span>
-                  <div>
-                    <h3 className="text-sm font-bold uppercase tracking-tight">{area.title}</h3>
-                    <p className="mt-1 text-sm leading-relaxed text-neutral-500">{area.description}</p>
+            <Link 
+              to={`/donate/${campaign.id}/updates`}
+              className="flex items-center justify-between py-6 border-b border-neutral-200 group hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
+            >
+              <h3 className="text-lg font-bold uppercase tracking-tight sm:text-xl">
+                Kabar Terbaru
+              </h3>
+              <ArrowRight size={20} className="text-neutral-900 transition-transform group-hover:translate-x-1" />
+            </Link>
+
+            <Link 
+              to={`/donate/${campaign.id}/disbursements`}
+              className="flex items-center justify-between py-6 border-b border-neutral-200 group hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
+            >
+              <h3 className="text-lg font-bold uppercase tracking-tight sm:text-xl">
+                Pencairan Dana
+              </h3>
+              <ArrowRight size={20} className="text-neutral-900 transition-transform group-hover:translate-x-1" />
+            </Link>
+
+            <div className="py-6 border-b border-neutral-200 flex flex-col sm:flex-row sm:items-start justify-between gap-6">
+              <div className="flex-1">
+                <Link to={`/donate/${campaign.id}/donors`} className="group inline-flex items-center justify-between w-full sm:w-auto sm:gap-4 hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900">
+                  <h3 className="text-lg font-bold uppercase tracking-tight sm:text-xl">
+                    Donasi
+                  </h3>
+                  <ArrowRight size={20} className="text-neutral-900 sm:hidden transition-transform group-hover:translate-x-1" />
+                </Link>
+                <p className="mt-2 text-sm text-neutral-500 font-medium">
+                  {campaign.donors.toLocaleString('id-ID')} PEOPLE HAVE SUPPORTED THIS MISSION.
+                </p>
+                
+                <div className="mt-6 space-y-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+                    Donasi Terbaru
+                  </p>
+                  
+                  <div className="space-y-4">
+                    {recentDonors.map((donor) => (
+                      <div key={donor.id} className="flex justify-between items-start gap-4 text-sm">
+                        <div className="flex-1">
+                          <p className="font-bold text-neutral-900">{donor.name}</p>
+                          <p className="text-neutral-500 text-xs mt-0.5">{donor.timeAgo}</p>
+                        </div>
+                        <p className="font-bold text-neutral-900 shrink-0">
+                          {formatRupiah(donor.amount)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-2">
+                    <Link
+                      to={`/donate/${campaign.id}/donors`}
+                      className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-neutral-900 hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+                    >
+                      Lihat Semua Donasi <ArrowRight size={14} strokeWidth={2.5} />
+                    </Link>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* ─── YOUR SUPPORT IN ACTION ───────────────────────────────────── */}
-        <section className="mx-auto mt-12 max-w-5xl px-4 sm:mt-20 sm:px-6 lg:px-8">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-neutral-400">
-            Impact
-          </p>
-          <h2 className="mt-3 text-2xl font-bold uppercase tracking-tight sm:text-4xl">
-            Your Support In Action
-          </h2>
-          <p className="mt-3 max-w-md text-sm leading-relaxed text-neutral-500">
-            Documentation in progress. Every mission will be reported with verified numbers.
-          </p>
-
-          <div className="mt-7 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {IMPACT_CARDS.map((card) => (
-              <div key={card.label} className="group relative overflow-hidden rounded-2xl">
-                <img
-                  src={card.image}
-                  alt={card.alt}
-                  loading="lazy"
-                  className="aspect-[4/3] w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div
-                  aria-hidden="true"
-                  className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/5"
-                />
-                <p className="absolute inset-x-0 bottom-0 p-4 text-sm font-bold uppercase tracking-[0.14em] text-white sm:text-base">
-                  {card.label}
-                </p>
               </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ─── TRANSPARENCY ─────────────────────────────────────────────── */}
-        <section className="mx-auto mt-14 max-w-5xl px-4 sm:mt-20 sm:px-6 lg:px-8">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-neutral-400">
-            Transparency
-          </p>
-          <h2 className="mt-3 text-2xl font-bold uppercase tracking-tight sm:text-4xl">Transparency</h2>
-          <p className="mt-3 max-w-md text-sm leading-relaxed text-neutral-500">
-            You deserve to know where your support goes.
-          </p>
-
-          <div className="mt-8 grid grid-cols-1 divide-y divide-neutral-200 border-y border-neutral-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-            {TRANSPARENCY_STATS.map((stat) => (
-              <div key={stat.label} className="py-6 sm:px-6 sm:py-8 sm:text-center sm:first:pl-0 sm:last:pr-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-400">
-                  {stat.label}
-                </p>
-                <p className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">{stat.value}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ─── COMPLETED MISSIONS ───────────────────────────────────────── */}
-        <section className="mx-auto mt-14 max-w-5xl px-4 sm:mt-20 sm:px-6 lg:px-8">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-neutral-400">
-            History
-          </p>
-          <h2 className="mt-3 text-2xl font-bold uppercase tracking-tight sm:text-4xl">
-            Completed Missions
-          </h2>
-
-          <div className="mt-7 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {COMPLETED_CAMPAIGNS.map((mission) => (
-              <Link
-                key={mission.number}
-                to={ROUTES.JOURNAL}
-                aria-label={`${mission.number} — ${mission.title} — read the story`}
-                className="group relative block overflow-hidden rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
-              >
-                <img
-                  src={mission.image}
-                  alt={mission.alt}
-                  loading="lazy"
-                  className="aspect-[4/3] w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div
-                  aria-hidden="true"
-                  className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/10"
-                />
-                <span className="absolute left-3 top-3 rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white backdrop-blur-md">
-                  Completed
-                </span>
-                <div className="absolute inset-x-0 bottom-0 p-5 text-white">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-white/70">
-                    {mission.number}
-                  </p>
-                  <h3 className="mt-1 text-lg font-bold uppercase leading-tight tracking-tight sm:text-xl">
-                    {mission.title}
-                  </h3>
-                  <p className="mt-1 text-xs leading-relaxed text-white/75">{mission.description}</p>
-                  <span className="mt-3 inline-block rounded-full bg-white px-5 py-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-900">
-                    Read Story
-                  </span>
-                </div>
+              <Link to={`/donate/${campaign.id}/donors`} className="hidden sm:inline-block group p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 rounded">
+                <ArrowRight size={20} className="text-neutral-900 transition-transform group-hover:translate-x-1" />
               </Link>
-            ))}
+            </div>
           </div>
         </section>
 

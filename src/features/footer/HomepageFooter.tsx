@@ -51,7 +51,7 @@ const NAVIGATION_LINKS: readonly FooterLinkItem[] = [
   { label: 'Home', href: ROUTES.HOME },
   { label: 'Shop', href: ROUTES.SHOP },
   { label: 'Mission', href: ROUTES.MISSION },
-  { label: 'Journal', href: ROUTES.JOURNAL },
+  { label: 'Impact', href: ROUTES.JOURNAL },
   { label: 'Donate', href: ROUTES.DONATE },
   { label: 'About', href: `${ROUTES.HOME}#onemission-vision` },
   { label: 'Contact', href: 'http://wa.me/6285798097779', isExternal: true },

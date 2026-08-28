@@ -17,6 +17,10 @@ const MissionPage = lazy(() => import('./pages/MissionPage').then((module) => ({
 const JournalPage = lazy(() => import('./pages/JournalPage').then((module) => ({ default: module.JournalPage })));
 const JournalStoryPage = lazy(() => import('./pages/JournalStoryPage').then((module) => ({ default: module.JournalStoryPage })));
 const DonatePage = lazy(() => import('./pages/DonatePage').then((module) => ({ default: module.DonatePage })));
+const DonateStoryPage = lazy(() => import('./pages/DonateStoryPage').then((m) => ({ default: m.DonateStoryPage })));
+const DonateUpdatesPage = lazy(() => import('./pages/DonateUpdatesPage').then((m) => ({ default: m.DonateUpdatesPage })));
+const DonateDisbursementsPage = lazy(() => import('./pages/DonateDisbursementsPage').then((m) => ({ default: m.DonateDisbursementsPage })));
+const DonateDonorsPage = lazy(() => import('./pages/DonateDonorsPage').then((m) => ({ default: m.DonateDonorsPage })));
 const TermsPage = lazy(() => import('./pages/TermsPage').then((module) => ({ default: module.TermsPage })));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then((module) => ({ default: module.PrivacyPage })));
 const FaqPage = lazy(() => import('./pages/FaqPage').then((module) => ({ default: module.FaqPage })));
@@ -274,6 +278,10 @@ function App() {
                   <Route path="/journal" element={<JournalPage />} />
                   <Route path="/donate" element={<DonatePage />} />
                 </Route>
+                <Route path="/donate/:campaignId/story" element={<DonateStoryPage />} />
+                <Route path="/donate/:campaignId/updates" element={<DonateUpdatesPage />} />
+                <Route path="/donate/:campaignId/disbursements" element={<DonateDisbursementsPage />} />
+                <Route path="/donate/:campaignId/donors" element={<DonateDonorsPage />} />
                 <Route path="/journal/:slug" element={<JournalStoryPage />} />
                 <Route path="*" element={<EarlyAccessGate chapter={earlyAccessChapter} onUnlocked={handleEarlyAccessUnlocked} />} />
               </Routes>
@@ -296,6 +304,10 @@ function App() {
               <Route path="/donate" element={<DonatePage />} />
             </Route>
 
+            <Route path="/donate/:campaignId/story" element={<DonateStoryPage />} />
+            <Route path="/donate/:campaignId/updates" element={<DonateUpdatesPage />} />
+            <Route path="/donate/:campaignId/disbursements" element={<DonateDisbursementsPage />} />
+            <Route path="/donate/:campaignId/donors" element={<DonateDonorsPage />} />
             <Route path="/journal/:slug" element={<JournalStoryPage />} />
             <Route path="/collection" element={<Navigate to={ROUTES.SHOP} replace />} />
             <Route path="/collections" element={<Navigate to={ROUTES.SHOP} replace />} />

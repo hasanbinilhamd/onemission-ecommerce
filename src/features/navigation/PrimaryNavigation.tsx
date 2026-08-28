@@ -77,23 +77,27 @@ export function PrimaryNavigation() {
       {/* Mobile/tablet: floating glass bottom bar */}
       <nav
         aria-label="Primary"
-        className="fixed bottom-0 left-0 right-0 z-40 flex lg:hidden items-center justify-center px-4 pb-[env(safe-area-inset-bottom,16px)] pointer-events-none"
+        className="fixed left-0 right-0 z-40 flex lg:hidden items-center justify-center pointer-events-none"
         style={{
+          bottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
           fontFamily: NAV_FONT_FAMILY,
         }}
       >
         <div 
-          className="flex w-full max-w-[400px] h-[64px] rounded-[24px] pointer-events-auto"
+          className="flex w-full max-w-[400px] p-1.5 pointer-events-auto"
           style={{
-            backgroundColor: theme === 'dark' ? 'rgba(255, 255, 255, 0.85)' : 'rgba(20, 20, 20, 0.75)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
+            width: 'calc(100% - 32px)',
+            margin: '0 auto',
+            borderRadius: '9999px',
+            backgroundColor: theme === 'dark' ? 'rgba(255, 255, 255, 0.65)' : 'rgba(20, 20, 20, 0.55)',
+            backdropFilter: 'blur(24px) saturate(150%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(150%)',
             border: theme === 'dark' 
-              ? '1px solid rgba(0,0,0,0.08)' 
-              : '1px solid rgba(255,255,255,0.12)',
+              ? '1px solid rgba(255, 255, 255, 0.7)' 
+              : '1px solid rgba(255, 255, 255, 0.12)',
             boxShadow: theme === 'dark'
-              ? '0 8px 32px rgba(0,0,0,0.08)'
-              : '0 8px 32px rgba(0,0,0,0.3)',
+              ? '0 10px 35px rgba(0,0,0,0.12)'
+              : '0 10px 35px rgba(0,0,0,0.35)',
             transition: 'background-color 240ms ease, border-color 240ms ease, box-shadow 240ms ease',
           }}
         >
@@ -104,7 +108,7 @@ export function PrimaryNavigation() {
                 key={item.to}
                 to={item.to}
                 end
-                className="flex-1 relative flex flex-col items-center justify-center h-full gap-1 rounded-[20px]"
+                className="flex-1 relative flex flex-col items-center justify-center gap-1 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
                 style={({ isActive }) => {
                   // Text & icon color calculation
                   const activeColor = theme === 'dark' ? '#111827' : '#FFFFFF';
@@ -113,11 +117,12 @@ export function PrimaryNavigation() {
                   
                   return {
                     color,
+                    height: '52px',
                     textDecoration: 'none',
                     transition: 'color 200ms ease, background-color 200ms ease',
                     // Very subtle background highlight for active state
                     backgroundColor: isActive 
-                      ? (theme === 'dark' ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.1)') 
+                      ? (theme === 'dark' ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.12)') 
                       : 'transparent',
                   };
                 }}

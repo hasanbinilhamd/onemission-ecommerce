@@ -44,15 +44,6 @@ export function PrimaryNavigation() {
           transition: 'background-color 220ms ease, border-color 220ms ease, box-shadow 220ms ease',
         }}
       >
-        <div className="absolute left-8 top-1/2 -translate-y-1/2 flex items-center">
-          <NavLink to={ROUTES.HOME} aria-label="One Mission">
-            <img
-              src={theme === 'dark' ? '/black_om_logo.png' : '/white_om_logo.png'}
-              alt="One Mission"
-              className="h-[18px] w-auto transition-opacity duration-200"
-            />
-          </NavLink>
-        </div>
 
         {PRIMARY_NAV_ITEMS.map((item) => (
           <NavLink
@@ -80,13 +71,7 @@ export function PrimaryNavigation() {
       <div 
         className="fixed top-0 left-0 right-0 z-40 flex lg:hidden items-center px-4 h-16 pointer-events-none"
       >
-        <NavLink to={ROUTES.HOME} aria-label="One Mission" className="pointer-events-auto">
-          <img
-            src={theme === 'dark' ? '/black_om_logo.png' : '/white_om_logo.png'}
-            alt="One Mission"
-            className="h-[18px] w-auto transition-opacity duration-200"
-          />
-        </NavLink>
+      
       </div>
 
       {/* Mobile/tablet: fixed bottom bar, five equal destinations */}

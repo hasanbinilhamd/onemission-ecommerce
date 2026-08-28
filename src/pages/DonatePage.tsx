@@ -139,25 +139,29 @@ export function DonatePage() {
                 </p>
                 <p className="mt-1 text-xl font-bold tracking-tight sm:text-2xl">
                   {formatRupiah(campaign.raised)}
-                  <span className="font-medium text-neutral-400"> of {formatRupiah(campaign.target)}</span>
                 </p>
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-sm font-medium text-neutral-400">
+                    of {formatRupiah(campaign.target)}
+                  </span>
+                  <div className="mt-1.5 text-sm font-bold text-neutral-900">{campaign.progressPercent}%</div>
+                </div>
                 <div
                   role="progressbar"
                   aria-valuenow={campaign.progressPercent}
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-label={`Campaign progress — ${campaign.progressPercent} percent`}
-                  className="mt-3 h-2 w-full overflow-hidden rounded-full bg-neutral-100"
+                  className="mt-1 h-2 w-full overflow-hidden rounded-full bg-neutral-100"
                 >
                   <div
                     className="h-full rounded-full bg-neutral-900"
                     style={{ width: `${campaign.progressPercent}%` }}
                   />
                 </div>
-                <div className="mt-1.5 text-sm font-bold text-neutral-900">{campaign.progressPercent}%</div>
 
-                <div className="mt-7 grid grid-cols-3 divide-x divide-neutral-200">
-                  <div className="pr-3">
+                <div className="mt-7 grid grid-cols-3 divide-neutral-200">
+                  <div className="pr-3 text-center">
                     <p className="text-2xl font-bold tracking-tight sm:text-3xl">
                       {campaign.donors.toLocaleString('id-ID')}
                     </p>
@@ -165,7 +169,7 @@ export function DonatePage() {
                       Donors
                     </p>
                   </div>
-                  <div className="px-3 sm:px-5">
+                  <div className="px-3 sm:px-5 text-center">
                     <p className="text-2xl font-bold tracking-tight sm:text-3xl">
                       {campaign.beneficiaries.toLocaleString('id-ID')}
                     </p>
@@ -173,7 +177,7 @@ export function DonatePage() {
                       Beneficiaries
                     </p>
                   </div>
-                  <div className="pl-3 sm:pl-5">
+                  <div className="pl-3 sm:pl-5 text-center">
                     <p className="text-2xl font-bold tracking-tight sm:text-3xl">{campaign.daysLeft}</p>
                     <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
                       Days Left

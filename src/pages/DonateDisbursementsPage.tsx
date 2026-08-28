@@ -92,7 +92,7 @@ export function DonateDisbursementsPage() {
         </div>
       </main>
 
-      <div className="mt-16 bg-white pb-[72px] sm:mt-20 lg:pb-0">
+      <div className="mt-16 bg-white pb-[100px] sm:mt-20 lg:pb-0">
         <HomepageFooter />
       </div>
     </div>

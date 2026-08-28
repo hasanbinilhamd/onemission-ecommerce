@@ -140,25 +140,30 @@ export function DonatePage() {
                 </p>
                 <p className="mt-1 text-xl font-bold tracking-tight sm:text-2xl">
                   {formatRupiah(campaign.raised)}
-                  <span className="font-medium text-neutral-400"> of {formatRupiah(campaign.target)}</span>
+                  
                 </p>
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-sm font-medium text-neutral-400">
+                    of {formatRupiah(campaign.target)}
+                  </span>
+                  <div className="mt-1.5 text-sm font-bold text-neutral-900">{campaign.progressPercent}%</div>
+                </div>
                 <div
                   role="progressbar"
                   aria-valuenow={campaign.progressPercent}
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-label={`Campaign progress — ${campaign.progressPercent} percent`}
-                  className="mt-3 h-2 w-full overflow-hidden rounded-full bg-neutral-100"
+                  className="mt-1 h-2 w-full overflow-hidden rounded-full bg-neutral-100"
                 >
                   <div
                     className="h-full rounded-full bg-neutral-900"
                     style={{ width: `${campaign.progressPercent}%` }}
                   />
                 </div>
-                <div className="mt-1.5 text-sm font-bold text-neutral-900">{campaign.progressPercent}%</div>
 
-                <div className="mt-7 grid grid-cols-3 divide-x divide-neutral-200">
-                  <div className="pr-3">
+                <div className="mt-7 grid grid-cols-3 divide-neutral-200">
+                  <div className="pr-3 text-center">
                     <p className="text-2xl font-bold tracking-tight sm:text-3xl">
                       {campaign.donors.toLocaleString('id-ID')}
                     </p>
@@ -166,7 +171,7 @@ export function DonatePage() {
                       Donors
                     </p>
                   </div>
-                  <div className="px-3 sm:px-5">
+                  <div className="px-0 sm:px-5 text-center">
                     <p className="text-2xl font-bold tracking-tight sm:text-3xl">
                       {campaign.beneficiaries.toLocaleString('id-ID')}
                     </p>
@@ -174,29 +179,13 @@ export function DonatePage() {
                       Beneficiaries
                     </p>
                   </div>
-                  <div className="pl-3 sm:pl-5">
+                  <div className="pl-3 sm:pl-5 text-center">
                     <p className="text-2xl font-bold tracking-tight sm:text-3xl">{campaign.daysLeft}</p>
                     <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
                       Days Left
                     </p>
                   </div>
                 </div>
-              </div>
-
-              {/* ─── PARTNER / TRUST ──────────────────────────────────── */}
-              <div className="mt-8 border-t border-neutral-200 pt-6">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-400">
-                  Our Partner
-                </p>
-                <p className="mt-1.5 text-lg font-bold uppercase tracking-tight">
-                  {campaign.partner.name}
-                </p>
-                <p className="mt-0.5 text-sm font-medium text-neutral-500">
-                  {campaign.partner.tagline}
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-neutral-500">
-                  {campaign.partner.statement}
-                </p>
               </div>
 
               {/* ─── ONE CLEAR CTA ────────────────────────────────────── */}
@@ -209,14 +198,31 @@ export function DonatePage() {
               </Button>
             </div>
           </div>
+
+          {/* ─── PARTNER / TRUST ──────────────────────────────────── */}
+          <div className="mt-8 border-t border-neutral-200 pt-6">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-400">
+              Our Partner
+            </p>
+            <p className="mt-1.5 text-lg font-bold uppercase tracking-tight">
+              {campaign.partner.name}
+            </p>
+            <p className="mt-0.5 text-sm font-medium text-neutral-500">
+              {campaign.partner.tagline}
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-neutral-500">
+              {campaign.partner.statement}
+            </p>
+          </div>
         </section>
+
 
         {/* ─── SUPPORT INTERACTION (hidden until Donate Now) ────────────── */}
         {isSupportOpen && (
           <section
             id="donation-support"
             aria-label="Donation support"
-            className="mx-auto mt-14 max-w-5xl scroll-mt-20 px-4 sm:mt-20 sm:px-6 lg:px-8"
+            className="mx-auto mt-10 max-w-5xl scroll-mt-20 px-4 sm:mt-20 sm:px-6 lg:px-8"
           >
             {isSubmitted ? (
               <div
@@ -355,7 +361,7 @@ export function DonatePage() {
         )}
 
         {/* ─── WHERE YOUR SUPPORT GOES ──────────────────────────────────── */}
-        <section className="mx-auto mt-14 max-w-5xl px-4 sm:mt-20 sm:px-6 lg:px-8">
+        <section className="mx-auto mt-12 max-w-5xl px-4 sm:mt-20 sm:px-6 lg:px-8">
           <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-neutral-400">
             Transparency
           </p>
@@ -382,7 +388,7 @@ export function DonatePage() {
         </section>
 
         {/* ─── YOUR SUPPORT IN ACTION ───────────────────────────────────── */}
-        <section className="mx-auto mt-14 max-w-5xl px-4 sm:mt-20 sm:px-6 lg:px-8">
+        <section className="mx-auto mt-12 max-w-5xl px-4 sm:mt-20 sm:px-6 lg:px-8">
           <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-neutral-400">
             Impact
           </p>
@@ -411,26 +417,6 @@ export function DonatePage() {
                 </p>
               </div>
             ))}
-          </div>
-        </section>
-
-        {/* ─── WHO WE WORK WITH ─────────────────────────────────────────── */}
-        <section className="mx-auto mt-14 max-w-5xl px-4 sm:mt-20 sm:px-6 lg:px-8">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-neutral-400">
-            Partners
-          </p>
-          <h2 className="mt-3 text-2xl font-bold uppercase tracking-tight sm:text-4xl">
-            Who We Work With
-          </h2>
-
-          <div className="mt-7 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-2xl font-bold uppercase tracking-tight">{campaign.partner.name}</p>
-              <p className="mt-1 text-sm font-medium text-neutral-500">{campaign.partner.tagline}</p>
-            </div>
-            <p className="max-w-sm text-sm leading-relaxed text-neutral-500">
-              {campaign.partner.statement}
-            </p>
           </div>
         </section>
 

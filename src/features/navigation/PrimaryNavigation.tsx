@@ -89,48 +89,69 @@ export function PrimaryNavigation() {
         </NavLink>
       </div>
 
-      {/* Mobile/tablet: fixed bottom bar, five equal destinations */}
+      {/* Mobile/tablet: floating glass bottom bar */}
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-40 flex lg:hidden items-center"
+        className="fixed bottom-0 left-0 right-0 z-40 flex lg:hidden items-center justify-center px-4 pb-[env(safe-area-inset-bottom,16px)] pointer-events-none"
         style={{
           fontFamily: NAV_FONT_FAMILY,
-          backgroundColor: colors.surfaceBackground,
-          borderTop: `1px solid ${colors.surfaceBorder}`,
-          boxShadow: colors.surfaceShadow,
-          paddingBottom: 'env(safe-area-inset-bottom)',
-          height: 'calc(60px + env(safe-area-inset-bottom))',
         }}
       >
-        {PRIMARY_NAV_ITEMS.map((item) => {
-          const Icon = item.icon;
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end
-              className="flex-1 flex flex-col items-center justify-center h-full gap-[4px]"
-              style={({ isActive }) => ({
-                color: isActive ? colors.foreground : colors.muted,
-                textDecoration: 'none',
-                transition: 'color 150ms ease',
-              })}
-            >
-              <Icon size={20} strokeWidth={2} />
-              <span
-                style={{
-                  fontSize: '9px',
-                  fontWeight: 600,
-                  letterSpacing: '0.1em',
-                  lineHeight: 1,
-                  marginTop: '2px',
+        <div 
+          className="flex w-full max-w-[400px] h-[64px] rounded-[24px] pointer-events-auto"
+          style={{
+            backgroundColor: theme === 'dark' ? 'rgba(255, 255, 255, 0.85)' : 'rgba(20, 20, 20, 0.75)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: theme === 'dark' 
+              ? '1px solid rgba(0,0,0,0.08)' 
+              : '1px solid rgba(255,255,255,0.12)',
+            boxShadow: theme === 'dark'
+              ? '0 8px 32px rgba(0,0,0,0.08)'
+              : '0 8px 32px rgba(0,0,0,0.3)',
+            transition: 'background-color 240ms ease, border-color 240ms ease, box-shadow 240ms ease',
+          }}
+        >
+          {PRIMARY_NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end
+                className="flex-1 relative flex flex-col items-center justify-center h-full gap-1 rounded-[20px]"
+                style={({ isActive }) => {
+                  // Text & icon color calculation
+                  const activeColor = theme === 'dark' ? '#111827' : '#FFFFFF';
+                  const inactiveColor = theme === 'dark' ? 'rgba(17,24,39,0.45)' : 'rgba(255,255,255,0.45)';
+                  const color = isActive ? activeColor : inactiveColor;
+                  
+                  return {
+                    color,
+                    textDecoration: 'none',
+                    transition: 'color 200ms ease, background-color 200ms ease',
+                    // Very subtle background highlight for active state
+                    backgroundColor: isActive 
+                      ? (theme === 'dark' ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.1)') 
+                      : 'transparent',
+                  };
                 }}
               >
-                {item.label}
-              </span>
-            </NavLink>
-          );
-        })}
+                <Icon size={20} strokeWidth={2.2} />
+                <span
+                  style={{
+                    fontSize: '9px',
+                    fontWeight: 600,
+                    letterSpacing: '0.08em',
+                    lineHeight: 1,
+                  }}
+                >
+                  {item.label}
+                </span>
+              </NavLink>
+            );
+          })}
+        </div>
       </nav>
     </>
   );

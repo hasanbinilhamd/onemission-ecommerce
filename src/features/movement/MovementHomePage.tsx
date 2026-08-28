@@ -169,7 +169,7 @@ export function MovementHomePage() {
       </main>
 
       {/* Adjust footer padding on mobile so it doesn't get hidden behind bottom nav */}
-      <div className="pb-[72px] lg:pb-0 bg-white">
+      <div className="pb-[100px] lg:pb-0 bg-white">
         <HomepageFooter />
       </div>
     </div>

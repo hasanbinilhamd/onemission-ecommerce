@@ -461,7 +461,7 @@ export function DonatePage() {
 
       {/* Footer with bottom-nav clearance on mobile — same pattern as the
           approved Movement Homepage, Mission, and Journal pages. */}
-      <div className="mt-16 bg-white pb-[72px] sm:mt-20 lg:pb-0">
+      <div className="mt-16 bg-white pb-[100px] sm:mt-20 lg:pb-0">
         <HomepageFooter />
       </div>
     </div>

@@ -89,15 +89,15 @@ export function PrimaryNavigation() {
             width: 'calc(100% - 32px)',
             margin: '0 auto',
             borderRadius: '9999px',
-            backgroundColor: theme === 'dark' ? 'rgba(255, 255, 255, 0.65)' : 'rgba(20, 20, 20, 0.55)',
-            backdropFilter: 'blur(24px) saturate(150%)',
-            WebkitBackdropFilter: 'blur(24px) saturate(150%)',
+            backgroundColor: theme === 'dark' ? 'rgba(255, 255, 255, 0.45)' : 'rgba(20, 20, 20, 0.40)',
+            backdropFilter: 'blur(24px) saturate(160%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(160%)',
             border: theme === 'dark' 
-              ? '1px solid rgba(255, 255, 255, 0.7)' 
-              : '1px solid rgba(255, 255, 255, 0.12)',
+              ? '1px solid rgba(255, 255, 255, 0.65)' 
+              : '1px solid rgba(255, 255, 255, 0.15)',
             boxShadow: theme === 'dark'
-              ? '0 10px 35px rgba(0,0,0,0.12)'
-              : '0 10px 35px rgba(0,0,0,0.35)',
+              ? 'inset 0 1px 0 rgba(255,255,255,0.6), inset 0 0 0 1px rgba(255,255,255,0.15), 0 12px 35px rgba(0,0,0,0.12)'
+              : 'inset 0 1px 0 rgba(255,255,255,0.15), inset 0 0 0 1px rgba(255,255,255,0.05), 0 12px 35px rgba(0,0,0,0.3)',
             transition: 'background-color 240ms ease, border-color 240ms ease, box-shadow 240ms ease',
           }}
         >

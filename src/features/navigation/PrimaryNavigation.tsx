@@ -76,6 +76,19 @@ export function PrimaryNavigation() {
         ))}
       </nav>
 
+      {/* Mobile/tablet: Top logo area (links are in bottom bar) */}
+      <div 
+        className="fixed top-0 left-0 right-0 z-40 flex lg:hidden items-center px-4 h-16 pointer-events-none"
+      >
+        <NavLink to={ROUTES.HOME} aria-label="One Mission" className="pointer-events-auto">
+          <img
+            src={theme === 'dark' ? '/black_om_logo.png' : '/white_om_logo.png'}
+            alt="One Mission"
+            className="h-[18px] w-auto transition-opacity duration-200"
+          />
+        </NavLink>
+      </div>
+
       {/* Mobile/tablet: fixed bottom bar, five equal destinations */}
       <nav
         aria-label="Primary"

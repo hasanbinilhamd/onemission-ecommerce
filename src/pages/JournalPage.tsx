@@ -93,7 +93,7 @@ export function JournalPage() {
               />
               <div className="absolute inset-x-0 bottom-0 p-5 text-white sm:p-8 lg:p-10">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/70">
-                  {featured.category} · {featured.date}
+                  {featured.category} · {featured.date} · {featured.readMinutes} min read
                 </p>
                 <h2 className="mt-2 max-w-2xl text-2xl font-bold uppercase leading-tight tracking-tight sm:text-4xl lg:text-5xl">
                   {featured.title}

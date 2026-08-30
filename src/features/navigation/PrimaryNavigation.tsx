@@ -6,7 +6,7 @@ import { useNavigationTheme } from './NavigationThemeContext';
 /**
  * PrimaryNavigation — movement-level primary navigation.
  *
- * EXACTLY five destinations: HOME | MISSION | SHOP | JOURNAL | DONATE.
+ * EXACTLY five destinations: HOME | MISSION | SHOP | IMPACT | DONATE.
  * Mounted only on the marketing/movement pages (see MovementLayout).
  *
  * Desktop (lg+): fixed top bar, centered links, theme-aware.
@@ -44,6 +44,24 @@ export function PrimaryNavigation() {
           transition: 'background-color 220ms ease, border-color 220ms ease, box-shadow 220ms ease',
         }}
       >
+        {/* Theme-aware One Mission logo (fixed rendered size, crossfade):
+            theme 'light' = transparent surface over a dark hero → WHITE logo
+            theme 'dark'  = white surface → BLACK logo */}
+        <div className="absolute left-6 top-1/2 h-9 -translate-y-1/2">
+          <img
+            src="/white_om_logo.png"
+            alt="One Mission"
+            className="h-full w-auto transition-opacity duration-200"
+            style={{ opacity: theme === 'light' ? 1 : 0 }}
+          />
+          <img
+            src="/black_om_logo.png"
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-y-0 left-0 h-full w-auto transition-opacity duration-200"
+            style={{ opacity: theme === 'dark' ? 1 : 0 }}
+          />
+        </div>
         {PRIMARY_NAV_ITEMS.map((item) => (
           <NavLink
             key={item.to}

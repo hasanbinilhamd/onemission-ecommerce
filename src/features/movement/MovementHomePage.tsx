@@ -1,10 +1,144 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '../../app/config/routes';
 import { HomepageFooter } from '../footer';
 import { ArrowRight } from 'lucide-react';
 import { PRODUCT_STORY_ITEMS } from '../story/productStoryData';
+import { websiteService, type MovementHomeContent } from '../../services/api/websiteService';
+
+/**
+ * MovementHomePage — approved Home design, CMS-driven content.
+ *
+ * Content source: HQ movement Home CMS (hero + Join The Mission cards).
+ * If the CMS is unavailable or empty, the approved fallback content below
+ * keeps the page identical to the previously approved version.
+ *
+ * DESIGN + LAYOUT + INTERACTION stay in this component — the CMS only
+ * supplies content (text, destinations, images).
+ */
+
+const FALLBACK_HOME = {
+  headline: 'We Build. We Move. We Serve.',
+  description:
+    'A movement of Muslims who train their body, strengthen their faith, and build a better ummah.',
+  ctaLabel: 'Join The Mission',
+  ctaDestination: 'mission',
+  socialProofNumber: '12K+',
+  socialProofText: 'Muslims are moving together',
+  desktopImage: '',
+  mobileImage: '',
+};
+
+const FALLBACK_CARDS = [
+  {
+    id: 'fallback-1',
+    title: 'Vote Now',
+    description: 'What should we do next?',
+    image: PRODUCT_STORY_ITEMS[1].mediaUrl,
+    destination: 'mission',
+    displayOrder: 1,
+  },
+  {
+    id: 'fallback-2',
+    title: 'Real Impact',
+    description: "See what we're building together.",
+    image: PRODUCT_STORY_ITEMS[0].mediaUrl,
+    destination: 'impact',
+    displayOrder: 2,
+  },
+  {
+    id: 'fallback-3',
+    title: 'Performance',
+    description: 'Gear that moves with you.',
+    image: PRODUCT_STORY_ITEMS[2].mediaUrl,
+    destination: 'shop',
+    displayOrder: 3,
+  },
+  {
+    id: 'fallback-4',
+    title: 'Donate Now',
+    description: 'Help someone move forward.',
+    image: PRODUCT_STORY_ITEMS[3].mediaUrl,
+    destination: 'donate',
+    displayOrder: 4,
+  },
+];
+
+const FALLBACK_CONTENT: MovementHomeContent = {
+  home: FALLBACK_HOME,
+  cards: FALLBACK_CARDS,
+};
+
+/**
+ * Controlled destination mapping. The CMS stores a slug; the frontend owns
+ * the actual routes. Impact uses the existing /journal route (user-facing
+ * "IMPACT" page).
+ */
+const HOME_DESTINATION_ROUTES: Record<string, string> = {
+  mission: ROUTES.MISSION,
+  impact: ROUTES.JOURNAL,
+  shop: ROUTES.SHOP,
+  donate: ROUTES.DONATE,
+};
+
+function resolveHomeDestination(destination: string | undefined): string {
+  return HOME_DESTINATION_ROUTES[String(destination || 'mission')] || ROUTES.MISSION;
+}
+
+/** Splits the CMS headline into the existing three-line treatment. */
+function splitHeadlineLines(headline: string): string[] {
+  const parts = String(headline || '')
+    .split('.')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (parts.length <= 1) return parts.length === 1 ? [parts[0]] : [];
+  return parts.map((part) => `${part}.`);
+}
+
+function useIsMobileViewport(): boolean {
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches,
+  );
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 639px)');
+    const update = () => setIsMobile(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+
+  return isMobile;
+}
 
 export function MovementHomePage() {
+  const [content, setContent] = useState<MovementHomeContent>(FALLBACK_CONTENT);
+  const isMobile = useIsMobileViewport();
+
+  useEffect(() => {
+    let isActive = true;
+    websiteService
+      .getMovementHome()
+      .then((result) => {
+        if (!isActive || !result?.home) return;
+        setContent({
+          home: { ...FALLBACK_HOME, ...result.home },
+          cards: Array.isArray(result.cards) && result.cards.length > 0 ? result.cards : FALLBACK_CARDS,
+        });
+      })
+      .catch(() => {
+        // CMS unavailable → approved fallback stays rendered.
+      });
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const heroImage = isMobile
+    ? content.home.mobileImage || content.home.desktopImage
+    : content.home.desktopImage || content.home.mobileImage;
+  const headlineLines = splitHeadlineLines(content.home.headline);
+
   return (
     <div
       className="bg-[#0A0A0A] min-h-screen text-white flex flex-col font-['SF-Pro-Display',_sans-serif]"
@@ -13,27 +147,40 @@ export function MovementHomePage() {
         {/* HERO SECTION */}
         <section className="relative w-full min-h-[85vh] sm:min-h-screen flex flex-col justify-end pb-24 sm:pb-32 px-6 sm:px-12 lg:px-24">
           <div className="absolute inset-0 z-0">
-             {/* Using a placeholder gradient for the image to mimic the dark aesthetic, since we don't have the specific hero image from the reference in the repo yet. */}
-             <div className="absolute inset-0 bg-gradient-to-b from-neutral-900/60 via-neutral-900/80 to-[#0A0A0A] z-10" />
-             <div className="w-full h-full bg-[#1A1A1A] object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-b from-neutral-900/60 via-neutral-900/80 to-[#0A0A0A] z-10" />
+            {heroImage ? (
+              <img
+                src={heroImage}
+                alt=""
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-[#1A1A1A] object-cover" />
+            )}
           </div>
 
           <div className="relative z-20 max-w-4xl">
             <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight uppercase leading-[0.95] mb-6">
-              <span className="block">We Build.</span>
-              <span className="block text-neutral-400">We Move.</span>
-              <span className="block">We Serve.</span>
+              {headlineLines.length > 0 ? (
+                headlineLines.map((line, index) => (
+                  <span key={index} className={`block ${index % 2 === 1 ? 'text-neutral-400' : ''}`}>
+                    {line}
+                  </span>
+                ))
+              ) : (
+                <span className="block">We Build.</span>
+              )}
             </h1>
-            
+
             <p className="text-base sm:text-lg md:text-xl text-neutral-300 max-w-md mb-10 leading-relaxed">
-              A movement of Muslims who train their body, strengthen their faith, and build a better ummah.
+              {content.home.description}
             </p>
 
             <Link
-              to={ROUTES.MISSION}
+              to={resolveHomeDestination(content.home.ctaDestination)}
               className="inline-flex items-center gap-3 bg-white text-black px-8 py-4 rounded-full font-semibold text-sm tracking-wide uppercase transition-transform hover:scale-105"
             >
-              Join The Mission
+              {content.home.ctaLabel}
               <ArrowRight size={18} strokeWidth={2.5} />
             </Link>
 
@@ -44,8 +191,8 @@ export function MovementHomePage() {
                 <div className="w-10 h-10 rounded-full border-2 border-[#0A0A0A] bg-neutral-600" />
               </div>
               <div>
-                <p className="font-bold text-lg leading-none">12K+</p>
-                <p className="text-xs text-neutral-400">Muslims are moving together</p>
+                <p className="font-bold text-lg leading-none">{content.home.socialProofNumber}</p>
+                <p className="text-xs text-neutral-400">{content.home.socialProofText}</p>
               </div>
             </div>
           </div>
@@ -59,111 +206,44 @@ export function MovementHomePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            
-            {/* Card 01 - Vote Now */}
-            <Link to={ROUTES.MISSION} className="group relative block aspect-[2/1] sm:aspect-[4/5] rounded-2xl overflow-hidden bg-neutral-100">
-              <div 
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-700 group-hover:scale-105"
-                style={{ backgroundImage: `url(${PRODUCT_STORY_ITEMS[1].mediaUrl})` }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10 z-10" />
-              <div className="absolute -top-4 -right-4 sm:-top-6 sm:-right-6 text-[120px] sm:text-[180px] leading-none font-bold text-white opacity-[0.12] select-none z-10 pointer-events-none tracking-tighter">
-                01
-              </div>
-              <div className="absolute inset-0 p-5 sm:p-6 flex flex-col justify-end sm:justify-between z-20 text-white">
-                <div className="hidden sm:flex justify-between items-start">
-                  <span className="text-xs font-semibold tracking-widest text-white/80">01</span>
-                </div>
-                <div className="flex justify-between items-end gap-4">
-                  <div>
-                    <h3 className="text-lg sm:text-2xl font-bold uppercase tracking-tight mb-1 sm:mb-2 leading-tight">Vote Now</h3>
-                    <p className="text-xs sm:text-sm text-white/80 leading-snug">What should we do next?</p>
+            {content.cards.map((card, index) => {
+              const displayOrder = Number(card.displayOrder) || index + 1;
+              const cardNumber = String(displayOrder).padStart(2, '0');
+              return (
+                <Link
+                  key={card.id ?? index}
+                  to={resolveHomeDestination(card.destination)}
+                  className="group relative block aspect-[2/1] sm:aspect-[4/5] rounded-2xl overflow-hidden bg-neutral-100"
+                >
+                  <div
+                    className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-700 group-hover:scale-105"
+                    style={{ backgroundImage: `url(${card.image})` }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10 z-10" />
+                  <div className="absolute -top-4 -right-4 sm:-top-6 sm:-right-6 text-[120px] sm:text-[180px] leading-none font-bold text-white opacity-[0.12] select-none z-10 pointer-events-none tracking-tighter">
+                    {cardNumber}
                   </div>
-                  <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 transition-all group-hover:bg-white group-hover:text-black">
-                     <ArrowRight size={18} strokeWidth={2} />
+                  <div className="absolute inset-0 p-5 sm:p-6 flex flex-col justify-end sm:justify-between z-20 text-white">
+                    <div className="hidden sm:flex justify-between items-start">
+                      <span className="text-xs font-semibold tracking-widest text-white/80">{cardNumber}</span>
+                    </div>
+                    <div className="flex justify-between items-end gap-4">
+                      <div>
+                        <h3 className="text-lg sm:text-2xl font-bold uppercase tracking-tight mb-1 sm:mb-2 leading-tight">
+                          {card.title}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-white/80 leading-snug">
+                          {card.description}
+                        </p>
+                      </div>
+                      <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 transition-all group-hover:bg-white group-hover:text-black">
+                        <ArrowRight size={18} strokeWidth={2} />
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </Link>
-
-            {/* Card 02 - Real Impact */}
-            <Link to={ROUTES.MISSION} className="group relative block aspect-[2/1] sm:aspect-[4/5] rounded-2xl overflow-hidden bg-neutral-100">
-              <div 
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-700 group-hover:scale-105"
-                style={{ backgroundImage: `url(${PRODUCT_STORY_ITEMS[0].mediaUrl})` }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10 z-10" />
-              <div className="absolute -top-4 -right-4 sm:-top-6 sm:-right-6 text-[120px] sm:text-[180px] leading-none font-bold text-white opacity-[0.12] select-none z-10 pointer-events-none tracking-tighter">
-                02
-              </div>
-              <div className="absolute inset-0 p-5 sm:p-6 flex flex-col justify-end sm:justify-between z-20 text-white">
-                <div className="hidden sm:flex justify-between items-start">
-                  <span className="text-xs font-semibold tracking-widest text-white/80">02</span>
-                </div>
-                <div className="flex justify-between items-end gap-4">
-                  <div>
-                    <h3 className="text-lg sm:text-2xl font-bold uppercase tracking-tight mb-1 sm:mb-2 leading-tight">Real Impact</h3>
-                    <p className="text-xs sm:text-sm text-white/80 leading-snug">See what we're building together.</p>
-                  </div>
-                  <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 transition-all group-hover:bg-white group-hover:text-black">
-                     <ArrowRight size={18} strokeWidth={2} />
-                  </div>
-                </div>
-              </div>
-            </Link>
-
-            {/* Card 03 - Performance */}
-            <Link to={ROUTES.SHOP} className="group relative block aspect-[2/1] sm:aspect-[4/5] rounded-2xl overflow-hidden bg-neutral-100">
-              <div 
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-700 group-hover:scale-105"
-                style={{ backgroundImage: `url(${PRODUCT_STORY_ITEMS[2].mediaUrl})` }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10 z-10" />
-              <div className="absolute -top-4 -right-4 sm:-top-6 sm:-right-6 text-[120px] sm:text-[180px] leading-none font-bold text-white opacity-[0.12] select-none z-10 pointer-events-none tracking-tighter">
-                03
-              </div>
-              <div className="absolute inset-0 p-5 sm:p-6 flex flex-col justify-end sm:justify-between z-20 text-white">
-                <div className="hidden sm:flex justify-between items-start">
-                  <span className="text-xs font-semibold tracking-widest text-white/80">03</span>
-                </div>
-                <div className="flex justify-between items-end gap-4">
-                  <div>
-                    <h3 className="text-lg sm:text-2xl font-bold uppercase tracking-tight mb-1 sm:mb-2 leading-tight">Performance</h3>
-                    <p className="text-xs sm:text-sm text-white/80 leading-snug">Gear that moves with you.</p>
-                  </div>
-                  <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 transition-all group-hover:bg-white group-hover:text-black">
-                     <ArrowRight size={18} strokeWidth={2} />
-                  </div>
-                </div>
-              </div>
-            </Link>
-
-            {/* Card 04 - Donate Now */}
-            <Link to={ROUTES.DONATE} className="group relative block aspect-[2/1] sm:aspect-[4/5] rounded-2xl overflow-hidden bg-neutral-100">
-              <div 
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-700 group-hover:scale-105"
-                style={{ backgroundImage: `url(${PRODUCT_STORY_ITEMS[3].mediaUrl})` }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10 z-10" />
-              <div className="absolute -top-4 -right-4 sm:-top-6 sm:-right-6 text-[120px] sm:text-[180px] leading-none font-bold text-white opacity-[0.12] select-none z-10 pointer-events-none tracking-tighter">
-                04
-              </div>
-              <div className="absolute inset-0 p-5 sm:p-6 flex flex-col justify-end sm:justify-between z-20 text-white">
-                <div className="hidden sm:flex justify-between items-start">
-                  <span className="text-xs font-semibold tracking-widest text-white/80">04</span>
-                </div>
-                <div className="flex justify-between items-end gap-4">
-                  <div>
-                    <h3 className="text-lg sm:text-2xl font-bold uppercase tracking-tight mb-1 sm:mb-2 leading-tight">Donate Now</h3>
-                    <p className="text-xs sm:text-sm text-white/80 leading-snug">Help someone move forward.</p>
-                  </div>
-                  <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 transition-all group-hover:bg-white group-hover:text-black">
-                     <ArrowRight size={18} strokeWidth={2} />
-                  </div>
-                </div>
-              </div>
-            </Link>
-
+                </Link>
+              );
+            })}
           </div>
         </section>
       </main>

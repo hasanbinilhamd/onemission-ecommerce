@@ -62,6 +62,7 @@ const ALLOWED_PUBLIC_PATTERNS = [
   /^website\/brand-video$/,
   /^website\/product-story$/,
   /^website\/collection$/,
+  /^movement\/home$/,
 ];
 
 function getUpstreamBaseUrl() {

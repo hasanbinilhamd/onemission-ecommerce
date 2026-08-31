@@ -1,98 +1,194 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ArrowRight, BookOpen, Check, Dumbbell, Sprout, Trophy, type LucideIcon } from 'lucide-react';
 import { Button } from '../components/shared';
 import { HomepageFooter } from '../features/footer';
+import { ROUTES } from '../app/config/routes';
+import {
+  missionService,
+  type MissionPayload,
+  type MissionOptionPayload,
+} from '../services/api/missionService';
 
 /**
- * MissionPage — Phase 3: Mission voting experience.
+ * MissionPage — approved Mission voting experience, CMS-driven.
  *
- * Follows the approved Movement Homepage design language (SF Pro Display,
- * editorial cards, ghost numbers, rounded-full CTAs, same footer treatment).
+ * Content source: HQ Mission CMS (public API). Voting goes through the
+ * server-side vote API; results are computed from real vote records.
  *
- * Voting is frontend-only: there is no voting backend in the repository, so
- * the collective results below are static presentation data and the user's
- * vote only produces the confirmation state (it does not alter the results).
+ * Fallback: when the API is unavailable, the previously approved static
+ * content renders (design unchanged). Live statistics are NEVER fabricated —
+ * they only render when real voting data arrives from the backend.
  *
- * Imagery constraint: all mission card photos are full-silhouette
- * compositions — no visible human faces or eyes.
+ * Imagery constraint: local fallback images remain full-silhouette
+ * compositions (no visible human faces or eyes).
  */
 
-interface MissionOption {
-  id: string;
-  number: string;
-  title: string;
-  description: string;
-  image: string;
-  alt: string;
-}
+const FALLBACK_MISSION = {
+  eyebrow: 'YOUR VOICE, OUR NEXT STEP',
+  title: 'THE NEXT MISSION IS YOURS.',
+  description: 'Your vote will shape our next move as a movement.',
+};
 
-const MISSION_OPTIONS: readonly MissionOption[] = [
+const FALLBACK_OPTIONS: readonly MissionOptionPayload[] = [
   {
     id: 'pesantren',
-    number: '01',
     title: 'PESANTREN',
     description: 'Support sports facilities and apparel for santri.',
     image: '/images/mission/mission-pesantren.jpg',
-    alt: 'Silhouette of a santri holding a soccer ball on a field at dusk.',
+    displayOrder: 1,
   },
   {
     id: 'football',
-    number: '02',
     title: 'MUSLIM FOOTBALL',
     description: 'Empower Muslim teams to play with identity and purpose.',
     image: '/images/mission/mission-football.jpg',
-    alt: 'Silhouette of a Muslim football player on a pitch at dusk.',
+    displayOrder: 2,
   },
   {
     id: 'calisthenics',
-    number: '03',
     title: 'MUSLIM CALISTHENICS',
     description: 'Build a strong and disciplined Muslim fitness community.',
     image: '/images/mission/mission-calisthenics.jpg',
-    alt: 'Silhouette of a calisthenics athlete on a pull-up bar at night.',
+    displayOrder: 3,
   },
   {
     id: 'youth',
-    number: '04',
     title: 'YOUTH DEVELOPMENT',
     description: 'Invest in the next generation through sports and character.',
     image: '/images/mission/mission-youth.jpg',
-    alt: 'Silhouettes of young athletes jogging on a track at sunrise.',
+    displayOrder: 4,
   },
 ] as const;
 
-interface VotingResult {
-  id: string;
-  label: string;
-  percent: number;
-  icon: LucideIcon;
-}
-
-/** Static presentation data — no voting backend exists yet. */
-const VOTING_RESULTS: readonly VotingResult[] = [
-  { id: 'pesantren', label: 'Pesantren', percent: 48, icon: BookOpen },
-  { id: 'football', label: 'Muslim Football', percent: 31, icon: Trophy },
-  { id: 'calisthenics', label: 'Muslim Calisthenics', percent: 13, icon: Dumbbell },
-  { id: 'youth', label: 'Youth Development', percent: 8, icon: Sprout },
+const FALLBACK_ALTS: readonly string[] = [
+  'Silhouette of a santri holding a soccer ball on a field at dusk.',
+  'Silhouette of a Muslim football player on a pitch at dusk.',
+  'Silhouette of a calisthenics athlete on a pull-up bar at night.',
+  'Silhouettes of young athletes jogging on a track at sunrise.',
 ] as const;
 
-const PARTICIPATION_COUNT = '12,843 people have voted';
+const RESULT_ICONS: readonly LucideIcon[] = [BookOpen, Trophy, Dumbbell, Sprout] as const;
 
 const SOCIAL_PROOF_AVATARS = ['#D1D5DB', '#9CA3AF', '#6B7280'] as const;
 
+function sortOptionsByDisplayOrder(options: MissionOptionPayload[]): MissionOptionPayload[] {
+  return [...options].sort(
+    (left, right) => Number(left.displayOrder || 0) - Number(right.displayOrder || 0) || left.id.localeCompare(right.id),
+  );
+}
+
+/** Preserves the approved two-line headline treatment for any CMS title. */
+function splitTitleLines(title: string): [string, string] {
+  const words = String(title || '').trim().split(/\s+/).filter(Boolean);
+  if (words.length <= 1) return ['The Next Mission', 'Is Yours.'];
+  const midpoint = Math.ceil(words.length / 2);
+  return [words.slice(0, midpoint).join(' '), words.slice(midpoint).join(' ')];
+}
+
 export function MissionPage() {
+  const [payload, setPayload] = useState<MissionPayload | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [voteError, setVoteError] = useState<string | null>(null);
+  const [voteErrorCode, setVoteErrorCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isActive = true;
+    missionService
+      .getMission()
+      .then((result) => {
+        if (isActive) setPayload(result);
+      })
+      .catch(() => {
+        // API unavailable → approved fallback content stays rendered.
+      });
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const options = useMemo(() => {
+    if (payload && payload.options.length > 0) {
+      return sortOptionsByDisplayOrder(payload.options);
+    }
+    return [...FALLBACK_OPTIONS];
+  }, [payload]);
+
+  const missionStatus = payload?.mission?.status ?? null;
+
+  const resultRows = useMemo(() => {
+    if (!payload) return [];
+    return payload.results.map((row, index) => {
+      const option = options.find((item) => item.id === row.optionId);
+      return {
+        optionId: row.optionId,
+        label: option?.title || `Option ${index + 1}`,
+        percent: row.percentage,
+        votes: row.votes,
+        icon: RESULT_ICONS[index % RESULT_ICONS.length],
+      };
+    });
+  }, [payload, options]);
+
+  const votingAllowed = missionStatus === 'OPEN';
+  const voteButtonDisabled =
+    !selectedId || hasVoted || isSubmitting || (missionStatus !== null && !votingAllowed);
 
   const handleSelect = useCallback((id: string) => {
     if (hasVoted) return;
     setSelectedId(id);
+    setVoteError(null);
+    setVoteErrorCode(null);
   }, [hasVoted]);
 
-  const handleVote = useCallback(() => {
-    if (!selectedId || hasVoted) return;
-    setHasVoted(true);
-  }, [hasVoted, selectedId]);
+  const handleVote = useCallback(async () => {
+    if (!selectedId || hasVoted || isSubmitting) return;
+
+    if (!payload) {
+      setVoteError('Voting is temporarily unavailable. Please try again later.');
+      setVoteErrorCode('MISSION_NETWORK_ERROR');
+      return;
+    }
+
+    if (!votingAllowed) {
+      setVoteError(
+        missionStatus === 'CLOSED'
+          ? 'Voting is currently closed.'
+          : 'Voting has not started yet.',
+      );
+      setVoteErrorCode('MISSION_NOT_OPEN');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setVoteError(null);
+    setVoteErrorCode(null);
+
+    try {
+      const updated = await missionService.vote(selectedId);
+      setPayload(updated);
+      setHasVoted(true);
+    } catch (error) {
+      if (error instanceof Error && (error as { code?: string }).code === 'MISSION_VOTE_AUTH_REQUIRED') {
+        setVoteError('Please sign in to vote.');
+        setVoteErrorCode('MISSION_VOTE_AUTH_REQUIRED');
+      } else if (error instanceof Error && (error as { code?: string }).code === 'MISSION_VOTE_ALREADY_RECORDED') {
+        setVoteError('You have already voted in this mission.');
+        setVoteErrorCode('MISSION_VOTE_ALREADY_RECORDED');
+      } else {
+        setVoteError('Your vote could not be recorded. Please try again.');
+        setVoteErrorCode('MISSION_VOTE_FAILED');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [hasVoted, isSubmitting, missionStatus, payload, selectedId, votingAllowed]);
+
+  const eyebrow = payload?.mission?.eyebrow || FALLBACK_MISSION.eyebrow;
+  const description = payload?.mission?.description || FALLBACK_MISSION.description;
+  const [titleLineOne, titleLineTwo] = splitTitleLines(payload?.mission?.title || FALLBACK_MISSION.title);
 
   return (
     <div className="min-h-screen bg-white font-['SF-Pro-Display',_sans-serif] text-neutral-900">
@@ -100,14 +196,14 @@ export function MissionPage() {
         {/* ─── MISSION INTRO ─────────────────────────────────────────────── */}
         <section className="mx-auto max-w-5xl px-4 pt-24 sm:px-6 sm:pt-28 lg:px-8 lg:pt-32">
           <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-neutral-400">
-            Your Voice, Our Next Step
+            {eyebrow}
           </p>
           <h1 className="mt-4 text-4xl font-bold uppercase leading-[0.95] tracking-tight sm:text-6xl lg:text-7xl">
-            <span className="block">The Next Mission</span>
-            <span className="block">Is Yours.</span>
+            <span className="block">{titleLineOne}</span>
+            <span className="block">{titleLineTwo}</span>
           </h1>
           <p className="mt-5 max-w-md text-sm leading-relaxed text-neutral-500 sm:text-base">
-            Your vote will shape our next move as a movement.
+            {description}
           </p>
         </section>
 
@@ -118,8 +214,11 @@ export function MissionPage() {
             aria-label="Mission options"
             className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-6"
           >
-            {MISSION_OPTIONS.map((option) => {
+            {options.map((option, index) => {
               const isSelected = selectedId === option.id;
+              const cardNumber = String(Number(option.displayOrder) || index + 1).padStart(2, '0');
+              const optionImage = option.image || FALLBACK_OPTIONS[index % FALLBACK_OPTIONS.length].image;
+              const optionAlt = FALLBACK_ALTS[index % FALLBACK_ALTS.length];
               return (
                 <button
                   key={option.id}
@@ -139,8 +238,8 @@ export function MissionPage() {
                   style={{ aspectRatio: '3 / 4' }}
                 >
                   <img
-                    src={option.image}
-                    alt={option.alt}
+                    src={optionImage}
+                    alt={optionAlt}
                     loading="lazy"
                     className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
@@ -153,7 +252,7 @@ export function MissionPage() {
                     aria-hidden="true"
                     className="pointer-events-none absolute -right-3 -top-4 select-none text-[84px] font-bold leading-none tracking-tighter text-white opacity-[0.14] sm:-right-4 sm:text-[104px]"
                   >
-                    {option.number}
+                    {cardNumber}
                   </span>
 
                   <span
@@ -188,7 +287,7 @@ export function MissionPage() {
         <section className="mx-auto mt-10 max-w-md px-4 sm:mt-12 lg:px-8">
           <Button
             type="button"
-            disabled={!selectedId || hasVoted}
+            disabled={voteButtonDisabled}
             onClick={handleVote}
             className="w-full rounded-full py-4 text-sm font-semibold uppercase tracking-[0.24em]"
           >
@@ -199,8 +298,8 @@ export function MissionPage() {
               </span>
             ) : (
               <span className="inline-flex items-center gap-2">
-                Vote Now
-                <ArrowRight size={16} strokeWidth={2.5} />
+                {isSubmitting ? 'Recording…' : 'Vote Now'}
+                {!isSubmitting && <ArrowRight size={16} strokeWidth={2.5} />}
               </span>
             )}
           </Button>
@@ -215,64 +314,90 @@ export function MissionPage() {
               Your Vote Has Been Counted.
             </p>
           )}
+
+          {voteError && (
+            <div className="mt-4 text-center" role="alert">
+              <p className="text-sm font-medium text-neutral-700">{voteError}</p>
+              {voteErrorCode === 'MISSION_VOTE_AUTH_REQUIRED' && (
+                <Link
+                  to={ROUTES.LOGIN}
+                  className="mt-2 inline-block text-[11px] font-semibold uppercase tracking-[0.22em] text-neutral-900 underline underline-offset-4"
+                >
+                  Sign In
+                </Link>
+              )}
+            </div>
+          )}
+
+          {missionStatus !== null && !votingAllowed && !hasVoted && (
+            <p className="mt-4 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+              {missionStatus === 'CLOSED' ? 'Voting is currently closed.' : 'Voting has not started yet.'}
+            </p>
+          )}
         </section>
 
-        {/* ─── SOCIAL PROOF ──────────────────────────────────────────────── */}
-        <section className="mt-10 flex flex-col items-center justify-center gap-3 sm:mt-12">
-          <div className="flex -space-x-2.5" aria-hidden="true">
-            {SOCIAL_PROOF_AVATARS.map((color) => (
-              <span
-                key={color}
-                className="h-8 w-8 rounded-full border-2 border-white"
-                style={{ backgroundColor: color }}
-              />
-            ))}
-          </div>
-          <p className="text-sm font-medium text-neutral-600">{PARTICIPATION_COUNT}</p>
-        </section>
+        {/* ─── SOCIAL PROOF (live data only — never fabricated) ──────────── */}
+        {payload && (
+          <section className="mt-10 flex flex-col items-center justify-center gap-3 sm:mt-12">
+            <div className="flex -space-x-2.5" aria-hidden="true">
+              {SOCIAL_PROOF_AVATARS.map((color) => (
+                <span
+                  key={color}
+                  className="h-8 w-8 rounded-full border-2 border-white"
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </div>
+            <p className="text-sm font-medium text-neutral-600">
+              {payload.totalVotes.toLocaleString('id-ID')} people have voted
+            </p>
+          </section>
+        )}
 
-        {/* ─── VOTING RESULTS ────────────────────────────────────────────── */}
-        <section className="mx-auto mt-16 max-w-5xl px-4 sm:mt-20 sm:px-6 lg:px-8">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-neutral-400">
-            Voting Results
-          </p>
+        {/* ─── VOTING RESULTS (computed by the backend) ──────────────────── */}
+        {payload && (
+          <section className="mx-auto mt-16 max-w-5xl px-4 sm:mt-20 sm:px-6 lg:px-8">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-neutral-400">
+              Voting Results
+            </p>
 
-          <div className="mt-7 space-y-5 sm:space-y-6">
-            {VOTING_RESULTS.map((result) => {
-              const ResultIcon = result.icon;
-              return (
-                <div key={result.id} className="flex items-center gap-3 sm:gap-4">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-700">
-                    <ResultIcon size={18} strokeWidth={2} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1.5 flex items-baseline justify-between gap-3">
-                      <span className="truncate text-sm font-semibold text-neutral-900">
-                        {result.label}
-                      </span>
-                      <span className="shrink-0 text-sm font-bold text-neutral-900">
-                        {result.percent}%
-                      </span>
-                    </div>
-                    <div
-                      role="progressbar"
-                      aria-valuenow={result.percent}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-label={`${result.label} — ${result.percent} percent`}
-                      className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-100"
-                    >
+            <div className="mt-7 space-y-5 sm:space-y-6">
+              {resultRows.map((result) => {
+                const ResultIcon = result.icon;
+                return (
+                  <div key={result.optionId} className="flex items-center gap-3 sm:gap-4">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-700">
+                      <ResultIcon size={18} strokeWidth={2} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1.5 flex items-baseline justify-between gap-3">
+                        <span className="truncate text-sm font-semibold text-neutral-900">
+                          {result.label}
+                        </span>
+                        <span className="shrink-0 text-sm font-bold text-neutral-900">
+                          {result.percent}%
+                        </span>
+                      </div>
                       <div
-                        className="h-full rounded-full bg-neutral-900"
-                        style={{ width: `${result.percent}%` }}
-                      />
+                        role="progressbar"
+                        aria-valuenow={result.percent}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-label={`${result.label} — ${result.percent} percent`}
+                        className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-100"
+                      >
+                        <div
+                          className="h-full rounded-full bg-neutral-900"
+                          style={{ width: `${result.percent}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </main>
 
       {/* Footer with bottom-nav clearance on mobile — same pattern as the

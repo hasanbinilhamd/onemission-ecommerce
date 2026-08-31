@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { ArrowRight, BookOpen, Check, Dumbbell, Sprout, Trophy, type LucideIcon } from 'lucide-react';
 import { Button } from '../components/shared';
 import { HomepageFooter } from '../features/footer';
-import { ROUTES } from '../app/config/routes';
 import {
   missionService,
   type MissionPayload,
@@ -90,16 +88,23 @@ export function MissionPage() {
   const [payload, setPayload] = useState<MissionPayload | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
+  const [alreadyVoted, setAlreadyVoted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [voteError, setVoteError] = useState<string | null>(null);
-  const [voteErrorCode, setVoteErrorCode] = useState<string | null>(null);
 
   useEffect(() => {
     let isActive = true;
     missionService
       .getMission()
       .then((result) => {
-        if (isActive) setPayload(result);
+        if (!isActive) return;
+        setPayload(result);
+        // Server already knows whether this voter identity (authenticated OR
+        // anonymous cookie) has voted — reflect it without any login flow.
+        if (result.hasVoted) {
+          setHasVoted(true);
+          setAlreadyVoted(true);
+        }
       })
       .catch(() => {
         // API unavailable → approved fallback content stays rendered.
@@ -140,7 +145,6 @@ export function MissionPage() {
     if (hasVoted) return;
     setSelectedId(id);
     setVoteError(null);
-    setVoteErrorCode(null);
   }, [hasVoted]);
 
   const handleVote = useCallback(async () => {
@@ -148,7 +152,6 @@ export function MissionPage() {
 
     if (!payload) {
       setVoteError('Voting is temporarily unavailable. Please try again later.');
-      setVoteErrorCode('MISSION_NETWORK_ERROR');
       return;
     }
 
@@ -158,28 +161,25 @@ export function MissionPage() {
           ? 'Voting is currently closed.'
           : 'Voting has not started yet.',
       );
-      setVoteErrorCode('MISSION_NOT_OPEN');
       return;
     }
 
     setIsSubmitting(true);
     setVoteError(null);
-    setVoteErrorCode(null);
 
     try {
       const updated = await missionService.vote(selectedId);
       setPayload(updated);
       setHasVoted(true);
+      setAlreadyVoted(false);
     } catch (error) {
-      if (error instanceof Error && (error as { code?: string }).code === 'MISSION_VOTE_AUTH_REQUIRED') {
-        setVoteError('Please sign in to vote.');
-        setVoteErrorCode('MISSION_VOTE_AUTH_REQUIRED');
-      } else if (error instanceof Error && (error as { code?: string }).code === 'MISSION_VOTE_ALREADY_RECORDED') {
-        setVoteError('You have already voted in this mission.');
-        setVoteErrorCode('MISSION_VOTE_ALREADY_RECORDED');
+      const errorCode = (error as { code?: string } | null)?.code;
+      if (errorCode === 'MISSION_ALREADY_VOTED') {
+        // Duplicate vote: show the already-voted state — never ask to log in.
+        setAlreadyVoted(true);
+        setHasVoted(true);
       } else {
         setVoteError('Your vote could not be recorded. Please try again.');
-        setVoteErrorCode('MISSION_VOTE_FAILED');
       }
     } finally {
       setIsSubmitting(false);
@@ -304,28 +304,38 @@ export function MissionPage() {
             )}
           </Button>
 
-          {hasVoted && (
-            <p
+          {hasVoted && !alreadyVoted && (
+            <div
               role="status"
               aria-live="polite"
-              className="mt-4 flex flex-wrap items-center justify-center gap-2 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-900"
+              className="mt-4 flex flex-col items-center gap-1 text-center"
             >
-              <Check size={14} strokeWidth={3} />
-              Your Vote Has Been Counted.
-            </p>
+              <p className="flex items-center justify-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-900">
+                <Check size={14} strokeWidth={3} />
+                Your Vote Has Been Recorded
+              </p>
+              <p className="text-xs text-neutral-500">Thank you for moving with us.</p>
+            </div>
+          )}
+
+          {alreadyVoted && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="mt-4 flex flex-col items-center gap-1 text-center"
+            >
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-900">
+                You've Already Voted
+              </p>
+              <p className="text-xs text-neutral-500">
+                You have already submitted your vote for this mission.
+              </p>
+            </div>
           )}
 
           {voteError && (
             <div className="mt-4 text-center" role="alert">
               <p className="text-sm font-medium text-neutral-700">{voteError}</p>
-              {voteErrorCode === 'MISSION_VOTE_AUTH_REQUIRED' && (
-                <Link
-                  to={ROUTES.LOGIN}
-                  className="mt-2 inline-block text-[11px] font-semibold uppercase tracking-[0.22em] text-neutral-900 underline underline-offset-4"
-                >
-                  Sign In
-                </Link>
-              )}
             </div>
           )}
 

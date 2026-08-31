@@ -40,6 +40,8 @@ export interface MissionPayload {
   options: MissionOptionPayload[];
   results: MissionResultRow[];
   totalVotes: number;
+  /** Whether the current voter identity (authenticated or anonymous cookie) already voted. */
+  hasVoted: boolean;
 }
 
 export class MissionServiceError extends Error {
@@ -107,6 +109,12 @@ export const missionService = {
     return fetchJson<MissionPayload>();
   },
 
+  /**
+   * Voting is anonymous-friendly: the token is attached when the visitor is
+   * signed in (their vote is then tied to the account); anonymous visitors
+   * simply have no Authorization header — the server issues the voter
+   * identity cookie automatically.
+   */
   async vote(missionOptionId: string): Promise<MissionPayload> {
     const tokens = loadStoredCustomerAuthTokens();
     const headers: Record<string, string> = {

@@ -311,6 +311,11 @@ export default async function handler(req, res) {
     if (req.headers.authorization) {
       headers.Authorization = req.headers.authorization;
     }
+    // Forward the visitor's cookies upstream so server-side identities
+    // (e.g. the anonymous mission voter cookie) stay consistent.
+    if (req.headers.cookie) {
+      headers.Cookie = req.headers.cookie;
+    }
     if (req.headers['content-type']) {
       headers['Content-Type'] = req.headers['content-type'];
     }
@@ -335,6 +340,17 @@ export default async function handler(req, res) {
 
     res.status(upstreamResponse.status);
     res.setHeader('Content-Type', contentType);
+
+    // Propagate upstream cookies (e.g. Set-Cookie for the anonymous mission
+    // voter identity) back to the browser — the browser sees the ecommerce
+    // origin, so the cookie is stored for this domain.
+    const setCookieValues = typeof upstreamResponse.headers.getSetCookie === 'function'
+      ? upstreamResponse.headers.getSetCookie()
+      : (upstreamResponse.headers.raw?.()['set-cookie'] || []);
+    if (setCookieValues.length > 0) {
+      res.setHeader('Set-Cookie', setCookieValues);
+    }
+
     res.send(Buffer.from(payload));
   } catch (error) {
     res.status(500).json({

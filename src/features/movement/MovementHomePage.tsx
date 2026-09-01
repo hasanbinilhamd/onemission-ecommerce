@@ -79,7 +79,7 @@ const FALLBACK_CONTENT: MovementHomeContent = {
  */
 const HOME_DESTINATION_ROUTES: Record<string, string> = {
   mission: ROUTES.MISSION,
-  impact: ROUTES.JOURNAL,
+  impact: ROUTES.IMPACT,
   shop: ROUTES.SHOP,
   donate: ROUTES.DONATE,
 };

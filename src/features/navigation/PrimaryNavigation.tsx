@@ -21,7 +21,7 @@ const PRIMARY_NAV_ITEMS = [
   { label: 'HOME', to: ROUTES.HOME, icon: Home },
   { label: 'MISSION', to: ROUTES.MISSION, icon: Flag },
   { label: 'SHOP', to: ROUTES.SHOP, icon: ShoppingBag },
-  { label: 'IMPACT', to: ROUTES.JOURNAL, icon: Book },
+  { label: 'IMPACT', to: ROUTES.IMPACT, icon: Book },
   { label: 'DONATE', to: ROUTES.DONATE, icon: Heart },
 ] as const;
 

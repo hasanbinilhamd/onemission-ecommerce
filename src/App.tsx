@@ -14,8 +14,8 @@ import { prepareInitialApplicationExperience, type InitialPreloadProgressHandler
 import { NavigationThemeProvider, RouteScrollRestoration, type NavigationTheme } from './features/navigation';
 
 const MissionPage = lazy(() => import('./pages/MissionPage').then((module) => ({ default: module.MissionPage })));
-const JournalPage = lazy(() => import('./pages/JournalPage').then((module) => ({ default: module.JournalPage })));
-const JournalStoryPage = lazy(() => import('./pages/JournalStoryPage').then((module) => ({ default: module.JournalStoryPage })));
+const ImpactPage = lazy(() => import('./pages/ImpactPage').then((module) => ({ default: module.ImpactPage })));
+const ImpactStoryPage = lazy(() => import('./pages/ImpactStoryPage').then((module) => ({ default: module.ImpactStoryPage })));
 const DonatePage = lazy(() => import('./pages/DonatePage').then((module) => ({ default: module.DonatePage })));
 const DonateStoryPage = lazy(() => import('./pages/DonateStoryPage').then((m) => ({ default: m.DonateStoryPage })));
 const DonateUpdatesPage = lazy(() => import('./pages/DonateUpdatesPage').then((m) => ({ default: m.DonateUpdatesPage })));
@@ -125,6 +125,11 @@ function clearRestoreCatalogFlag(locationState: Record<string, unknown> | null |
 function LegacyOrderRedirect() {
   const { orderNumber = '' } = useParams<{ orderNumber: string }>();
   return <Navigate to={`/account/orders/${encodeURIComponent(orderNumber)}`} replace />;
+}
+
+function LegacyJournalRedirect() {
+  const { slug = '' } = useParams<{ slug: string }>();
+  return <Navigate to={`/impact/${encodeURIComponent(slug)}`} replace />;
 }
 
 function resolveHomepageNavigationTheme(): NavigationTheme {
@@ -275,14 +280,16 @@ function App() {
                 <Route element={<MovementLayout />}>
                   <Route path="/" element={<MainLayout><MovementHomePage /></MainLayout>} />
                   <Route path="/mission" element={<MissionPage />} />
-                  <Route path="/journal" element={<JournalPage />} />
+                  <Route path="/impact" element={<ImpactPage />} />
+                  <Route path="/impact/:slug" element={<ImpactStoryPage />} />
                   <Route path="/donate" element={<DonatePage />} />
                 </Route>
+                <Route path="/journal" element={<Navigate to={ROUTES.IMPACT} replace />} />
+                <Route path="/journal/:slug" element={<LegacyJournalRedirect />} />
                 <Route path="/donate/:campaignId/story" element={<DonateStoryPage />} />
                 <Route path="/donate/:campaignId/updates" element={<DonateUpdatesPage />} />
                 <Route path="/donate/:campaignId/disbursements" element={<DonateDisbursementsPage />} />
                 <Route path="/donate/:campaignId/donors" element={<DonateDonorsPage />} />
-                <Route path="/journal/:slug" element={<JournalStoryPage />} />
                 <Route path="*" element={<EarlyAccessGate chapter={earlyAccessChapter} onUnlocked={handleEarlyAccessUnlocked} />} />
               </Routes>
             </Suspense>
@@ -300,15 +307,17 @@ function App() {
               />
               <Route path="/mission" element={<MissionPage />} />
               <Route path="/shop" element={<MainLayout>{renderShopPage()}</MainLayout>} />
-              <Route path="/journal" element={<JournalPage />} />
+              <Route path="/impact" element={<ImpactPage />} />
+              <Route path="/impact/:slug" element={<ImpactStoryPage />} />
               <Route path="/donate" element={<DonatePage />} />
             </Route>
 
+            <Route path="/journal" element={<Navigate to={ROUTES.IMPACT} replace />} />
+            <Route path="/journal/:slug" element={<LegacyJournalRedirect />} />
             <Route path="/donate/:campaignId/story" element={<DonateStoryPage />} />
             <Route path="/donate/:campaignId/updates" element={<DonateUpdatesPage />} />
             <Route path="/donate/:campaignId/disbursements" element={<DonateDisbursementsPage />} />
             <Route path="/donate/:campaignId/donors" element={<DonateDonorsPage />} />
-            <Route path="/journal/:slug" element={<JournalStoryPage />} />
             <Route path="/collection" element={<Navigate to={ROUTES.SHOP} replace />} />
             <Route path="/collections" element={<Navigate to={ROUTES.SHOP} replace />} />
             <Route path="/terms" element={<TermsPage />} />

@@ -7,6 +7,7 @@ export const ROUTES = {
   MISSION: '/mission',
   SHOP: '/shop',
   JOURNAL: '/journal',
+  IMPACT: '/impact',
   DONATE: '/donate',
   PRODUCT: '/product/:slug',
   COLLECTION: '/collection',

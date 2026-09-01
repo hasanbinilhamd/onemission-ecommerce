@@ -65,6 +65,8 @@ const ALLOWED_PUBLIC_PATTERNS = [
   /^movement\/home$/,
   /^movement\/mission$/,
   /^movement\/mission\/vote$/,
+  /^movement\/impact$/,
+  /^movement\/impact\/[^/]+$/,
 ];
 
 function getUpstreamBaseUrl() {

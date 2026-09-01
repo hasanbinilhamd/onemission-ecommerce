@@ -77,7 +77,7 @@ export interface MovementHomeCard {
 }
 
 export interface MovementHomeContent {
-  home: MovementHomePageContent;
+  home: MovementHomePageContent | null;
   cards: MovementHomeCard[];
 }
 

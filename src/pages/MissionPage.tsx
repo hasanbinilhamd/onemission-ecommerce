@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowRight, BookOpen, Check, Dumbbell, Sprout, Trophy, type LucideIcon } from 'lucide-react';
-import { Button } from '../components/shared';
+import { Button, SkeletonBlock, CmsStatePanel } from '../components/shared';
 import { HomepageFooter } from '../features/footer';
 import {
   missionService,
@@ -9,62 +9,22 @@ import {
 } from '../services/api/missionService';
 
 /**
- * MissionPage — approved Mission voting experience, CMS-driven.
+ * MissionPage — approved Mission voting experience, CMS-driven content ONLY.
  *
- * Content source: HQ Mission CMS (public API). Voting goes through the
- * server-side vote API; results are computed from real vote records.
+ * The HQ Mission CMS is the single source of truth:
+ *   loading → skeleton (intro + option cards + voting area)
+ *   success  → real CMS content (only an OPEN mission is returned publicly)
+ *   no mission → honest "NO ACTIVE MISSION" empty state
+ *   error    → honest error state with retry
  *
- * Fallback: when the API is unavailable, the previously approved static
- * content renders (design unchanged). Live statistics are NEVER fabricated —
- * they only render when real voting data arrives from the backend.
- *
- * Imagery constraint: local fallback images remain full-silhouette
- * compositions (no visible human faces or eyes).
+ * Results and total voters are live data only — never fabricated, never
+ * static. Voting goes through the server-side vote API (anonymous-friendly).
  */
 
-const FALLBACK_MISSION = {
-  eyebrow: 'YOUR VOICE, OUR NEXT STEP',
-  title: 'THE NEXT MISSION IS YOURS.',
-  description: 'Your vote will shape our next move as a movement.',
-};
-
-const FALLBACK_OPTIONS: readonly MissionOptionPayload[] = [
-  {
-    id: 'pesantren',
-    title: 'PESANTREN',
-    description: 'Support sports facilities and apparel for santri.',
-    image: '/images/mission/mission-pesantren.jpg',
-    displayOrder: 1,
-  },
-  {
-    id: 'football',
-    title: 'MUSLIM FOOTBALL',
-    description: 'Empower Muslim teams to play with identity and purpose.',
-    image: '/images/mission/mission-football.jpg',
-    displayOrder: 2,
-  },
-  {
-    id: 'calisthenics',
-    title: 'MUSLIM CALISTHENICS',
-    description: 'Build a strong and disciplined Muslim fitness community.',
-    image: '/images/mission/mission-calisthenics.jpg',
-    displayOrder: 3,
-  },
-  {
-    id: 'youth',
-    title: 'YOUTH DEVELOPMENT',
-    description: 'Invest in the next generation through sports and character.',
-    image: '/images/mission/mission-youth.jpg',
-    displayOrder: 4,
-  },
-] as const;
-
-const FALLBACK_ALTS: readonly string[] = [
-  'Silhouette of a santri holding a soccer ball on a field at dusk.',
-  'Silhouette of a Muslim football player on a pitch at dusk.',
-  'Silhouette of a calisthenics athlete on a pull-up bar at night.',
-  'Silhouettes of young athletes jogging on a track at sunrise.',
-] as const;
+type MissionState =
+  | { status: 'loading' }
+  | { status: 'error' }
+  | { status: 'success'; payload: MissionPayload };
 
 const RESULT_ICONS: readonly LucideIcon[] = [BookOpen, Trophy, Dumbbell, Sprout] as const;
 
@@ -84,44 +44,70 @@ function splitTitleLines(title: string): [string, string] {
   return [words.slice(0, midpoint).join(' '), words.slice(midpoint).join(' ')];
 }
 
+function MissionSkeleton() {
+  return (
+    <div className="min-h-screen bg-white font-['SF-Pro-Display',_sans-serif]">
+      <main>
+        <section className="mx-auto max-w-5xl px-4 pt-24 sm:px-6 sm:pt-28 lg:px-8 lg:pt-32">
+          <SkeletonBlock className="h-3 w-56" />
+          <SkeletonBlock className="mt-4 h-12 w-3/4 max-w-xl sm:h-16" />
+          <SkeletonBlock className="mt-3 h-12 w-1/2 max-w-md sm:h-16" />
+          <SkeletonBlock className="mt-5 h-4 w-full max-w-md" />
+        </section>
+        <section className="mx-auto mt-10 max-w-5xl px-4 sm:mt-12 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-6">
+            {[0, 1, 2, 3].map((index) => (
+              <SkeletonBlock key={index} className="aspect-[3/4] w-full rounded-2xl" />
+            ))}
+          </div>
+        </section>
+        <section className="mx-auto mt-10 max-w-md px-4 sm:mt-12 lg:px-8">
+          <SkeletonBlock className="h-14 w-full rounded-full" />
+        </section>
+      </main>
+      <div className="bg-white pb-[100px] sm:mt-20 lg:pb-0">
+        <HomepageFooter />
+      </div>
+    </div>
+  );
+}
+
 export function MissionPage() {
-  const [payload, setPayload] = useState<MissionPayload | null>(null);
+  const [state, setState] = useState<MissionState>({ status: 'loading' });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [alreadyVoted, setAlreadyVoted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [voteError, setVoteError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let isActive = true;
-    missionService
-      .getMission()
-      .then((result) => {
-        if (!isActive) return;
-        setPayload(result);
-        // Server already knows whether this voter identity (authenticated OR
-        // anonymous cookie) has voted — reflect it without any login flow.
-        if (result.hasVoted) {
-          setHasVoted(true);
-          setAlreadyVoted(true);
-        }
-      })
-      .catch(() => {
-        // API unavailable → approved fallback content stays rendered.
-      });
-    return () => {
-      isActive = false;
-    };
+  const load = useCallback(async () => {
+    setState({ status: 'loading' });
+    try {
+      const payload = await missionService.getMission();
+      setState({ status: 'success', payload });
+      if (payload.hasVoted) {
+        setHasVoted(true);
+        setAlreadyVoted(true);
+      } else {
+        setHasVoted(false);
+        setAlreadyVoted(false);
+        setSelectedId(null);
+      }
+    } catch {
+      setState({ status: 'error' });
+    }
   }, []);
 
-  const options = useMemo(() => {
-    if (payload && payload.options.length > 0) {
-      return sortOptionsByDisplayOrder(payload.options);
-    }
-    return [...FALLBACK_OPTIONS];
-  }, [payload]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
-  const missionStatus = payload?.mission?.status ?? null;
+  const payload = state.status === 'success' ? state.payload : null;
+
+  const options = useMemo(
+    () => (payload && payload.options.length > 0 ? sortOptionsByDisplayOrder(payload.options) : []),
+    [payload],
+  );
 
   const resultRows = useMemo(() => {
     if (!payload) return [];
@@ -131,15 +117,14 @@ export function MissionPage() {
         optionId: row.optionId,
         label: option?.title || `Option ${index + 1}`,
         percent: row.percentage,
-        votes: row.votes,
         icon: RESULT_ICONS[index % RESULT_ICONS.length],
       };
     });
   }, [payload, options]);
 
-  const votingAllowed = missionStatus === 'OPEN';
+  const votingAllowed = payload?.mission?.status === 'OPEN';
   const voteButtonDisabled =
-    !selectedId || hasVoted || isSubmitting || (missionStatus !== null && !votingAllowed);
+    !selectedId || hasVoted || isSubmitting || !votingAllowed;
 
   const handleSelect = useCallback((id: string) => {
     if (hasVoted) return;
@@ -149,18 +134,8 @@ export function MissionPage() {
 
   const handleVote = useCallback(async () => {
     if (!selectedId || hasVoted || isSubmitting) return;
-
-    if (!payload) {
-      setVoteError('Voting is temporarily unavailable. Please try again later.');
-      return;
-    }
-
     if (!votingAllowed) {
-      setVoteError(
-        missionStatus === 'CLOSED'
-          ? 'Voting is currently closed.'
-          : 'Voting has not started yet.',
-      );
+      setVoteError('Voting is currently closed.');
       return;
     }
 
@@ -169,13 +144,12 @@ export function MissionPage() {
 
     try {
       const updated = await missionService.vote(selectedId);
-      setPayload(updated);
+      setState({ status: 'success', payload: updated });
       setHasVoted(true);
       setAlreadyVoted(false);
     } catch (error) {
       const errorCode = (error as { code?: string } | null)?.code;
       if (errorCode === 'MISSION_ALREADY_VOTED') {
-        // Duplicate vote: show the already-voted state — never ask to log in.
         setAlreadyVoted(true);
         setHasVoted(true);
       } else {
@@ -184,104 +158,156 @@ export function MissionPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [hasVoted, isSubmitting, missionStatus, payload, selectedId, votingAllowed]);
+  }, [hasVoted, isSubmitting, selectedId, votingAllowed]);
 
-  const eyebrow = payload?.mission?.eyebrow || FALLBACK_MISSION.eyebrow;
-  const description = payload?.mission?.description || FALLBACK_MISSION.description;
-  const [titleLineOne, titleLineTwo] = splitTitleLines(payload?.mission?.title || FALLBACK_MISSION.title);
+  if (state.status === 'loading') {
+    return <MissionSkeleton />;
+  }
+
+  if (state.status === 'error') {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="pt-16">
+          <CmsStatePanel
+            eyebrow="One Mission"
+            title="Unable to load the mission."
+            description="Please check your connection and try again."
+            actionLabel="Try Again"
+            onAction={() => void load()}
+          />
+        </div>
+        <div className="bg-white pb-[100px] lg:pb-0">
+          <HomepageFooter />
+        </div>
+      </div>
+    );
+  }
+
+  const mission = payload?.mission ?? null;
+
+  if (!mission) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="pt-16">
+          <CmsStatePanel
+            eyebrow="One Mission"
+            title="No Active Mission"
+            description="Voting will open here when the next mission goes live."
+          />
+        </div>
+        <div className="bg-white pb-[100px] lg:pb-0">
+          <HomepageFooter />
+        </div>
+      </div>
+    );
+  }
+
+  const [titleLineOne, titleLineTwo] = splitTitleLines(mission.title);
 
   return (
     <div className="min-h-screen bg-white font-['SF-Pro-Display',_sans-serif] text-neutral-900">
       <main>
         {/* ─── MISSION INTRO ─────────────────────────────────────────────── */}
         <section className="mx-auto max-w-5xl px-4 pt-24 sm:px-6 sm:pt-28 lg:px-8 lg:pt-32">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-neutral-400">
-            {eyebrow}
-          </p>
+          {mission.eyebrow && (
+            <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-neutral-400">
+              {mission.eyebrow}
+            </p>
+          )}
           <h1 className="mt-4 text-4xl font-bold uppercase leading-[0.95] tracking-tight sm:text-6xl lg:text-7xl">
             <span className="block">{titleLineOne}</span>
             <span className="block">{titleLineTwo}</span>
           </h1>
-          <p className="mt-5 max-w-md text-sm leading-relaxed text-neutral-500 sm:text-base">
-            {description}
-          </p>
+          {mission.description && (
+            <p className="mt-5 max-w-md text-sm leading-relaxed text-neutral-500 sm:text-base">
+              {mission.description}
+            </p>
+          )}
         </section>
 
         {/* ─── MISSION OPTIONS ───────────────────────────────────────────── */}
-        <section className="mx-auto mt-10 max-w-5xl px-4 sm:mt-12 sm:px-6 lg:px-8">
-          <div
-            role="group"
-            aria-label="Mission options"
-            className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-6"
-          >
-            {options.map((option, index) => {
-              const isSelected = selectedId === option.id;
-              const cardNumber = String(Number(option.displayOrder) || index + 1).padStart(2, '0');
-              const optionImage = option.image || FALLBACK_OPTIONS[index % FALLBACK_OPTIONS.length].image;
-              const optionAlt = FALLBACK_ALTS[index % FALLBACK_ALTS.length];
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() => handleSelect(option.id)}
-                  disabled={hasVoted}
-                  aria-pressed={isSelected}
-                  aria-label={`${option.title}${isSelected ? ', selected' : ''}`}
-                  className={[
-                    'group relative block w-full overflow-hidden rounded-2xl text-left',
-                    'transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2',
-                    isSelected
-                      ? 'ring-2 ring-neutral-900 ring-offset-2'
-                      : 'ring-1 ring-neutral-200 hover:ring-neutral-400',
-                    hasVoted ? 'cursor-default' : 'cursor-pointer',
-                  ].join(' ')}
-                  style={{ aspectRatio: '3 / 4' }}
-                >
-                  <img
-                    src={optionImage}
-                    alt={optionAlt}
-                    loading="lazy"
-                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                  <div
-                    aria-hidden="true"
-                    className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/10"
-                  />
-
-                  <span
-                    aria-hidden="true"
-                    className="pointer-events-none absolute -right-3 -top-4 select-none text-[84px] font-bold leading-none tracking-tighter text-white opacity-[0.14] sm:-right-4 sm:text-[104px]"
-                  >
-                    {cardNumber}
-                  </span>
-
-                  <span
-                    aria-hidden="true"
+        {options.length > 0 && (
+          <section className="mx-auto mt-10 max-w-5xl px-4 sm:mt-12 sm:px-6 lg:px-8">
+            <div
+              role="group"
+              aria-label="Mission options"
+              className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-6"
+            >
+              {options.map((option, index) => {
+                const isSelected = selectedId === option.id;
+                const cardNumber = String(Number(option.displayOrder) || index + 1).padStart(2, '0');
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => handleSelect(option.id)}
+                    disabled={hasVoted}
+                    aria-pressed={isSelected}
+                    aria-label={`${option.title}${isSelected ? ', selected' : ''}`}
                     className={[
-                      'absolute right-2.5 top-2.5 z-20 flex h-6 w-6 items-center justify-center rounded-full transition-all duration-200',
-                      isSelected ? 'scale-100 opacity-100' : 'scale-75 opacity-0',
+                      'group relative block w-full overflow-hidden rounded-2xl text-left',
+                      'transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2',
+                      isSelected
+                        ? 'ring-2 ring-neutral-900 ring-offset-2'
+                        : 'ring-1 ring-neutral-200 hover:ring-neutral-400',
+                      hasVoted ? 'cursor-default' : 'cursor-pointer',
                     ].join(' ')}
-                    style={{
-                      backgroundColor: '#FFFFFF',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-                    }}
+                    style={{ aspectRatio: '3 / 4' }}
                   >
-                    <Check size={14} strokeWidth={3} className="text-neutral-900" />
-                  </span>
+                    {option.image ? (
+                      <img
+                        src={option.image}
+                        alt={option.title}
+                        loading="lazy"
+                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-neutral-100" />
+                    )}
+                    <div
+                      aria-hidden="true"
+                      className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/10"
+                    />
 
-                  <div className="absolute inset-x-0 bottom-0 z-10 p-3.5 text-white sm:p-5">
-                    <h3 className="text-sm font-bold uppercase leading-tight tracking-tight sm:text-lg lg:text-xl">
-                      {option.title}
-                    </h3>
-                    <p className="mt-1 text-[11px] leading-snug text-white/75 sm:text-xs">
-                      {option.description}
-                    </p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </section>
+                    <span
+                      aria-hidden="true"
+                      className="pointer-events-none absolute -right-3 -top-4 select-none text-[84px] font-bold leading-none tracking-tighter text-white opacity-[0.14] sm:-right-4 sm:text-[104px]"
+                    >
+                      {cardNumber}
+                    </span>
+
+                    <span
+                      aria-hidden="true"
+                      className={[
+                        'absolute right-2.5 top-2.5 z-20 flex h-6 w-6 items-center justify-center rounded-full transition-all duration-200',
+                        isSelected ? 'scale-100 opacity-100' : 'scale-75 opacity-0',
+                      ].join(' ')}
+                      style={{
+                        backgroundColor: '#FFFFFF',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+                      }}
+                    >
+                      <Check size={14} strokeWidth={3} className="text-neutral-900" />
+                    </span>
+
+                    <div className="absolute inset-x-0 bottom-0 z-10 p-3.5 text-white sm:p-5">
+                      {option.title && (
+                        <h3 className="text-sm font-bold uppercase leading-tight tracking-tight sm:text-lg lg:text-xl">
+                          {option.title}
+                        </h3>
+                      )}
+                      {option.description && (
+                        <p className="mt-1 text-[11px] leading-snug text-white/75 sm:text-xs">
+                          {option.description}
+                        </p>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* ─── VOTE NOW ──────────────────────────────────────────────────── */}
         <section className="mx-auto mt-10 max-w-md px-4 sm:mt-12 lg:px-8">
@@ -339,15 +365,15 @@ export function MissionPage() {
             </div>
           )}
 
-          {missionStatus !== null && !votingAllowed && !hasVoted && (
+          {!votingAllowed && !hasVoted && (
             <p className="mt-4 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
-              {missionStatus === 'CLOSED' ? 'Voting is currently closed.' : 'Voting has not started yet.'}
+              Voting is currently closed.
             </p>
           )}
         </section>
 
         {/* ─── SOCIAL PROOF (live data only — never fabricated) ──────────── */}
-        {payload && (
+        {payload && payload.totalVotes > 0 && (
           <section className="mt-10 flex flex-col items-center justify-center gap-3 sm:mt-12">
             <div className="flex -space-x-2.5" aria-hidden="true">
               {SOCIAL_PROOF_AVATARS.map((color) => (
@@ -365,7 +391,7 @@ export function MissionPage() {
         )}
 
         {/* ─── VOTING RESULTS (computed by the backend) ──────────────────── */}
-        {payload && (
+        {payload && resultRows.length > 0 && (
           <section className="mx-auto mt-16 max-w-5xl px-4 sm:mt-20 sm:px-6 lg:px-8">
             <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-neutral-400">
               Voting Results

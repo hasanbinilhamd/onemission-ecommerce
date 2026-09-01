@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, ArrowRight } from 'lucide-react';
-import { Button, Input } from '../components/shared';
+import { Button, Input, SkeletonBlock, CmsStatePanel } from '../components/shared';
 import { HomepageFooter } from '../features/footer';
 import { ROUTES } from '../app/config/routes';
 import { openMidtransSnap } from '../services/payment/midtransSnap';
@@ -9,30 +9,26 @@ import {
   donationService,
   type DonatePayload,
   type DonateCampaignSummary,
-  type DonatePartner,
-  type DonateHighlight,
 } from '../services/api/donationService';
 import {
-  ACTIVE_CAMPAIGN,
   CUSTOM_AMOUNT_KEY,
   SUPPORT_PRESET_AMOUNTS,
 } from '../features/donate';
 
 /**
  * DonatePage — ONE active campaign + guest donation via the existing
- * Midtrans integration.
+ * Midtrans integration. The HQ Donate CMS is the single source of truth:
  *
- * Content comes from the HQ Donate CMS (public API). When the API is
- * unavailable, the previously approved static content renders as fallback.
+ *   loading → skeleton
+ *   success  → real CMS campaign (server-computed progress, PAID only)
+ *   no active campaign → honest "NO ACTIVE CAMPAIGN" state (no CTA)
+ *   error    → honest error state with retry
  *
- * Donations are GUEST transactions: no login required. The donor may enter a
- * name or choose to hide it ("Show my name as a supporter." unchecked →
- * appears as Anonymous). Campaign progress comes from PAID donations only
- * (server-authoritative — never fabricated).
+ * No static campaign content, amounts, donors, or partners are ever
+ * rendered as fallback data.
  */
 
 type PresetSelection = number | typeof CUSTOM_AMOUNT_KEY;
-
 type PaymentState = 'idle' | 'submitting' | 'success' | 'pending' | 'failed';
 
 export function formatRupiah(value: number): string {
@@ -58,25 +54,49 @@ function formatRelativeTime(value: string): string {
   return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
 }
 
-const FALLBACK_PARTNER: DonatePartner = {
-  id: 'fallback-partner',
-  name: ACTIVE_CAMPAIGN.partner.name,
-  tagline: ACTIVE_CAMPAIGN.partner.tagline,
-  statement: ACTIVE_CAMPAIGN.partner.statement,
-};
+type DonateState =
+  | { status: 'loading' }
+  | { status: 'error' }
+  | { status: 'success'; payload: DonatePayload };
 
-const FALLBACK_HIGHLIGHTS: DonateHighlight[] = [...ACTIVE_CAMPAIGN.donorsList]
-  .sort((left, right) => right.dateTimestamp - left.dateTimestamp)
-  .slice(0, 5)
-  .map((donor) => ({
-    id: donor.id,
-    donorName: donor.name,
-    amount: donor.amount,
-    createdAt: new Date(donor.dateTimestamp).toISOString(),
-  }));
+function DonateSkeleton() {
+  return (
+    <div className="min-h-screen bg-white font-['SF-Pro-Display',_sans-serif]">
+      <main>
+        <section className="min-h-[68vh] w-full bg-[#0A0A0A]">
+          <div className="mx-auto flex min-h-[68vh] w-full max-w-5xl items-end px-4 pb-14 pt-24 sm:px-6 sm:pb-16 lg:px-8">
+            <div className="w-full max-w-md">
+              <SkeletonBlock className="h-3 w-28 bg-white/10" />
+              <SkeletonBlock className="mt-4 h-12 w-4/5 bg-white/10" />
+              <SkeletonBlock className="mt-3 h-12 w-3/5 bg-white/10" />
+              <SkeletonBlock className="mt-5 h-4 w-full bg-white/10" />
+            </div>
+          </div>
+        </section>
+        <section className="mx-auto mt-12 max-w-5xl px-4 sm:mt-16 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
+            <SkeletonBlock className="aspect-[4/5] w-full rounded-2xl lg:h-full" />
+            <div className="flex flex-col justify-center">
+              <SkeletonBlock className="h-6 w-24 rounded-full" />
+              <SkeletonBlock className="mt-4 h-10 w-4/5" />
+              <SkeletonBlock className="mt-4 h-4 w-full max-w-md" />
+              <SkeletonBlock className="mt-8 h-4 w-40" />
+              <SkeletonBlock className="mt-3 h-8 w-64" />
+              <SkeletonBlock className="mt-3 h-2 w-full" />
+              <SkeletonBlock className="mt-10 h-14 w-full rounded-full sm:w-56" />
+            </div>
+          </div>
+        </section>
+      </main>
+      <div className="mt-16 bg-white pb-[100px] sm:mt-20 lg:pb-0">
+        <HomepageFooter />
+      </div>
+    </div>
+  );
+}
 
 export function DonatePage() {
-  const [payload, setPayload] = useState<DonatePayload | null>(null);
+  const [state, setState] = useState<DonateState>({ status: 'loading' });
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState<PresetSelection | null>(null);
   const [customAmount, setCustomAmount] = useState('');
@@ -87,47 +107,30 @@ export function DonatePage() {
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const paymentStateRef = useRef<PaymentState>('idle');
 
-  const updatePaymentState = (state: PaymentState) => {
-    paymentStateRef.current = state;
-    setPaymentState(state);
+  const updatePaymentState = (next: PaymentState) => {
+    paymentStateRef.current = next;
+    setPaymentState(next);
   };
 
-  const refreshDonate = useCallback(async () => {
+  const load = useCallback(async () => {
+    setState({ status: 'loading' });
     try {
-      const result = await donationService.getDonate();
-      setPayload(result);
+      const payload = await donationService.getDonate();
+      setState({ status: 'success', payload });
     } catch {
-      // API unavailable → approved fallback stays rendered.
+      setState({ status: 'error' });
     }
   }, []);
 
   useEffect(() => {
-    void refreshDonate();
-  }, [refreshDonate]);
+    void load();
+  }, [load]);
 
-  const cmsCampaign = payload?.campaign ?? null;
-  const partners = payload && payload.partners.length > 0 ? payload.partners : [FALLBACK_PARTNER];
-  const highlights = payload ? payload.highlights : FALLBACK_HIGHLIGHTS;
+  const payload = state.status === 'success' ? state.payload : null;
+  const campaign: DonateCampaignSummary | null = payload?.campaign ?? null;
+  const partners = payload?.partners ?? [];
+  const highlights = payload?.highlights ?? [];
   const pastCampaigns = payload?.pastCampaigns ?? [];
-
-  // Fallback mapping keeps the page identical when the CMS is unreachable.
-  const campaign: DonateCampaignSummary = cmsCampaign ?? {
-    id: ACTIVE_CAMPAIGN.id,
-    title: ACTIVE_CAMPAIGN.title,
-    slug: ACTIVE_CAMPAIGN.id,
-    shortDescription: ACTIVE_CAMPAIGN.description,
-    coverImage: ACTIVE_CAMPAIGN.image,
-    status: 'ACTIVE',
-    targetAmount: ACTIVE_CAMPAIGN.target,
-    raised: ACTIVE_CAMPAIGN.raised,
-    donorCount: ACTIVE_CAMPAIGN.donors,
-    progressPercent: ACTIVE_CAMPAIGN.progressPercent,
-    startedAt: null,
-    endedAt: null,
-  };
-
-  const isFallback = !cmsCampaign;
-  const campaignClosed = payload !== null && cmsCampaign === null;
 
   const resolvedAmount =
     selectedPreset !== null && selectedPreset !== CUSTOM_AMOUNT_KEY
@@ -170,7 +173,7 @@ export function DonatePage() {
         token: result.snapToken,
         onSuccess: () => {
           updatePaymentState('success');
-          void refreshDonate();
+          void load();
         },
         onPending: () => {
           updatePaymentState('pending');
@@ -193,6 +196,48 @@ export function DonatePage() {
       );
     }
   };
+
+  if (state.status === 'loading') {
+    return <DonateSkeleton />;
+  }
+
+  if (state.status === 'error') {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="pt-16">
+          <CmsStatePanel
+            eyebrow="One Mission"
+            title="Unable to load donations."
+            description="Please check your connection and try again."
+            actionLabel="Try Again"
+            onAction={() => void load()}
+          />
+        </div>
+        <div className="bg-white pb-[100px] lg:pb-0">
+          <HomepageFooter />
+        </div>
+      </div>
+    );
+  }
+
+  if (!campaign) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="pt-16">
+          <CmsStatePanel
+            eyebrow="One Mission"
+            title="No Active Campaign"
+            description="Donations will open here when the next campaign goes live."
+          />
+        </div>
+        <div className="bg-white pb-[100px] lg:pb-0">
+          <HomepageFooter />
+        </div>
+      </div>
+    );
+  }
+
+  const remaining = Math.max(0, campaign.targetAmount - campaign.raised);
 
   return (
     <div className="min-h-screen bg-white font-['SF-Pro-Display',_sans-serif] text-neutral-900">
@@ -223,98 +268,84 @@ export function DonatePage() {
         </section>
 
         {/* ─── CURRENT CAMPAIGN (ONE active campaign only) ─────────────── */}
-        {!campaignClosed ? (
-          <section className="mx-auto mt-12 max-w-5xl px-4 sm:mt-16 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
-              <div className="overflow-hidden rounded-2xl">
+        <section className="mx-auto mt-12 max-w-5xl px-4 sm:mt-16 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
+            <div className="overflow-hidden rounded-2xl">
+              {campaign.coverImage ? (
                 <img
                   src={campaign.coverImage}
                   alt={campaign.title}
                   className="aspect-[4/5] w-full object-cover lg:h-full"
                 />
-              </div>
+              ) : (
+                <div className="aspect-[4/5] w-full bg-neutral-100 lg:h-full" />
+              )}
+            </div>
 
-              <div className="flex flex-col justify-center">
-                <span className="inline-flex w-fit items-center gap-2 rounded-full bg-neutral-900 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-white">
-                  <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-white" />
-                  {campaign.status === 'CLOSED' ? 'CLOSED' : 'URGENT'}
-                </span>
-                <h2 className="mt-4 text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl lg:text-5xl">
-                  {campaign.title}
-                </h2>
+            <div className="flex flex-col justify-center">
+              <span className="inline-flex w-fit items-center gap-2 rounded-full bg-neutral-900 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-white">
+                <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-white" />
+                {campaign.status === 'CLOSED' ? 'CLOSED' : 'ACTIVE'}
+              </span>
+              <h2 className="mt-4 text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl lg:text-5xl">
+                {campaign.title}
+              </h2>
+              {campaign.shortDescription && (
                 <p className="mt-4 max-w-md text-sm leading-relaxed text-neutral-500 sm:text-base">
                   {campaign.shortDescription}
                 </p>
+              )}
 
-                {/* ─── PROGRESS (computed from PAID donations) ─────────── */}
-                <div className="mt-8">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-400">
-                    Progress Collected
-                  </p>
-                  <p className="mt-1 text-xl font-bold tracking-tight sm:text-2xl">
-                    {formatRupiah(campaign.raised)}
-                  </p>
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="text-sm font-medium text-neutral-400">
-                      of {formatRupiah(campaign.targetAmount)}
-                    </span>
-                    <div className="mt-1.5 text-sm font-bold text-neutral-900">{campaign.progressPercent}%</div>
-                  </div>
+              {/* ─── PROGRESS (computed from PAID donations) ─────────── */}
+              <div className="mt-8">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-400">
+                  Progress Collected
+                </p>
+                <p className="mt-1 text-xl font-bold tracking-tight sm:text-2xl">
+                  {formatRupiah(campaign.raised)}
+                </p>
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-sm font-medium text-neutral-400">
+                    of {formatRupiah(campaign.targetAmount)}
+                  </span>
+                  <div className="mt-1.5 text-sm font-bold text-neutral-900">{campaign.progressPercent}%</div>
+                </div>
+                <div
+                  role="progressbar"
+                  aria-valuenow={campaign.progressPercent}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={`Campaign progress — ${campaign.progressPercent} percent`}
+                  className="mt-1 h-2 w-full overflow-hidden rounded-full bg-neutral-100"
+                >
                   <div
-                    role="progressbar"
-                    aria-valuenow={campaign.progressPercent}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-label={`Campaign progress — ${campaign.progressPercent} percent`}
-                    className="mt-1 h-2 w-full overflow-hidden rounded-full bg-neutral-100"
-                  >
-                    <div
-                      className="h-full rounded-full bg-neutral-900"
-                      style={{ width: `${campaign.progressPercent}%` }}
-                    />
-                  </div>
-
-                  <div className="mt-7 grid grid-cols-3 divide-neutral-200">
-                    <div className="pr-3 text-center">
-                      <p className="text-2xl font-bold tracking-tight sm:text-3xl">
-                        {campaign.donorCount.toLocaleString('id-ID')}
-                      </p>
-                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
-                        Donors
-                      </p>
-                    </div>
-                    {isFallback && (
-                      <>
-                        <div className="px-3 sm:px-5 text-center">
-                          <p className="text-2xl font-bold tracking-tight sm:text-3xl">
-                            {ACTIVE_CAMPAIGN.beneficiaries.toLocaleString('id-ID')}
-                          </p>
-                          <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
-                            Beneficiaries
-                          </p>
-                        </div>
-                        <div className="pl-3 sm:pl-5 text-center">
-                          <p className="text-2xl font-bold tracking-tight sm:text-3xl">{ACTIVE_CAMPAIGN.daysLeft}</p>
-                          <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
-                            Days Left
-                          </p>
-                        </div>
-                      </>
-                    )}
-                    {!isFallback && (
-                      <div className="col-span-2 px-3 text-center sm:px-5">
-                        <p className="text-2xl font-bold tracking-tight sm:text-3xl">
-                          {formatRupiah(campaign.targetAmount - campaign.raised)}
-                        </p>
-                        <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
-                          Remaining
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                    className="h-full rounded-full bg-neutral-900"
+                    style={{ width: `${campaign.progressPercent}%` }}
+                  />
                 </div>
 
-                {/* ─── OUR PARTNERS ────────────────────────────────────── */}
+                <div className="mt-7 grid grid-cols-2 divide-x divide-neutral-200">
+                  <div className="pr-3 text-center">
+                    <p className="text-2xl font-bold tracking-tight sm:text-3xl">
+                      {campaign.donorCount.toLocaleString('id-ID')}
+                    </p>
+                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+                      Donors
+                    </p>
+                  </div>
+                  <div className="pl-3 text-center">
+                    <p className="text-2xl font-bold tracking-tight sm:text-3xl">
+                      {formatRupiah(remaining)}
+                    </p>
+                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+                      Remaining
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* ─── OUR PARTNERS ────────────────────────────────────── */}
+              {partners.length > 0 && (
                 <div className="mt-8 border-t border-neutral-200 pt-6">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-400">
                     Our Partners
@@ -335,30 +366,24 @@ export function DonatePage() {
                     </div>
                   ))}
                 </div>
+              )}
 
-                {/* ─── ONE CLEAR CTA ────────────────────────────────────── */}
-                {campaign.status !== 'CLOSED' && (
-                  <Button
-                    type="button"
-                    onClick={openSupport}
-                    className="mt-8 w-full rounded-full py-4 text-[11px] font-semibold uppercase tracking-[0.24em] sm:w-auto sm:px-12"
-                  >
-                    Donate Now
-                  </Button>
-                )}
-              </div>
+              {/* ─── ONE CLEAR CTA ────────────────────────────────────── */}
+              {campaign.status !== 'CLOSED' && (
+                <Button
+                  type="button"
+                  onClick={openSupport}
+                  className="mt-8 w-full rounded-full py-4 text-[11px] font-semibold uppercase tracking-[0.24em] sm:w-auto sm:px-12"
+                >
+                  Donate Now
+                </Button>
+              )}
             </div>
-          </section>
-        ) : (
-          <section className="mx-auto mt-12 max-w-5xl px-4 sm:px-6 lg:px-8">
-            <p className="rounded-2xl bg-neutral-50 p-8 text-center text-sm text-neutral-500">
-              Donation is currently closed. Please check back soon.
-            </p>
-          </section>
-        )}
+          </div>
+        </section>
 
         {/* ─── SUPPORT INTERACTION (hidden until Donate Now) ────────────── */}
-        {isSupportOpen && !campaignClosed && (
+        {isSupportOpen && campaign.status !== 'CLOSED' && (
           <section
             id="donation-support"
             aria-label="Donation support"
@@ -527,66 +552,64 @@ export function DonatePage() {
         )}
 
         {/* ─── NAVIGATION LINKS TO DETAILS ─────────────────────────────── */}
-        {!campaignClosed && (
-          <section className="mx-auto mt-14 max-w-5xl px-4 sm:mt-20 sm:px-6 lg:px-8">
-            <div className="flex flex-col border-t border-neutral-200">
-              <Link
-                to={`/donate/${campaign.id}/story`}
-                className="flex items-center justify-between py-6 border-b border-neutral-200 group hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
-              >
-                <h3 className="text-lg font-bold uppercase tracking-tight sm:text-xl">
-                  Cerita Penggalangan Dana
-                </h3>
-                <ArrowRight size={20} className="text-neutral-900 transition-transform group-hover:translate-x-1" />
-              </Link>
+        <section className="mx-auto mt-14 max-w-5xl px-4 sm:mt-20 sm:px-6 lg:px-8">
+          <div className="flex flex-col border-t border-neutral-200">
+            <Link
+              to={`/donate/${campaign.id}/story`}
+              className="flex items-center justify-between py-6 border-b border-neutral-200 group hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
+            >
+              <h3 className="text-lg font-bold uppercase tracking-tight sm:text-xl">
+                Cerita Penggalangan Dana
+              </h3>
+              <ArrowRight size={20} className="text-neutral-900 transition-transform group-hover:translate-x-1" />
+            </Link>
 
-              <Link
-                to={`/donate/${campaign.id}/updates`}
-                className="flex items-center justify-between py-6 border-b border-neutral-200 group hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
-              >
-                <h3 className="text-lg font-bold uppercase tracking-tight sm:text-xl">
-                  Kabar Terbaru
-                </h3>
-                <ArrowRight size={20} className="text-neutral-900 transition-transform group-hover:translate-x-1" />
-              </Link>
+            <Link
+              to={`/donate/${campaign.id}/updates`}
+              className="flex items-center justify-between py-6 border-b border-neutral-200 group hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
+            >
+              <h3 className="text-lg font-bold uppercase tracking-tight sm:text-xl">
+                Kabar Terbaru
+              </h3>
+              <ArrowRight size={20} className="text-neutral-900 transition-transform group-hover:translate-x-1" />
+            </Link>
 
-              <Link
-                to={`/donate/${campaign.id}/disbursements`}
-                className="flex items-center justify-between py-6 border-b border-neutral-200 group hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
-              >
-                <h3 className="text-lg font-bold uppercase tracking-tight sm:text-xl">
-                  Pencairan Dana
-                </h3>
-                <ArrowRight size={20} className="text-neutral-900 transition-transform group-hover:translate-x-1" />
-              </Link>
+            <Link
+              to={`/donate/${campaign.id}/disbursements`}
+              className="flex items-center justify-between py-6 border-b border-neutral-200 group hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
+            >
+              <h3 className="text-lg font-bold uppercase tracking-tight sm:text-xl">
+                Pencairan Dana
+              </h3>
+              <ArrowRight size={20} className="text-neutral-900 transition-transform group-hover:translate-x-1" />
+            </Link>
 
-              <div className="py-6 border-b border-neutral-200 flex flex-col sm:flex-row sm:items-start justify-between gap-6">
-                <div className="flex-1">
-                  <Link to={`/donate/${campaign.id}/donors`} className="group inline-flex items-center justify-between w-full sm:w-auto sm:gap-4 hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900">
-                    <h3 className="text-lg font-bold uppercase tracking-tight sm:text-xl">
-                      Donasi
-                    </h3>
-                    <ArrowRight size={20} className="text-neutral-900 sm:hidden transition-transform group-hover:translate-x-1" />
-                  </Link>
-                  <p className="mt-2 text-sm text-neutral-500 font-medium">
-                    {campaign.donorCount.toLocaleString('id-ID')} PEOPLE HAVE SUPPORTED THIS MISSION.
-                  </p>
-                  <div className="pt-2">
-                    <Link
-                      to={`/donate/${campaign.id}/donors`}
-                      className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-neutral-900 hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
-                    >
-                      Lihat Semua Donasi <ArrowRight size={14} strokeWidth={2.5} />
-                    </Link>
-                  </div>
-                </div>
-                <Link to={`/donate/${campaign.id}/donors`} className="hidden sm:inline-block group p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 rounded">
-                  <ArrowRight size={20} className="text-neutral-900 transition-transform group-hover:translate-x-1" />
+            <div className="py-6 border-b border-neutral-200 flex flex-col sm:flex-row sm:items-start justify-between gap-6">
+              <div className="flex-1">
+                <Link to={`/donate/${campaign.id}/donors`} className="group inline-flex items-center justify-between w-full sm:w-auto sm:gap-4 hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900">
+                  <h3 className="text-lg font-bold uppercase tracking-tight sm:text-xl">
+                    Donasi
+                  </h3>
+                  <ArrowRight size={20} className="text-neutral-900 sm:hidden transition-transform group-hover:translate-x-1" />
                 </Link>
+                <p className="mt-2 text-sm text-neutral-500 font-medium">
+                  {campaign.donorCount.toLocaleString('id-ID')} PEOPLE HAVE SUPPORTED THIS MISSION.
+                </p>
+                <div className="pt-2">
+                  <Link
+                    to={`/donate/${campaign.id}/donors`}
+                    className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-neutral-900 hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+                  >
+                    Lihat Semua Donasi <ArrowRight size={14} strokeWidth={2.5} />
+                  </Link>
+                </div>
               </div>
+              <Link to={`/donate/${campaign.id}/donors`} className="hidden sm:inline-block group p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 rounded">
+                <ArrowRight size={20} className="text-neutral-900 transition-transform group-hover:translate-x-1" />
+              </Link>
             </div>
-          </section>
-        )}
+          </div>
+        </section>
 
         {/* ─── PAST CAMPAIGNS (history, not donation choices) ──────────── */}
         {pastCampaigns.length > 0 && (
@@ -602,12 +625,16 @@ export function DonatePage() {
                   aria-label={`${past.title} — view story`}
                   className="group relative block overflow-hidden rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
                 >
-                  <img
-                    src={past.coverImage}
-                    alt={past.title}
-                    loading="lazy"
-                    className="aspect-[4/3] w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
+                  {past.coverImage ? (
+                    <img
+                      src={past.coverImage}
+                      alt={past.title}
+                      loading="lazy"
+                      className="aspect-[4/3] w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="aspect-[4/3] w-full bg-neutral-100" />
+                  )}
                   <div
                     aria-hidden="true"
                     className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/10"

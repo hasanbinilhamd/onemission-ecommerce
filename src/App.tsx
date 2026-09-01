@@ -18,6 +18,7 @@ const MissionPage = lazy(() => import('./pages/MissionPage').then((module) => ({
 const ImpactPage = lazy(() => import('./pages/ImpactPage').then((module) => ({ default: module.ImpactPage })));
 const ImpactStoryPage = lazy(() => import('./pages/ImpactStoryPage').then((module) => ({ default: module.ImpactStoryPage })));
 const DonatePage = lazy(() => import('./pages/DonatePage').then((module) => ({ default: module.DonatePage })));
+const DonateCampaignPage = lazy(() => import('./pages/DonateCampaignPage').then((m) => ({ default: m.DonateCampaignPage })));
 const DonateStoryPage = lazy(() => import('./pages/DonateStoryPage').then((m) => ({ default: m.DonateStoryPage })));
 const DonateUpdatesPage = lazy(() => import('./pages/DonateUpdatesPage').then((m) => ({ default: m.DonateUpdatesPage })));
 const DonateDisbursementsPage = lazy(() => import('./pages/DonateDisbursementsPage').then((m) => ({ default: m.DonateDisbursementsPage })));
@@ -291,6 +292,7 @@ function App() {
                 <Route path="/donate/:campaignId/updates" element={<DonateUpdatesPage />} />
                 <Route path="/donate/:campaignId/disbursements" element={<DonateDisbursementsPage />} />
                 <Route path="/donate/:campaignId/donors" element={<DonateDonorsPage />} />
+                <Route path="/donate/campaigns/:slug" element={<DonateCampaignPage />} />
                 <Route path="*" element={<EarlyAccessGate chapter={earlyAccessChapter} onUnlocked={handleEarlyAccessUnlocked} />} />
               </Routes>
             </Suspense>
@@ -319,6 +321,7 @@ function App() {
             <Route path="/donate/:campaignId/updates" element={<DonateUpdatesPage />} />
             <Route path="/donate/:campaignId/disbursements" element={<DonateDisbursementsPage />} />
             <Route path="/donate/:campaignId/donors" element={<DonateDonorsPage />} />
+                <Route path="/donate/campaigns/:slug" element={<DonateCampaignPage />} />
             <Route path="/collection" element={<Navigate to={ROUTES.SHOP} replace />} />
             <Route path="/collections" element={<Navigate to={ROUTES.SHOP} replace />} />
             <Route path="/terms" element={<TermsPage />} />

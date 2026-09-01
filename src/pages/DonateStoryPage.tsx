@@ -2,16 +2,14 @@ import { Link, useParams } from 'react-router-dom';
 import { HomepageFooter } from '../features/footer';
 import { TopBackNavigation } from '../features/navigation';
 import { ROUTES } from '../app/config/routes';
-import { ACTIVE_CAMPAIGN } from '../features/donate';
 import { Button } from '../components/shared';
+import { useDonateCms } from '../features/donate/donateCms';
 
 export function DonateStoryPage() {
   const { campaignId } = useParams<{ campaignId: string }>();
-  // For MVP, we only have one active campaign.
-  // We should match it by ID ideally, but we'll use ACTIVE_CAMPAIGN directly.
-  const campaign = ACTIVE_CAMPAIGN;
+  const { campaign, isFallback } = useDonateCms();
 
-  if (campaignId !== campaign.id) {
+  if (isFallback && campaignId !== campaign.id) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-white px-4 text-center font-['SF-Pro-Display',_sans-serif]">
         <TopBackNavigation label="Back to Donate" fallbackTo={ROUTES.DONATE} />

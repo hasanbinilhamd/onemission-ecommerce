@@ -67,6 +67,10 @@ const ALLOWED_PUBLIC_PATTERNS = [
   /^movement\/mission\/vote$/,
   /^movement\/impact$/,
   /^movement\/impact\/[^/]+$/,
+  /^movement\/donate$/,
+  /^movement\/donate\/donations$/,
+  /^movement\/donate\/transactions$/,
+  /^movement\/donate\/campaigns\/[^/]+$/,
 ];
 
 function getUpstreamBaseUrl() {

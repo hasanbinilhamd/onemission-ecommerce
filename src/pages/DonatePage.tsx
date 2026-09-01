@@ -1,9 +1,17 @@
-import { useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, ArrowRight } from 'lucide-react';
 import { Button, Input } from '../components/shared';
 import { HomepageFooter } from '../features/footer';
 import { ROUTES } from '../app/config/routes';
+import { openMidtransSnap } from '../services/payment/midtransSnap';
+import {
+  donationService,
+  type DonatePayload,
+  type DonateCampaignSummary,
+  type DonatePartner,
+  type DonateHighlight,
+} from '../services/api/donationService';
 import {
   ACTIVE_CAMPAIGN,
   CUSTOM_AMOUNT_KEY,
@@ -11,19 +19,21 @@ import {
 } from '../features/donate';
 
 /**
- * DonatePage — Phase 5.1 revision: campaign-first, support on demand.
+ * DonatePage — ONE active campaign + guest donation via the existing
+ * Midtrans integration.
  *
- * Experience: SEE → UNDERSTAND → TRUST → DECIDE → DONATE.
- * The donation form is NOT visible on initial load — it appears only after
- * the user intentionally clicks DONATE NOW. No payment gateway: submission
- * shows a frontend confirmation only, and never claims money was transferred.
+ * Content comes from the HQ Donate CMS (public API). When the API is
+ * unavailable, the previously approved static content renders as fallback.
  *
- * Follows the approved Home/Mission/Journal design language. All human
- * imagery is full-silhouette composition — no visible faces or eyes.
- * Numbers are static MVP presentation data.
+ * Donations are GUEST transactions: no login required. The donor may enter a
+ * name or choose to hide it ("Show my name as a supporter." unchecked →
+ * appears as Anonymous). Campaign progress comes from PAID donations only
+ * (server-authoritative — never fabricated).
  */
 
 type PresetSelection = number | typeof CUSTOM_AMOUNT_KEY;
+
+type PaymentState = 'idle' | 'submitting' | 'success' | 'pending' | 'failed';
 
 export function formatRupiah(value: number): string {
   return `Rp${value.toLocaleString('id-ID')}`;
@@ -35,28 +45,97 @@ function formatPresetLabel(value: number): string {
   return `Rp${value}`;
 }
 
-function isValidEmail(value: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+function formatRelativeTime(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const diffMs = Date.now() - date.getTime();
+  const diffMinutes = Math.floor(diffMs / 60_000);
+  if (diffMinutes < 1) return 'just now';
+  if (diffMinutes < 60) return `${diffMinutes} min ago`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours} hr ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
 }
 
+const FALLBACK_PARTNER: DonatePartner = {
+  id: 'fallback-partner',
+  name: ACTIVE_CAMPAIGN.partner.name,
+  tagline: ACTIVE_CAMPAIGN.partner.tagline,
+  statement: ACTIVE_CAMPAIGN.partner.statement,
+};
+
+const FALLBACK_HIGHLIGHTS: DonateHighlight[] = [...ACTIVE_CAMPAIGN.donorsList]
+  .sort((left, right) => right.dateTimestamp - left.dateTimestamp)
+  .slice(0, 5)
+  .map((donor) => ({
+    id: donor.id,
+    donorName: donor.name,
+    amount: donor.amount,
+    createdAt: new Date(donor.dateTimestamp).toISOString(),
+  }));
+
 export function DonatePage() {
+  const [payload, setPayload] = useState<DonatePayload | null>(null);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState<PresetSelection | null>(null);
   const [customAmount, setCustomAmount] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [showName, setShowName] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [showName, setShowName] = useState(true);
+  const [paymentState, setPaymentState] = useState<PaymentState>('idle');
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const paymentStateRef = useRef<PaymentState>('idle');
+
+  const updatePaymentState = (state: PaymentState) => {
+    paymentStateRef.current = state;
+    setPaymentState(state);
+  };
+
+  const refreshDonate = useCallback(async () => {
+    try {
+      const result = await donationService.getDonate();
+      setPayload(result);
+    } catch {
+      // API unavailable → approved fallback stays rendered.
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshDonate();
+  }, [refreshDonate]);
+
+  const cmsCampaign = payload?.campaign ?? null;
+  const partners = payload && payload.partners.length > 0 ? payload.partners : [FALLBACK_PARTNER];
+  const highlights = payload ? payload.highlights : FALLBACK_HIGHLIGHTS;
+  const pastCampaigns = payload?.pastCampaigns ?? [];
+
+  // Fallback mapping keeps the page identical when the CMS is unreachable.
+  const campaign: DonateCampaignSummary = cmsCampaign ?? {
+    id: ACTIVE_CAMPAIGN.id,
+    title: ACTIVE_CAMPAIGN.title,
+    slug: ACTIVE_CAMPAIGN.id,
+    shortDescription: ACTIVE_CAMPAIGN.description,
+    coverImage: ACTIVE_CAMPAIGN.image,
+    status: 'ACTIVE',
+    targetAmount: ACTIVE_CAMPAIGN.target,
+    raised: ACTIVE_CAMPAIGN.raised,
+    donorCount: ACTIVE_CAMPAIGN.donors,
+    progressPercent: ACTIVE_CAMPAIGN.progressPercent,
+    startedAt: null,
+    endedAt: null,
+  };
+
+  const isFallback = !cmsCampaign;
+  const campaignClosed = payload !== null && cmsCampaign === null;
 
   const resolvedAmount =
     selectedPreset !== null && selectedPreset !== CUSTOM_AMOUNT_KEY
       ? selectedPreset
       : Number(customAmount);
 
-  const amountValid = Number.isFinite(resolvedAmount) && resolvedAmount > 0;
-  const nameValid = !showName || name.trim().length > 0;
-  const emailValid = isValidEmail(email);
-  const formValid = amountValid && nameValid && emailValid && !isSubmitted;
+  const amountValid = Number.isFinite(resolvedAmount) && resolvedAmount >= 1000;
+  const formValid = amountValid && paymentState !== 'submitting';
 
   const openSupport = () => {
     setIsSupportOpen(true);
@@ -66,20 +145,54 @@ export function DonatePage() {
   };
 
   const handlePresetSelect = (value: PresetSelection) => {
-    if (isSubmitted) return;
+    if (paymentState === 'submitting') return;
     setSelectedPreset(value);
+    updatePaymentState('idle');
+    setPaymentError(null);
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!formValid) return;
-    setIsSubmitted(true);
+
+    updatePaymentState('submitting');
+    setPaymentError(null);
+
+    try {
+      const result = await donationService.createDonation({
+        amount: resolvedAmount,
+        donorName: name.trim(),
+        anonymous: !showName,
+        donorEmail: email.trim(),
+      });
+
+      await openMidtransSnap({
+        token: result.snapToken,
+        onSuccess: () => {
+          updatePaymentState('success');
+          void refreshDonate();
+        },
+        onPending: () => {
+          updatePaymentState('pending');
+        },
+        onError: () => {
+          updatePaymentState('failed');
+          setPaymentError('Payment was not completed. Please try again.');
+        },
+        onClose: () => {
+          if (paymentStateRef.current !== 'success') {
+            updatePaymentState('failed');
+            setPaymentError('Payment was not completed. Please try again.');
+          }
+        },
+      });
+    } catch (error) {
+      updatePaymentState('failed');
+      setPaymentError(
+        error instanceof Error ? error.message : 'Your donation could not be created. Please try again.',
+      );
+    }
   };
-
-  const campaign = ACTIVE_CAMPAIGN;
-
-  // Recent 5 donors newest first
-  const recentDonors = [...campaign.donorsList].sort((a, b) => b.dateTimestamp - a.dateTimestamp).slice(0, 5);
 
   return (
     <div className="min-h-screen bg-white font-['SF-Pro-Display',_sans-serif] text-neutral-900">
@@ -109,119 +222,149 @@ export function DonatePage() {
           </div>
         </section>
 
-        {/* ─── CURRENT CAMPAIGN ─────────────────────────────────────────── */}
-        <section className="mx-auto mt-12 max-w-5xl px-4 sm:mt-16 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
-            <div className="overflow-hidden rounded-2xl">
-              <img
-                src={campaign.image}
-                alt={campaign.imageAlt}
-                className="aspect-[4/5] w-full object-cover lg:h-full"
-              />
-            </div>
+        {/* ─── CURRENT CAMPAIGN (ONE active campaign only) ─────────────── */}
+        {!campaignClosed ? (
+          <section className="mx-auto mt-12 max-w-5xl px-4 sm:mt-16 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
+              <div className="overflow-hidden rounded-2xl">
+                <img
+                  src={campaign.coverImage}
+                  alt={campaign.title}
+                  className="aspect-[4/5] w-full object-cover lg:h-full"
+                />
+              </div>
 
-            <div className="flex flex-col justify-center">
-              <span className="inline-flex w-fit items-center gap-2 rounded-full bg-neutral-900 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-white">
-                <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-white" />
-                {campaign.statusLabel}
-              </span>
-              <h2 className="mt-4 text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl lg:text-5xl">
-                {campaign.title}
-              </h2>
-              <p className="mt-4 max-w-md text-sm leading-relaxed text-neutral-500 sm:text-base">
-                {campaign.description}
-              </p>
+              <div className="flex flex-col justify-center">
+                <span className="inline-flex w-fit items-center gap-2 rounded-full bg-neutral-900 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-white">
+                  <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-white" />
+                  {campaign.status === 'CLOSED' ? 'CLOSED' : 'URGENT'}
+                </span>
+                <h2 className="mt-4 text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl lg:text-5xl">
+                  {campaign.title}
+                </h2>
+                <p className="mt-4 max-w-md text-sm leading-relaxed text-neutral-500 sm:text-base">
+                  {campaign.shortDescription}
+                </p>
 
-              {/* ─── PROGRESS ─────────────────────────────────────────── */}
-              <div className="mt-8">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-400">
-                  Progress Collected
-                </p>
-                <p className="mt-1 text-xl font-bold tracking-tight sm:text-2xl">
-                  {formatRupiah(campaign.raised)}
-                </p>
-                <div className="flex items-center justify-between gap-1">
-                  <span className="text-sm font-medium text-neutral-400">
-                    of {formatRupiah(campaign.target)}
-                  </span>
-                  <div className="mt-1.5 text-sm font-bold text-neutral-900">{campaign.progressPercent}%</div>
-                </div>
-                <div
-                  role="progressbar"
-                  aria-valuenow={campaign.progressPercent}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-label={`Campaign progress — ${campaign.progressPercent} percent`}
-                  className="mt-1 h-2 w-full overflow-hidden rounded-full bg-neutral-100"
-                >
+                {/* ─── PROGRESS (computed from PAID donations) ─────────── */}
+                <div className="mt-8">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-400">
+                    Progress Collected
+                  </p>
+                  <p className="mt-1 text-xl font-bold tracking-tight sm:text-2xl">
+                    {formatRupiah(campaign.raised)}
+                  </p>
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-sm font-medium text-neutral-400">
+                      of {formatRupiah(campaign.targetAmount)}
+                    </span>
+                    <div className="mt-1.5 text-sm font-bold text-neutral-900">{campaign.progressPercent}%</div>
+                  </div>
                   <div
-                    className="h-full rounded-full bg-neutral-900"
-                    style={{ width: `${campaign.progressPercent}%` }}
-                  />
+                    role="progressbar"
+                    aria-valuenow={campaign.progressPercent}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`Campaign progress — ${campaign.progressPercent} percent`}
+                    className="mt-1 h-2 w-full overflow-hidden rounded-full bg-neutral-100"
+                  >
+                    <div
+                      className="h-full rounded-full bg-neutral-900"
+                      style={{ width: `${campaign.progressPercent}%` }}
+                    />
+                  </div>
+
+                  <div className="mt-7 grid grid-cols-3 divide-neutral-200">
+                    <div className="pr-3 text-center">
+                      <p className="text-2xl font-bold tracking-tight sm:text-3xl">
+                        {campaign.donorCount.toLocaleString('id-ID')}
+                      </p>
+                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+                        Donors
+                      </p>
+                    </div>
+                    {isFallback && (
+                      <>
+                        <div className="px-3 sm:px-5 text-center">
+                          <p className="text-2xl font-bold tracking-tight sm:text-3xl">
+                            {ACTIVE_CAMPAIGN.beneficiaries.toLocaleString('id-ID')}
+                          </p>
+                          <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+                            Beneficiaries
+                          </p>
+                        </div>
+                        <div className="pl-3 sm:pl-5 text-center">
+                          <p className="text-2xl font-bold tracking-tight sm:text-3xl">{ACTIVE_CAMPAIGN.daysLeft}</p>
+                          <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+                            Days Left
+                          </p>
+                        </div>
+                      </>
+                    )}
+                    {!isFallback && (
+                      <div className="col-span-2 px-3 text-center sm:px-5">
+                        <p className="text-2xl font-bold tracking-tight sm:text-3xl">
+                          {formatRupiah(campaign.targetAmount - campaign.raised)}
+                        </p>
+                        <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+                          Remaining
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div className="mt-7 grid grid-cols-3 divide-neutral-200">
-                  <div className="pr-3 text-center">
-                    <p className="text-2xl font-bold tracking-tight sm:text-3xl">
-                      {campaign.donors.toLocaleString('id-ID')}
-                    </p>
-                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
-                      Donors
-                    </p>
-                  </div>
-                  <div className="px-3 sm:px-5 text-center">
-                    <p className="text-2xl font-bold tracking-tight sm:text-3xl">
-                      {campaign.beneficiaries.toLocaleString('id-ID')}
-                    </p>
-                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
-                      Beneficiaries
-                    </p>
-                  </div>
-                  <div className="pl-3 sm:pl-5 text-center">
-                    <p className="text-2xl font-bold tracking-tight sm:text-3xl">{campaign.daysLeft}</p>
-                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
-                      Days Left
-                    </p>
-                  </div>
+                {/* ─── OUR PARTNERS ────────────────────────────────────── */}
+                <div className="mt-8 border-t border-neutral-200 pt-6">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-400">
+                    Our Partners
+                  </p>
+                  {partners.map((partner) => (
+                    <div key={partner.id} className="mt-2">
+                      <p className="text-lg font-bold uppercase tracking-tight">
+                        {partner.name}
+                        {partner.tagline ? (
+                          <span className="ml-2 text-sm font-medium normal-case tracking-normal text-neutral-500">
+                            {partner.tagline}
+                          </span>
+                        ) : null}
+                      </p>
+                      {partner.statement && (
+                        <p className="mt-1 text-sm leading-relaxed text-neutral-500">{partner.statement}</p>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              </div>
 
-              {/* ─── PARTNER / TRUST ──────────────────────────────────── */}
-              <div className="mt-8 border-t border-neutral-200 pt-6">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-400">
-                  Our Partner
-                </p>
-                <p className="mt-1.5 text-lg font-bold uppercase tracking-tight">
-                  {campaign.partner.name}
-                </p>
-                <p className="mt-0.5 text-sm font-medium text-neutral-500">
-                  {campaign.partner.tagline}
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-neutral-500">
-                  {campaign.partner.statement}
-                </p>
+                {/* ─── ONE CLEAR CTA ────────────────────────────────────── */}
+                {campaign.status !== 'CLOSED' && (
+                  <Button
+                    type="button"
+                    onClick={openSupport}
+                    className="mt-8 w-full rounded-full py-4 text-[11px] font-semibold uppercase tracking-[0.24em] sm:w-auto sm:px-12"
+                  >
+                    Donate Now
+                  </Button>
+                )}
               </div>
-
-              {/* ─── ONE CLEAR CTA ────────────────────────────────────── */}
-              <Button
-                type="button"
-                onClick={openSupport}
-                className="mt-8 w-full rounded-full py-4 text-[11px] font-semibold uppercase tracking-[0.24em] sm:w-auto sm:px-12"
-              >
-                Donate Now
-              </Button>
             </div>
-          </div>
-        </section>
+          </section>
+        ) : (
+          <section className="mx-auto mt-12 max-w-5xl px-4 sm:px-6 lg:px-8">
+            <p className="rounded-2xl bg-neutral-50 p-8 text-center text-sm text-neutral-500">
+              Donation is currently closed. Please check back soon.
+            </p>
+          </section>
+        )}
 
         {/* ─── SUPPORT INTERACTION (hidden until Donate Now) ────────────── */}
-        {isSupportOpen && (
+        {isSupportOpen && !campaignClosed && (
           <section
             id="donation-support"
             aria-label="Donation support"
             className="mx-auto mt-14 max-w-5xl scroll-mt-20 px-4 sm:mt-20 sm:px-6 lg:px-8"
           >
-            {isSubmitted ? (
+            {paymentState === 'success' || paymentState === 'pending' ? (
               <div
                 role="status"
                 aria-live="polite"
@@ -231,10 +374,12 @@ export function DonatePage() {
                   <Check size={22} strokeWidth={3} />
                 </span>
                 <h3 className="mt-5 text-xl font-bold uppercase tracking-tight sm:text-2xl">
-                  You Helped Move This Forward.
+                  {paymentState === 'success' ? 'You Helped Move This Forward.' : 'Your Donation Is Being Processed.'}
                 </h3>
                 <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-neutral-500">
-                  Thank you for supporting this cause.
+                  {paymentState === 'success'
+                    ? 'Thank you for supporting this cause.'
+                    : 'Your payment is pending confirmation. The donation will be counted once payment is verified.'}
                 </p>
               </div>
             ) : (
@@ -312,14 +457,14 @@ export function DonatePage() {
                 <div className="mt-7 max-w-xl">
                   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                     <Input
-                      label="Your name"
+                      label="Your name (optional)"
                       value={name}
                       onChange={(event) => setName(event.target.value)}
                       placeholder="Your name"
                       autoComplete="name"
                     />
                     <Input
-                      label="Your email"
+                      label="Your email (optional)"
                       type="email"
                       inputMode="email"
                       value={email}
@@ -338,9 +483,13 @@ export function DonatePage() {
                     />
                     Show my name as a supporter.
                   </label>
-                  {showName && !nameValid && (
-                    <p className="mt-2 text-xs font-medium text-red-500">
-                      Your name is required to be shown as a supporter.
+                  <p className="mt-1 text-xs text-neutral-400">
+                    Unchecked — your donation appears as Anonymous. No login required.
+                  </p>
+
+                  {paymentError && (
+                    <p className="mt-3 text-sm font-medium text-red-600" role="alert">
+                      {paymentError}
                     </p>
                   )}
 
@@ -349,7 +498,7 @@ export function DonatePage() {
                     disabled={!formValid}
                     className="mt-6 w-full rounded-full py-4 text-[11px] font-semibold uppercase tracking-[0.24em]"
                   >
-                    Support This Mission
+                    {paymentState === 'submitting' ? 'Opening Payment…' : 'Support This Mission'}
                   </Button>
                 </div>
               </form>
@@ -357,70 +506,71 @@ export function DonatePage() {
           </section>
         )}
 
-        {/* ─── NAVIGATION LINKS TO DETAILS ─────────────────────────────── */}
-        <section className="mx-auto mt-14 max-w-5xl px-4 sm:mt-20 sm:px-6 lg:px-8">
-          <div className="flex flex-col border-t border-neutral-200">
-            <Link 
-              to={`/donate/${campaign.id}/story`}
-              className="flex items-center justify-between py-6 border-b border-neutral-200 group hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
-            >
-              <h3 className="text-lg font-bold uppercase tracking-tight sm:text-xl">
-                Cerita Penggalangan Dana
-              </h3>
-              <ArrowRight size={20} className="text-neutral-900 transition-transform group-hover:translate-x-1" />
-            </Link>
-
-            <Link 
-              to={`/donate/${campaign.id}/updates`}
-              className="flex items-center justify-between py-6 border-b border-neutral-200 group hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
-            >
-              <h3 className="text-lg font-bold uppercase tracking-tight sm:text-xl">
-                Kabar Terbaru
-              </h3>
-              <ArrowRight size={20} className="text-neutral-900 transition-transform group-hover:translate-x-1" />
-            </Link>
-
-            <Link 
-              to={`/donate/${campaign.id}/disbursements`}
-              className="flex items-center justify-between py-6 border-b border-neutral-200 group hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
-            >
-              <h3 className="text-lg font-bold uppercase tracking-tight sm:text-xl">
-                Pencairan Dana
-              </h3>
-              <ArrowRight size={20} className="text-neutral-900 transition-transform group-hover:translate-x-1" />
-            </Link>
-
-            <div className="py-6 border-b border-neutral-200 flex flex-col sm:flex-row sm:items-start justify-between gap-6">
-              <div className="flex-1">
-                <Link to={`/donate/${campaign.id}/donors`} className="group inline-flex items-center justify-between w-full sm:w-auto sm:gap-4 hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900">
-                  <h3 className="text-lg font-bold uppercase tracking-tight sm:text-xl">
-                    Donasi
-                  </h3>
-                  <ArrowRight size={20} className="text-neutral-900 sm:hidden transition-transform group-hover:translate-x-1" />
-                </Link>
-                <p className="mt-2 text-sm text-neutral-500 font-medium">
-                  {campaign.donors.toLocaleString('id-ID')} PEOPLE HAVE SUPPORTED THIS MISSION.
-                </p>
-                
-                <div className="mt-6 space-y-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
-                    Donasi Terbaru
-                  </p>
-                  
-                  <div className="space-y-4">
-                    {recentDonors.map((donor) => (
-                      <div key={donor.id} className="flex justify-between items-start gap-4 text-sm">
-                        <div className="flex-1">
-                          <p className="font-bold text-neutral-900">{donor.name}</p>
-                          <p className="text-neutral-500 text-xs mt-0.5">{donor.timeAgo}</p>
-                        </div>
-                        <p className="font-bold text-neutral-900 shrink-0">
-                          {formatRupiah(donor.amount)}
-                        </p>
-                      </div>
-                    ))}
+        {/* ─── DONATION HIGHLIGHTS (real paid donations only) ──────────── */}
+        {highlights.length > 0 && (
+          <section className="mx-auto mt-14 max-w-5xl px-4 sm:mt-20 sm:px-6 lg:px-8">
+            <div className="rounded-2xl border border-neutral-200 p-5 sm:p-8">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-400">
+                Recent Support
+              </p>
+              <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                {highlights.map((donation) => (
+                  <div key={donation.id} className="rounded-xl bg-neutral-50 p-4">
+                    <p className="truncate text-sm font-bold text-neutral-900">{donation.donorName}</p>
+                    <p className="mt-1 text-sm font-bold text-neutral-900">{formatRupiah(donation.amount)}</p>
+                    <p className="mt-1 text-xs text-neutral-400">{formatRelativeTime(donation.createdAt)}</p>
                   </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
+        {/* ─── NAVIGATION LINKS TO DETAILS ─────────────────────────────── */}
+        {!campaignClosed && (
+          <section className="mx-auto mt-14 max-w-5xl px-4 sm:mt-20 sm:px-6 lg:px-8">
+            <div className="flex flex-col border-t border-neutral-200">
+              <Link
+                to={`/donate/${campaign.id}/story`}
+                className="flex items-center justify-between py-6 border-b border-neutral-200 group hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
+              >
+                <h3 className="text-lg font-bold uppercase tracking-tight sm:text-xl">
+                  Cerita Penggalangan Dana
+                </h3>
+                <ArrowRight size={20} className="text-neutral-900 transition-transform group-hover:translate-x-1" />
+              </Link>
+
+              <Link
+                to={`/donate/${campaign.id}/updates`}
+                className="flex items-center justify-between py-6 border-b border-neutral-200 group hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
+              >
+                <h3 className="text-lg font-bold uppercase tracking-tight sm:text-xl">
+                  Kabar Terbaru
+                </h3>
+                <ArrowRight size={20} className="text-neutral-900 transition-transform group-hover:translate-x-1" />
+              </Link>
+
+              <Link
+                to={`/donate/${campaign.id}/disbursements`}
+                className="flex items-center justify-between py-6 border-b border-neutral-200 group hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
+              >
+                <h3 className="text-lg font-bold uppercase tracking-tight sm:text-xl">
+                  Pencairan Dana
+                </h3>
+                <ArrowRight size={20} className="text-neutral-900 transition-transform group-hover:translate-x-1" />
+              </Link>
+
+              <div className="py-6 border-b border-neutral-200 flex flex-col sm:flex-row sm:items-start justify-between gap-6">
+                <div className="flex-1">
+                  <Link to={`/donate/${campaign.id}/donors`} className="group inline-flex items-center justify-between w-full sm:w-auto sm:gap-4 hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900">
+                    <h3 className="text-lg font-bold uppercase tracking-tight sm:text-xl">
+                      Donasi
+                    </h3>
+                    <ArrowRight size={20} className="text-neutral-900 sm:hidden transition-transform group-hover:translate-x-1" />
+                  </Link>
+                  <p className="mt-2 text-sm text-neutral-500 font-medium">
+                    {campaign.donorCount.toLocaleString('id-ID')} PEOPLE HAVE SUPPORTED THIS MISSION.
+                  </p>
                   <div className="pt-2">
                     <Link
                       to={`/donate/${campaign.id}/donors`}
@@ -430,13 +580,57 @@ export function DonatePage() {
                     </Link>
                   </div>
                 </div>
+                <Link to={`/donate/${campaign.id}/donors`} className="hidden sm:inline-block group p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 rounded">
+                  <ArrowRight size={20} className="text-neutral-900 transition-transform group-hover:translate-x-1" />
+                </Link>
               </div>
-              <Link to={`/donate/${campaign.id}/donors`} className="hidden sm:inline-block group p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 rounded">
-                <ArrowRight size={20} className="text-neutral-900 transition-transform group-hover:translate-x-1" />
-              </Link>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
+
+        {/* ─── PAST CAMPAIGNS (history, not donation choices) ──────────── */}
+        {pastCampaigns.length > 0 && (
+          <section className="mx-auto mt-14 max-w-5xl px-4 sm:mt-20 sm:px-6 lg:px-8">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-neutral-400">
+              Past Campaigns
+            </p>
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {pastCampaigns.map((past) => (
+                <Link
+                  key={past.id}
+                  to={`/donate/campaigns/${past.slug}`}
+                  aria-label={`${past.title} — view story`}
+                  className="group relative block overflow-hidden rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+                >
+                  <img
+                    src={past.coverImage}
+                    alt={past.title}
+                    loading="lazy"
+                    className="aspect-[4/3] w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/10"
+                  />
+                  <span className="absolute left-3 top-3 rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white backdrop-blur-md">
+                    Closed
+                  </span>
+                  <div className="absolute inset-x-0 bottom-0 p-5 text-white">
+                    <h3 className="text-lg font-bold uppercase leading-tight tracking-tight sm:text-xl">
+                      {past.title}
+                    </h3>
+                    <p className="mt-1 text-xs text-white/75">
+                      {formatRupiah(past.raised)} raised
+                    </p>
+                    <span className="mt-3 inline-block rounded-full bg-white px-5 py-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-900">
+                      View Story
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* ─── FINAL CTA ────────────────────────────────────────────────── */}
         <section className="mx-auto mt-16 max-w-5xl px-4 text-center sm:mt-24 sm:px-6 lg:px-8">
@@ -464,7 +658,7 @@ export function DonatePage() {
       </main>
 
       {/* Footer with bottom-nav clearance on mobile — same pattern as the
-          approved Movement Homepage, Mission, and Journal pages. */}
+          approved Movement pages. */}
       <div className="mt-16 bg-white pb-[100px] sm:mt-20 lg:pb-0">
         <HomepageFooter />
       </div>

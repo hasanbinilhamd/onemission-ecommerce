@@ -1,21 +1,58 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { HomepageFooter } from '../features/footer';
 import { TopBackNavigation } from '../features/navigation';
 import { ROUTES } from '../app/config/routes';
-import { ACTIVE_CAMPAIGN } from '../features/donate';
 import { Button } from '../components/shared';
 import { formatRupiah } from './DonatePage';
+import { useDonateCms } from '../features/donate/donateCms';
+import {
+  donationService,
+  type DonationListItem,
+} from '../services/api/donationService';
 
 type SortOrder = 'TERBARU' | 'TERBESAR';
 
+const PAGE_SIZE = 10;
+
 export function DonateDonorsPage() {
   const { campaignId } = useParams<{ campaignId: string }>();
+  const { campaign, isFallback } = useDonateCms();
   const [sortOrder, setSortOrder] = useState<SortOrder>('TERBARU');
-  const [visibleCount, setVisibleCount] = useState(10);
-  const campaign = ACTIVE_CAMPAIGN;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [cmsDonations, setCmsDonations] = useState<DonationListItem[]>([]);
+  const [cmsTotal, setCmsTotal] = useState(0);
 
-  if (campaignId !== campaign.id) {
+  // Server-side donations list (successful donations only) — LATEST/LARGEST.
+  useEffect(() => {
+    if (isFallback) return undefined;
+    let isActive = true;
+    donationService
+      .getDonations(sortOrder === 'TERBARU' ? 'LATEST' : 'LARGEST', 0, visibleCount)
+      .then((result) => {
+        if (!isActive) return;
+        setCmsDonations(result.items);
+        setCmsTotal(result.total);
+      })
+      .catch(() => {
+        // Keep the previously loaded list on errors.
+      });
+    return () => {
+      isActive = false;
+    };
+  }, [isFallback, sortOrder, visibleCount]);
+
+  const sortedDonors = useMemo(() => {
+    const arr = [...campaign.donorsList];
+    if (sortOrder === 'TERBARU') {
+      arr.sort((a, b) => b.dateTimestamp - a.dateTimestamp);
+    } else {
+      arr.sort((a, b) => b.amount - a.amount);
+    }
+    return arr;
+  }, [campaign.donorsList, sortOrder]);
+
+  if (isFallback && campaignId !== campaign.id) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-white px-4 text-center font-['SF-Pro-Display',_sans-serif]">
         <TopBackNavigation label="Back to Donate" fallbackTo={ROUTES.DONATE} />
@@ -32,22 +69,16 @@ export function DonateDonorsPage() {
     );
   }
 
-  const sortedDonors = useMemo(() => {
-    const arr = [...campaign.donorsList];
-    if (sortOrder === 'TERBARU') {
-      arr.sort((a, b) => b.dateTimestamp - a.dateTimestamp);
-    } else {
-      arr.sort((a, b) => b.amount - a.amount);
-    }
-    return arr;
-  }, [campaign.donorsList, sortOrder]);
-
-  const visibleDonors = sortedDonors.slice(0, visibleCount);
-  const hasMore = visibleCount < sortedDonors.length;
+  const visibleDonors = isFallback ? sortedDonors.slice(0, visibleCount) : [];
+  const hasMore = isFallback
+    ? visibleCount < sortedDonors.length
+    : cmsDonations.length < cmsTotal;
 
   const handleLoadMore = () => {
-    setVisibleCount(c => c + 10);
+    setVisibleCount((current) => current + PAGE_SIZE);
   };
+
+  const donorsShown = isFallback ? visibleDonors : cmsDonations;
 
   return (
     <div className="min-h-screen bg-white font-['SF-Pro-Display',_sans-serif] text-neutral-900">
@@ -63,7 +94,10 @@ export function DonateDonorsPage() {
 
         <div className="mt-8 flex gap-4 border-b border-neutral-200 pb-4">
           <button
-            onClick={() => setSortOrder('TERBARU')}
+            onClick={() => {
+              setSortOrder('TERBARU');
+              setVisibleCount(PAGE_SIZE);
+            }}
             className={[
               'text-xs font-bold uppercase tracking-widest transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900',
               sortOrder === 'TERBARU' ? 'text-neutral-900' : 'text-neutral-400 hover:text-neutral-600'
@@ -72,7 +106,10 @@ export function DonateDonorsPage() {
             Terbaru
           </button>
           <button
-            onClick={() => setSortOrder('TERBESAR')}
+            onClick={() => {
+              setSortOrder('TERBESAR');
+              setVisibleCount(PAGE_SIZE);
+            }}
             className={[
               'text-xs font-bold uppercase tracking-widest transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900',
               sortOrder === 'TERBESAR' ? 'text-neutral-900' : 'text-neutral-400 hover:text-neutral-600'
@@ -83,14 +120,20 @@ export function DonateDonorsPage() {
         </div>
 
         <div className="mt-8 space-y-6">
-          {visibleDonors.length === 0 ? (
+          {donorsShown.length === 0 ? (
             <p className="text-sm text-neutral-500">Belum ada donasi.</p>
           ) : (
-            visibleDonors.map((donor) => (
+            donorsShown.map((donor) => (
               <div key={donor.id} className="flex justify-between items-start gap-4">
                 <div className="flex-1">
-                  <p className="text-base font-bold text-neutral-900">{donor.name}</p>
-                  <p className="text-neutral-500 text-xs mt-1">{donor.timeAgo}</p>
+                  <p className="text-base font-bold text-neutral-900">
+                    {(donor as { name?: string }).name ?? (donor as DonationListItem).donorName}
+                  </p>
+                  <p className="text-neutral-500 text-xs mt-1">
+                    {isFallback
+                      ? (donor as { timeAgo?: string }).timeAgo
+                      : new Date((donor as DonationListItem).createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
                 </div>
                 <p className="text-base font-bold text-neutral-900 shrink-0">
                   {formatRupiah(donor.amount)}

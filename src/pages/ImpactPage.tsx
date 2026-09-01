@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from '../components/shared';
+import { Button, SkeletonBlock, CmsStatePanel } from '../components/shared';
 import { HomepageFooter } from '../features/footer';
-import { JOURNAL_STORIES } from '../features/journal';
 import {
   impactService,
+  type ImpactListPayload,
   type ImpactListItem,
   type ImpactPageSettings,
   type ImpactStoryStatus,
@@ -13,12 +13,13 @@ import {
 /**
  * ImpactPage — the documentation/storytelling layer of the movement.
  *
- * CMS-driven: header settings, status filtering + sorting, and SEE MORE
- * pagination all come from the public HQ Impact API. The server keeps the
- * default ordering (NOW LIVE → COMING SOON → CLOSED; DRAFT never public).
+ * The HQ Impact CMS is the single source of truth:
+ *   loading → skeleton
+ *   success  → real CMS content (status-priority ordering server-side)
+ *   empty    → honest empty state (no fabricated stories)
+ *   error    → honest error state with retry
  *
- * Fallback: when the API is unavailable, the previously approved static
- * content renders with the same visual design.
+ * No static Journal content is ever used as fallback.
  */
 
 const INITIAL_BATCH_SIZE = 12;
@@ -30,24 +31,10 @@ const SORT_OPTIONS = ['LATEST', 'UPCOMING', 'OLDEST'] as const;
 type StatusFilter = (typeof STATUS_OPTIONS)[number];
 type SortMode = (typeof SORT_OPTIONS)[number];
 
-const FALLBACK_SETTINGS: ImpactPageSettings = {
-  eyebrow: 'IMPACT',
-  title: 'THE WORK BEHIND THE MOVEMENT.',
-  description: 'Stories, progress, people, and ideas shaping what we are building together.',
-};
-
-const FALLBACK_ITEMS: ImpactListItem[] = JOURNAL_STORIES.map((story) => ({
-  id: story.id,
-  title: story.title,
-  slug: story.id,
-  category: story.category,
-  shortDescription: story.description,
-  coverImage: story.image,
-  status: 'NOW_LIVE',
-  featured: story.featured === true,
-  publishedAt: story.date,
-  readingMinutes: story.readMinutes,
-}));
+type ImpactState =
+  | { status: 'loading' }
+  | { status: 'error' }
+  | { status: 'success'; settings: ImpactPageSettings; items: ImpactListItem[]; total: number; isCmsActive: boolean };
 
 function statusLabel(status: ImpactStoryStatus): string {
   if (status === 'NOW_LIVE') return 'NOW LIVE';
@@ -61,7 +48,6 @@ function statusLabel(status: ImpactStoryStatus): string {
  *   NOW LIVE     → subtle green
  *   COMING SOON  → subtle amber
  *   CLOSED       → neutral gray
- * Status text remains visible — color is never the only signal.
  */
 function statusBadgeClass(status: ImpactStoryStatus): string {
   if (status === 'NOW_LIVE') return 'bg-emerald-100 text-emerald-900';
@@ -76,25 +62,6 @@ function formatDate(value: string | null): string {
   return date.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' });
 }
 
-function getPublishedTime(value: string | null): number {
-  if (!value) return 0;
-  const time = new Date(value).getTime();
-  return Number.isNaN(time) ? 0 : time;
-}
-
-/** Fallback-only local sort (the server sorts when the CMS is active). */
-function sortFallbackItems(items: ImpactListItem[], sort: SortMode): ImpactListItem[] {
-  const priority: Record<string, number> = { NOW_LIVE: 0, COMING_SOON: 1, CLOSED: 2 };
-  return [...items].sort((left, right) => {
-    const groupDiff = (priority[left.status] ?? 99) - (priority[right.status] ?? 99);
-    if (groupDiff !== 0) return groupDiff;
-    const leftTime = getPublishedTime(left.publishedAt);
-    const rightTime = getPublishedTime(right.publishedAt);
-    if (sort === 'OLDEST' || sort === 'UPCOMING') return leftTime - rightTime;
-    return rightTime - leftTime;
-  });
-}
-
 function emptyStateLabel(status: StatusFilter): string {
   if (status === 'COMING_SOON') return 'No upcoming Impact at the moment.';
   if (status === 'NOW_LIVE') return 'No live Impact at the moment.';
@@ -102,121 +69,155 @@ function emptyStateLabel(status: StatusFilter): string {
   return 'No Impact has been published yet.';
 }
 
+function ImpactSkeleton() {
+  return (
+    <div className="min-h-screen bg-white font-['SF-Pro-Display',_sans-serif]">
+      <main>
+        <section className="mx-auto max-w-5xl px-4 pt-24 sm:px-6 sm:pt-28 lg:px-8 lg:pt-32">
+          <SkeletonBlock className="h-3 w-40" />
+          <SkeletonBlock className="mt-4 h-14 w-2/3 max-w-2xl sm:h-20" />
+          <SkeletonBlock className="mt-5 h-4 w-full max-w-md" />
+        </section>
+        <section className="mx-auto mt-14 max-w-5xl px-4 sm:mt-20 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap gap-2">
+            {[0, 1, 2, 3].map((index) => (
+              <SkeletonBlock key={index} className="h-9 w-24 rounded-full" />
+            ))}
+          </div>
+          <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[0, 1, 2, 3, 4, 5].map((index) => (
+              <SkeletonBlock key={index} className="aspect-[4/3] w-full rounded-2xl" />
+            ))}
+          </div>
+        </section>
+      </main>
+      <div className="mt-16 bg-white pb-[100px] sm:mt-20 lg:pb-0">
+        <HomepageFooter />
+      </div>
+    </div>
+  );
+}
+
 export function ImpactPage() {
-  const [settings, setSettings] = useState<ImpactPageSettings>(FALLBACK_SETTINGS);
-  const [items, setItems] = useState<ImpactListItem[]>(FALLBACK_ITEMS);
-  const [isCmsActive, setIsCmsActive] = useState(false);
+  const [state, setState] = useState<ImpactState>({ status: 'loading' });
   const [activeStatus, setActiveStatus] = useState<StatusFilter>('ALL');
   const [activeSort, setActiveSort] = useState<SortMode>('LATEST');
   const [loadedCount, setLoadedCount] = useState(INITIAL_BATCH_SIZE);
-  const [total, setTotal] = useState(FALLBACK_ITEMS.length);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const loadPage = async (status: StatusFilter, sort: SortMode, offset: number, limit: number) => {
-    setIsLoading(true);
+  const loadPage = useCallback(async (status: StatusFilter, sort: SortMode, offset: number, limit: number) => {
     try {
-      const result = await impactService.getImpactList(status, sort, offset, limit);
+      const result: ImpactListPayload = await impactService.getImpactList(status, sort, offset, limit);
       if (offset === 0) {
-        if (result.settings) setSettings(result.settings);
-        setItems(result.items);
+        setState({
+          status: 'success',
+          settings: result.settings ?? { eyebrow: '', title: '', description: '' },
+          items: result.items ?? [],
+          total: result.total ?? 0,
+          isCmsActive: true,
+        });
       } else {
-        setItems((current) => {
-          const existingSlugs = new Set(current.map((item) => item.slug));
-          return [...current, ...result.items.filter((item) => !existingSlugs.has(item.slug))];
+        setState((current) => {
+          if (current.status !== 'success') return current;
+          const existingIds = new Set(current.items.map((item) => item.slug));
+          return {
+            ...current,
+            items: [...current.items, ...result.items.filter((item) => !existingIds.has(item.slug))],
+            total: result.total ?? current.total,
+          };
         });
       }
-      setTotal(result.total);
-      setIsCmsActive(true);
     } catch {
-      // API unavailable → approved fallback content stays rendered.
-    } finally {
-      setIsLoading(false);
+      setState((current) =>
+        current.status === 'success' ? current : { status: 'error' },
+      );
     }
-  };
+  }, []);
 
   useEffect(() => {
-    let isActive = true;
-    impactService
-      .getImpactList('ALL', 'LATEST', 0, INITIAL_BATCH_SIZE)
-      .then((result) => {
-        if (!isActive) return;
-        if (result.settings) setSettings(result.settings);
-        if (Array.isArray(result.items)) {
-          setItems(result.items);
-          setTotal(result.total);
-          setIsCmsActive(true);
-        }
-      })
-      .catch(() => {
-        // Keep the approved fallback.
-      });
-    return () => {
-      isActive = false;
-    };
-  }, []);
+    setState({ status: 'loading' });
+    void loadPage('ALL', 'LATEST', 0, INITIAL_BATCH_SIZE);
+  }, [loadPage]);
 
   const handleStatusChange = (status: StatusFilter) => {
     setActiveStatus(status);
     setLoadedCount(INITIAL_BATCH_SIZE);
-    if (!isCmsActive) return;
+    setState({ status: 'loading' });
     void loadPage(status, activeSort, 0, INITIAL_BATCH_SIZE);
   };
 
   const handleSortChange = (sort: SortMode) => {
     setActiveSort(sort);
     setLoadedCount(INITIAL_BATCH_SIZE);
-    if (!isCmsActive) return;
+    setState({ status: 'loading' });
     void loadPage(activeStatus, sort, 0, INITIAL_BATCH_SIZE);
   };
 
   const handleSeeMore = () => {
-    if (!isCmsActive) {
-      setLoadedCount((current) => current + BATCH_SIZE);
-      return;
-    }
-    void loadPage(activeStatus, activeSort, loadedCount, BATCH_SIZE).then(() => {
+    if (state.status !== 'success') return;
+    setIsLoadingMore(true);
+    void loadPage(activeStatus, activeSort, loadedCount, BATCH_SIZE).finally(() => {
+      setIsLoadingMore(false);
       setLoadedCount((current) => current + BATCH_SIZE);
     });
   };
 
-  const visibleItems = useMemo(() => {
-    if (isCmsActive) return items;
+  if (state.status === 'loading') {
+    return <ImpactSkeleton />;
+  }
 
-    const filtered =
-      activeStatus === 'ALL'
-        ? FALLBACK_ITEMS
-        : FALLBACK_ITEMS.filter((item) => item.status === activeStatus);
-    return sortFallbackItems(filtered, activeSort).slice(0, loadedCount);
-  }, [activeStatus, activeSort, isCmsActive, items, loadedCount]);
+  if (state.status === 'error') {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="pt-16">
+          <CmsStatePanel
+            eyebrow="Impact"
+            title="Unable to load Impact."
+            description="Please check your connection and try again."
+            actionLabel="Try Again"
+            onAction={() => {
+              setState({ status: 'loading' });
+              void loadPage(activeStatus, activeSort, 0, INITIAL_BATCH_SIZE);
+            }}
+          />
+        </div>
+        <div className="bg-white pb-[100px] lg:pb-0">
+          <HomepageFooter />
+        </div>
+      </div>
+    );
+  }
 
-  const hasMore = isCmsActive
-    ? items.length < total
-    : (() => {
-        const filtered =
-          activeStatus === 'ALL'
-            ? FALLBACK_ITEMS
-            : FALLBACK_ITEMS.filter((item) => item.status === activeStatus);
-        return loadedCount < filtered.length;
-      })();
+  const { settings, items, total } = state;
+  const hasMore = items.length < total;
+  const showEmptyState = items.length === 0 && !hasMore;
 
   return (
     <div className="min-h-screen bg-white font-['SF-Pro-Display',_sans-serif] text-neutral-900">
       <main>
         {/* ─── IMPACT INTRO ────────────────────────────────────────────── */}
-        <section className="mx-auto max-w-5xl px-4 pt-24 sm:px-6 sm:pt-28 lg:px-8 lg:pt-32">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-neutral-400">
-            {settings.eyebrow}
-          </p>
-          <h1 className="mt-4 text-5xl font-bold uppercase leading-none tracking-tight sm:text-7xl lg:text-8xl">
-            {settings.title}
-          </h1>
-          <p className="mt-5 max-w-md text-sm leading-relaxed text-neutral-500 sm:text-base">
-            {settings.description}
-          </p>
-        </section>
+        {(settings.title || settings.eyebrow || settings.description) && (
+          <section className="mx-auto max-w-5xl px-4 pt-24 sm:px-6 sm:pt-28 lg:px-8 lg:pt-32">
+            {settings.eyebrow && (
+              <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-neutral-400">
+                {settings.eyebrow}
+              </p>
+            )}
+            {settings.title && (
+              <h1 className="mt-4 text-5xl font-bold uppercase leading-none tracking-tight sm:text-7xl lg:text-8xl">
+                {settings.title}
+              </h1>
+            )}
+            {settings.description && (
+              <p className="mt-5 max-w-md text-sm leading-relaxed text-neutral-500 sm:text-base">
+                {settings.description}
+              </p>
+            )}
+          </section>
+        )}
 
         {/* ─── STATUS FILTER + SORT + COLLECTION ────────────────────────── */}
-        <section className="mx-auto mt-14 max-w-5xl px-4 sm:mt-20 sm:px-6 lg:px-8">
+        <section className={`mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 ${settings.title ? 'mt-14 sm:mt-20' : 'pt-24 sm:pt-28'}`}>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div role="group" aria-label="Filter by status" className="flex flex-wrap gap-2">
               {STATUS_OPTIONS.map((status) => {
@@ -266,13 +267,13 @@ export function ImpactPage() {
             </div>
           </div>
 
-          {visibleItems.length === 0 && !isLoading ? (
+          {showEmptyState ? (
             <p className="mt-14 text-center text-sm font-medium text-neutral-400">
               {emptyStateLabel(activeStatus)}
             </p>
           ) : (
             <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {visibleItems.map((story) => (
+              {items.map((story) => (
                 <article key={story.slug}>
                   <Link
                     to={`/impact/${story.slug}`}
@@ -280,12 +281,16 @@ export function ImpactPage() {
                     className="group block focus-visible:outline-none"
                   >
                     <div className="relative aspect-[4/3] overflow-hidden rounded-2xl">
-                      <img
-                        src={story.coverImage}
-                        alt={story.title}
-                        loading="lazy"
-                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      />
+                      {story.coverImage ? (
+                        <img
+                          src={story.coverImage}
+                          alt={story.title}
+                          loading="lazy"
+                          className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-neutral-100" />
+                      )}
                       <div
                         aria-hidden="true"
                         className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/10"
@@ -299,9 +304,11 @@ export function ImpactPage() {
                         <h3 className="text-lg font-bold uppercase leading-tight tracking-tight drop-shadow-sm line-clamp-2">
                           {story.title}
                         </h3>
-                        <p className="mt-1.5 text-xs leading-relaxed text-white/80 line-clamp-2">
-                          {story.shortDescription}
-                        </p>
+                        {story.shortDescription && (
+                          <p className="mt-1.5 text-xs leading-relaxed text-white/80 line-clamp-2">
+                            {story.shortDescription}
+                          </p>
+                        )}
                         <p className="mt-2.5 text-[10px] font-semibold uppercase tracking-widest text-white/60 drop-shadow-sm">
                           {formatDate(story.publishedAt)}
                           {story.readingMinutes ? ` · ${story.readingMinutes} min read` : ''}
@@ -321,14 +328,15 @@ export function ImpactPage() {
                 type="button"
                 variant="outline"
                 onClick={handleSeeMore}
+                disabled={isLoadingMore}
                 className="rounded-full px-10 py-3.5 text-[11px] font-semibold uppercase tracking-[0.24em]"
               >
-                See More
+                {isLoadingMore ? 'Loading…' : 'See More'}
               </Button>
             </div>
           )}
 
-          {!hasMore && visibleItems.length > 0 && (
+          {!hasMore && items.length > 0 && (
             <p className="mt-12 text-center text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-300">
               End of the archive — more stories are being written.
             </p>

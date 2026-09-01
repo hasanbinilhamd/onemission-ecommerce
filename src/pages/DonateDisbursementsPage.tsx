@@ -1,43 +1,68 @@
-import { Link, useParams } from 'react-router-dom';
 import { HomepageFooter } from '../features/footer';
 import { TopBackNavigation } from '../features/navigation';
 import { ROUTES } from '../app/config/routes';
-import { Button } from '../components/shared';
-import { formatRupiah } from './DonatePage';
+import { SkeletonBlock, CmsStatePanel } from '../components/shared';
 import { useDonateCms } from '../features/donate/donateCms';
+import { formatRupiah } from './DonatePage';
 
+/**
+ * DonateDisbursementsPage — fund disbursement information, from the CMS only.
+ * Totals are derived from real CMS disbursement records + backend-computed
+ * raised amount — never static values.
+ */
 export function DonateDisbursementsPage() {
-  const { campaignId } = useParams<{ campaignId: string }>();
-  const { campaign, isFallback } = useDonateCms();
+  const { status, payload, reload } = useDonateCms();
 
-  if (isFallback && campaignId !== campaign.id) {
+  const disbursements = payload?.disbursements ?? [];
+  const campaign = payload?.campaign ?? null;
+
+  const totalDisbursed = disbursements.reduce((acc, item) => acc + (Number(item.amount) || 0), 0);
+  const raised = campaign ? Number(campaign.raised) || 0 : 0;
+  const remaining = Math.max(0, raised - totalDisbursed);
+
+  if (status === 'loading') {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-white px-4 text-center font-['SF-Pro-Display',_sans-serif]">
-        <TopBackNavigation label="Back to Donate" fallbackTo={ROUTES.DONATE} />
-        <h1 className="text-3xl font-bold uppercase tracking-tight text-neutral-900">
-          Campaign not found
-        </h1>
-        <p className="mb-8 mt-2 max-w-sm text-sm text-neutral-500">
-          This campaign does not exist or has ended.
-        </p>
-        <Link to={ROUTES.DONATE}>
-          <Button>Back to Donate</Button>
-        </Link>
+      <div className="min-h-screen bg-white font-['SF-Pro-Display',_sans-serif]">
+        <div className="mx-auto max-w-3xl px-4 pt-28 sm:px-6 sm:pt-32">
+          <SkeletonBlock className="h-3 w-40" />
+          <SkeletonBlock className="mt-4 h-10 w-1/2" />
+          <SkeletonBlock className="mt-10 h-24 w-full rounded-2xl" />
+          <SkeletonBlock className="mt-4 h-16 w-full rounded-xl" />
+        </div>
+        <div className="mt-16 bg-white pb-[100px] lg:pb-0">
+          <HomepageFooter />
+        </div>
       </div>
     );
   }
 
-  const totalDisbursed = campaign.disbursements.reduce((acc, curr) => acc + curr.amount, 0);
-  const remaining = campaign.raised - totalDisbursed;
+  if (status === 'error') {
+    return (
+      <div className="min-h-screen bg-white">
+        <TopBackNavigation label="Back" fallbackTo={ROUTES.DONATE} />
+        <div className="pt-16">
+          <CmsStatePanel
+            eyebrow="Donate"
+            title="Unable to load disbursements."
+            description="Please check your connection and try again."
+            actionLabel="Try Again"
+            onAction={reload}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white font-['SF-Pro-Display',_sans-serif] text-neutral-900">
       <TopBackNavigation label="Back" fallbackTo={ROUTES.DONATE} />
 
       <main className="mx-auto max-w-3xl px-4 pt-24 sm:px-6 sm:pt-28 lg:px-8 lg:pt-32">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-400">
-          {campaign.title}
-        </p>
+        {campaign && (
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-400">
+            {campaign.title}
+          </p>
+        )}
         <h1 className="mt-3 text-3xl font-bold uppercase leading-tight tracking-tight sm:text-5xl">
           Pencairan Dana
         </h1>
@@ -47,7 +72,9 @@ export function DonateDisbursementsPage() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-400">
               TOTAL TERKUMPUL
             </p>
-            <p className="mt-2 text-xl font-bold tracking-tight sm:text-2xl">{formatRupiah(campaign.raised)}</p>
+            <p className="mt-2 text-xl font-bold tracking-tight sm:text-2xl">
+              {formatRupiah(campaign?.raised ?? 0)}
+            </p>
           </div>
           <div className="py-6 sm:px-6 sm:py-8 sm:first:pl-0 sm:last:pr-0">
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-400">
@@ -63,29 +90,20 @@ export function DonateDisbursementsPage() {
           </div>
         </div>
 
-        <div className="mt-12 space-y-12">
-          {campaign.disbursements.length === 0 ? (
+        <div className="mt-12 space-y-8">
+          {disbursements.length === 0 ? (
             <p className="text-sm text-neutral-500">Belum ada pencairan dana untuk campaign ini.</p>
           ) : (
-            campaign.disbursements.map((disbursement) => (
-              <div key={disbursement.id} className="border-b border-neutral-200 pb-12 last:border-0 last:pb-0">
+            disbursements.map((item) => (
+              <div key={item.id} className="border-b border-neutral-200 pb-8 last:border-0 last:pb-0">
                 <p className="text-[11px] font-bold tracking-widest uppercase text-neutral-400">
-                  {disbursement.date}
+                  {new Date(item.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}
                 </p>
-                <div className="mt-3 flex flex-wrap items-baseline justify-between gap-4">
-                  <h3 className="text-lg font-bold uppercase leading-snug sm:text-xl text-neutral-900">
-                    {disbursement.title}
-                  </h3>
-                  <p className="text-xl font-bold text-neutral-900">{formatRupiah(disbursement.amount)}</p>
+                <h3 className="mt-2 text-lg font-bold leading-snug text-neutral-900">{item.title}</h3>
+                <div className="mt-2 flex items-center justify-between gap-4">
+                  <p className="text-sm text-neutral-500">{item.partnerName}</p>
+                  <p className="text-base font-bold text-neutral-900">{formatRupiah(item.amount)}</p>
                 </div>
-                <div className="mt-2 text-sm text-neutral-500">
-                  Disalurkan melalui: <span className="font-bold text-neutral-900">{disbursement.partnerName}</span>
-                </div>
-                {disbursement.image && (
-                  <div className="mt-6 overflow-hidden rounded-2xl bg-neutral-100">
-                    <img src={disbursement.image} alt={disbursement.imageAlt} className="w-full aspect-[4/3] sm:aspect-[16/9] object-cover" />
-                  </div>
-                )}
               </div>
             ))
           )}

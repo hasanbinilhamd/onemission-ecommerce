@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { LayoutGrid, Rows3, Columns2 } from 'lucide-react';
+import { SkeletonBlock, CmsStatePanel } from '../components/shared';
 import { HomepageFooter } from '../features/footer';
 import { TopBackNavigation } from '../features/navigation';
-import { getJournalStoryById } from '../features/journal';
 import { ROUTES } from '../app/config/routes';
 import {
   impactService,
@@ -13,14 +13,16 @@ import {
 } from '../services/api/impactService';
 
 /**
- * ImpactStoryPage — Impact detail.
+ * ImpactStoryPage — Impact detail, CMS content ONLY.
  *
- * Renders the CMS content blocks in order (TEXT + IMAGE). The gallery layout
- * toggle is a USER VIEWING PREFERENCE (persisted locally like the existing
- * Collection grid-mode preference) — it never lives in the CMS.
+ *   loading → skeleton
+ *   success  → real CMS blocks (ordered TEXT + IMAGE) + related stories
+ *   not found → honest not-found state
+ *   error    → honest error state with retry
  *
- * Fallback: previously approved static story content renders when the API is
- * unavailable.
+ * The gallery layout toggle is a USER VIEWING PREFERENCE (persisted locally
+ * like the existing Collection grid-mode preference) — never CMS data.
+ * No static Journal content is used as fallback.
  */
 
 type GalleryMode = 'single' | 'two' | 'editorial';
@@ -57,34 +59,65 @@ function statusBadgeClass(status: ImpactStoryStatus): string {
   return 'bg-neutral-200 text-neutral-700';
 }
 
+type StoryState =
+  | { status: 'loading' }
+  | { status: 'error' }
+  | { status: 'notFound' }
+  | { status: 'success'; payload: ImpactDetailPayload };
+
+function StorySkeleton() {
+  return (
+    <div className="min-h-screen bg-white font-['SF-Pro-Display',_sans-serif]">
+      <div className="mx-auto max-w-3xl px-4 pt-28 sm:px-6 sm:pt-32">
+        <SkeletonBlock className="h-3 w-32" />
+        <SkeletonBlock className="mt-4 h-10 w-4/5 max-w-xl" />
+        <SkeletonBlock className="mt-3 h-4 w-full max-w-md" />
+        <SkeletonBlock className="mt-8 aspect-[16/9] w-full rounded-2xl" />
+        <SkeletonBlock className="mt-8 h-4 w-full" />
+        <SkeletonBlock className="mt-3 h-4 w-full" />
+        <SkeletonBlock className="mt-3 h-4 w-3/4" />
+      </div>
+      <div className="mt-16 bg-white pb-[100px] lg:pb-0">
+        <HomepageFooter />
+      </div>
+    </div>
+  );
+}
+
 export function ImpactStoryPage() {
   const { slug = '' } = useParams<{ slug: string }>();
-  const [payload, setPayload] = useState<ImpactDetailPayload | null>(null);
+  const [state, setState] = useState<StoryState>({ status: 'loading' });
   const [galleryMode, setGalleryMode] = useState<GalleryMode>(() => loadStoredGalleryMode());
 
-  const fallbackStory = useMemo(() => getJournalStoryById(slug), [slug]);
+  const load = useCallback(async () => {
+    setState({ status: 'loading' });
+    try {
+      const payload = await impactService.getImpactStory(slug);
+      setState({ status: 'success', payload });
+    } catch (error) {
+      const code = (error as { code?: string } | null)?.code;
+      if (code === 'IMPACT_NOT_FOUND') {
+        setState({ status: 'notFound' });
+      } else {
+        setState({ status: 'error' });
+      }
+    }
+  }, [slug]);
 
   useEffect(() => {
-    let isActive = true;
-    impactService
-      .getImpactStory(slug)
-      .then((result) => {
-        if (isActive) setPayload(result);
-      })
-      .catch(() => {
-        // API unavailable → previously approved static fallback renders.
-      });
-    return () => {
-      isActive = false;
-    };
-  }, [slug]);
+    void load();
+  }, [load]);
 
   const handleGalleryModeChange = (mode: GalleryMode) => {
     setGalleryMode(mode);
     persistGalleryMode(mode);
   };
 
-  if (!payload && !fallbackStory) {
+  if (state.status === 'loading') {
+    return <StorySkeleton />;
+  }
+
+  if (state.status === 'notFound') {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-white px-4 text-center font-['SF-Pro-Display',_sans-serif]">
         <TopBackNavigation label="Back to Impact" fallbackTo={ROUTES.IMPACT} />
@@ -104,41 +137,24 @@ export function ImpactStoryPage() {
     );
   }
 
-  if (!payload && fallbackStory) {
-    const paragraphs = fallbackStory.body;
-
+  if (state.status === 'error') {
     return (
-      <div className="min-h-screen bg-white font-['SF-Pro-Display',_sans-serif] text-neutral-900">
+      <div className="min-h-screen bg-white">
         <TopBackNavigation label="Back to Impact" fallbackTo={ROUTES.IMPACT} />
-        <article className="mx-auto max-w-3xl px-4 pt-24 sm:px-6 sm:pt-28">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-400">
-            {fallbackStory.category} · {fallbackStory.date} · {fallbackStory.readMinutes} min read
-          </p>
-          <h1 className="mt-3 text-3xl font-bold uppercase leading-tight tracking-tight sm:text-5xl">
-            {fallbackStory.title}
-          </h1>
-          <div className="mt-8 overflow-hidden rounded-2xl">
-            <img
-              src={fallbackStory.image}
-              alt={fallbackStory.alt}
-              className="aspect-[16/9] w-full object-cover"
-            />
-          </div>
-          <div className="mt-8 space-y-5 text-[15px] leading-relaxed text-neutral-700">
-            {paragraphs.map((paragraph) => (
-              <p key={paragraph}>{paragraph}</p>
-            ))}
-          </div>
-        </article>
-        <div className="mt-16 bg-white">
-          <HomepageFooter />
+        <div className="pt-16">
+          <CmsStatePanel
+            eyebrow="Impact"
+            title="Unable to load this story."
+            description="Please check your connection and try again."
+            actionLabel="Try Again"
+            onAction={() => void load()}
+          />
         </div>
       </div>
     );
   }
 
-  const story = payload!.story;
-  const blocks = payload!.blocks;
+  const { story, blocks, related } = state.payload;
   const imageBlocks: ImpactContentBlock[] = blocks.filter((block) => block.type === 'IMAGE');
   const textBlocks: ImpactContentBlock[] = blocks.filter((block) => block.type === 'TEXT');
   const showGalleryToggle = imageBlocks.length >= 2;
@@ -169,9 +185,11 @@ export function ImpactStoryPage() {
         <h1 className="mt-3 text-3xl font-bold uppercase leading-tight tracking-tight sm:text-5xl">
           {story.title}
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-neutral-500 sm:text-base">
-          {story.shortDescription}
-        </p>
+        {story.shortDescription && (
+          <p className="mt-3 text-sm leading-relaxed text-neutral-500 sm:text-base">
+            {story.shortDescription}
+          </p>
+        )}
 
         {story.coverImage && (
           <div className="mt-8 overflow-hidden rounded-2xl">
@@ -184,18 +202,15 @@ export function ImpactStoryPage() {
         )}
 
         {/* ─── CONTENT BLOCKS (in CMS order) ───────────────────────────── */}
-        <div className="mt-8 space-y-8">
-          {blocks.map((block) => {
-            if (block.type === 'TEXT') {
-              return (
-                <p key={block.id} className="text-[15px] leading-relaxed text-neutral-700">
-                  {block.text}
-                </p>
-              );
-            }
-            return null;
-          })}
-        </div>
+        {textBlocks.length > 0 && (
+          <div className="mt-8 space-y-8">
+            {textBlocks.map((block) => (
+              <p key={block.id} className="text-[15px] leading-relaxed text-neutral-700">
+                {block.text}
+              </p>
+            ))}
+          </div>
+        )}
 
         {/* ─── IMAGE DOCUMENTATION + GALLERY TOGGLE ─────────────────────── */}
         {showGalleryToggle && (
@@ -282,25 +297,29 @@ export function ImpactStoryPage() {
       </article>
 
       {/* ─── RELATED IMPACT ─────────────────────────────────────────────── */}
-      {payload!.related.length > 0 && (
+      {related.length > 0 && (
         <section className="mx-auto mt-16 max-w-5xl px-4 sm:px-6 lg:px-8">
           <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-neutral-400">
             Related Impact
           </p>
           <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-3">
-            {payload!.related.map((item) => (
+            {related.map((item) => (
               <Link
                 key={item.slug}
                 to={`/impact/${item.slug}`}
                 className="group block focus-visible:outline-none"
               >
                 <div className="relative aspect-[4/3] overflow-hidden rounded-2xl">
-                  <img
-                    src={item.coverImage}
-                    alt={item.title}
-                    loading="lazy"
-                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
+                  {item.coverImage ? (
+                    <img
+                      src={item.coverImage}
+                      alt={item.title}
+                      loading="lazy"
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-neutral-100" />
+                  )}
                   <div
                     aria-hidden="true"
                     className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/5"

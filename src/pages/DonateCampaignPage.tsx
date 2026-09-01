@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { HomepageFooter } from '../features/footer';
 import { TopBackNavigation } from '../features/navigation';
 import { ROUTES } from '../app/config/routes';
+import { SkeletonBlock, CmsStatePanel } from '../components/shared';
 import { donationService, type CampaignDetailPayload } from '../services/api/donationService';
 import { formatRupiah } from './DonatePage';
 
@@ -11,27 +12,34 @@ import { formatRupiah } from './DonatePage';
  *
  * CLOSED campaigns remain viewable as documentation (story, updates,
  * disbursements, partners, donations). No Donate Now CTA — historical
- * campaigns are not donation choices.
+ * campaigns are not donation choices. CMS content only, no static fallback.
  */
 export function DonateCampaignPage() {
   const { slug = '' } = useParams<{ slug: string }>();
   const [payload, setPayload] = useState<CampaignDetailPayload | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
+
+  const load = useCallback(async () => {
+    setPayload(null);
+    setNotFound(false);
+    setLoadFailed(false);
+    try {
+      const result = await donationService.getCampaign(slug);
+      setPayload(result);
+    } catch (error) {
+      const code = (error as { code?: string } | null)?.code;
+      if (code === 'DONATION_CAMPAIGN_NOT_FOUND') {
+        setNotFound(true);
+      } else {
+        setLoadFailed(true);
+      }
+    }
+  }, [slug]);
 
   useEffect(() => {
-    let isActive = true;
-    donationService
-      .getCampaign(slug)
-      .then((result) => {
-        if (isActive) setPayload(result);
-      })
-      .catch(() => {
-        if (isActive) setNotFound(true);
-      });
-    return () => {
-      isActive = false;
-    };
-  }, [slug]);
+    void load();
+  }, [load]);
 
   if (notFound) {
     return (
@@ -53,12 +61,38 @@ export function DonateCampaignPage() {
     );
   }
 
-  if (!payload) {
+  if (loadFailed) {
     return (
       <div className="min-h-screen bg-white">
         <TopBackNavigation label="Back to Donate" fallbackTo={ROUTES.DONATE} />
-        <div className="flex min-h-[60vh] items-center justify-center text-sm text-neutral-400">
-          Loading campaign…
+        <div className="pt-16">
+          <CmsStatePanel
+            eyebrow="Donate"
+            title="Unable to load this campaign."
+            description="Please check your connection and try again."
+            actionLabel="Try Again"
+            onAction={() => void load()}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (!payload) {
+    return (
+      <div className="min-h-screen bg-white font-['SF-Pro-Display',_sans-serif]">
+        <TopBackNavigation label="Back to Donate" fallbackTo={ROUTES.DONATE} />
+        <div className="mx-auto max-w-3xl px-4 pt-28 sm:px-6 sm:pt-32">
+          <SkeletonBlock className="h-6 w-24 rounded-full" />
+          <SkeletonBlock className="mt-4 h-10 w-3/4 max-w-xl" />
+          <SkeletonBlock className="mt-3 h-4 w-full max-w-md" />
+          <SkeletonBlock className="mt-8 aspect-[16/9] w-full rounded-2xl" />
+          <SkeletonBlock className="mt-8 h-4 w-full" />
+          <SkeletonBlock className="mt-3 h-4 w-full" />
+          <SkeletonBlock className="mt-3 h-4 w-2/3" />
+        </div>
+        <div className="mt-16 bg-white pb-[100px] lg:pb-0">
+          <HomepageFooter />
         </div>
       </div>
     );

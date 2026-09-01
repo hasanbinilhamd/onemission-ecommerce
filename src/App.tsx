@@ -12,6 +12,7 @@ import { EarlyAccessGate } from './features/early-access';
 import { getEarlyAccessStatus } from './services/api/earlyAccessService';
 import { prepareInitialApplicationExperience, type InitialPreloadProgressHandler } from './features/homepage/initialHomepageResources';
 import { NavigationThemeProvider, RouteScrollRestoration, type NavigationTheme } from './features/navigation';
+import { HomeEntryGate } from './features/entry-gateway';
 
 const MissionPage = lazy(() => import('./pages/MissionPage').then((module) => ({ default: module.MissionPage })));
 const ImpactPage = lazy(() => import('./pages/ImpactPage').then((module) => ({ default: module.ImpactPage })));
@@ -278,7 +279,7 @@ function App() {
                 {/* Early Access now protects only the Shop/ecommerce experience.
                     Movement pages stay public while Shop keeps its existing gate. */}
                 <Route element={<MovementLayout />}>
-                  <Route path="/" element={<MainLayout><MovementHomePage /></MainLayout>} />
+                  <Route path="/" element={<MainLayout><HomeEntryGate><MovementHomePage /></HomeEntryGate></MainLayout>} />
                   <Route path="/mission" element={<MissionPage />} />
                   <Route path="/impact" element={<ImpactPage />} />
                   <Route path="/impact/:slug" element={<ImpactStoryPage />} />
@@ -303,7 +304,7 @@ function App() {
             <Route element={<MovementLayout />}>
               <Route
                 path="/"
-                element={<MainLayout><MovementHomePage /></MainLayout>}
+                element={<MainLayout><HomeEntryGate><MovementHomePage /></HomeEntryGate></MainLayout>}
               />
               <Route path="/mission" element={<MissionPage />} />
               <Route path="/shop" element={<MainLayout>{renderShopPage()}</MainLayout>} />

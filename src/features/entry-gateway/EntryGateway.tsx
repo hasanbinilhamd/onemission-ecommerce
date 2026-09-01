@@ -1,20 +1,28 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ArrowRight } from 'lucide-react';
 import { env } from '../../app/config/env';
 
 /**
- * Entry Gateway — first-visit split experience.
+ * Entry Gateway — TRUE full-screen entry gate.
  *
- * Full-screen brand gateway shown once (localStorage "onemission_entry_seen")
- * before the Home experience. Two paths:
- *   JOIN THE MISSION → /
+ * Shown once per browser (localStorage "onemission_entry_seen") before the
+ * Home experience. While active, the gateway is rendered as a fixed overlay
+ * ABOVE the entire application shell (navbar, bottom nav, search, cart,
+ * account, page content) and blocks all underlying interaction:
+ *   - pointer events are covered by the overlay itself
+ *   - the app root is marked `inert` so keyboard focus cannot escape
+ *   - body scrolling is locked while the gate is open
+ *
+ * Two paths:
+ *   ENTER ONEMISSION → the complete One Mission website (Home at /)
  *   SHOP ON SHOPEE   → configured VITE_SHOPEE_STORE_URL (single source of truth)
  *
- * Desktop: 50/50 editorial split with a subtle hover expansion (55/45) via CSS
- * transitions. Mobile: stacked large panels, tap to navigate (no hover).
+ * Desktop: 50/50 editorial split, subtle hover expansion (56/44) via CSS.
+ * Mobile: stacked large panels, tap to navigate (no hover simulation).
  *
- * No CMS, no analytics, no new dependencies. Left panel reuses an existing
- * silhouette asset (no visible faces/eyes).
+ * Dev testing: remove localStorage["onemission_entry_seen"] and refresh.
+ * No CMS, no analytics, no new dependencies.
  */
 
 const ENTRY_SEEN_KEY = 'onemission_entry_seen';
@@ -49,13 +57,43 @@ export function HomeEntryGate({ children }: HomeEntryGateProps) {
   const [showGateway, setShowGateway] = useState(() => !readEntryGatewaySeen());
   const [shopeeMissing, setShopeeMissing] = useState(false);
 
+  // While the gate is open, the underlying website is completely inert:
+  // pointer events are covered by the fixed overlay, the app root is marked
+  // inert (keyboard/a11y), and body scrolling is locked.
+  useEffect(() => {
+    if (!showGateway) return undefined;
+
+    const rootElement = document.getElementById('root');
+    if (rootElement) {
+      try {
+        (rootElement as HTMLElement & { inert?: boolean }).inert = true;
+      } catch {
+        rootElement.setAttribute('inert', '');
+      }
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      if (rootElement) {
+        try {
+          (rootElement as HTMLElement & { inert?: boolean }).inert = false;
+        } catch {
+          rootElement.removeAttribute('inert');
+        }
+      }
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [showGateway]);
+
   if (!showGateway) {
     return <>{children}</>;
   }
 
   const shopeeUrl = env.shopeeStoreUrl.trim();
 
-  const handleJoinMission = () => {
+  const handleEnterOnemission = () => {
     persistEntryGatewaySeen();
     setShowGateway(false);
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
@@ -70,17 +108,27 @@ export function HomeEntryGate({ children }: HomeEntryGateProps) {
     persistEntryGatewaySeen();
   };
 
-  return <EntryGateway onJoinMission={handleJoinMission} onShopOnShopee={handleShopOnShopee} shopeeUrl={shopeeUrl} shopeeMissing={shopeeMissing} />;
+  const gateway = (
+    <EntryGateway
+      onEnterOnemission={handleEnterOnemission}
+      onShopOnShopee={handleShopOnShopee}
+      shopeeUrl={shopeeUrl}
+      shopeeMissing={shopeeMissing}
+    />
+  );
+
+  if (typeof document === 'undefined') return null;
+  return createPortal(gateway, document.body);
 }
 
 interface EntryGatewayProps {
-  onJoinMission: () => void;
+  onEnterOnemission: () => void;
   onShopOnShopee: (event: React.MouseEvent<HTMLAnchorElement>) => void;
   shopeeUrl: string;
   shopeeMissing: boolean;
 }
 
-function EntryGateway({ onJoinMission, onShopOnShopee, shopeeUrl, shopeeMissing }: EntryGatewayProps) {
+function EntryGateway({ onEnterOnemission, onShopOnShopee, shopeeUrl, shopeeMissing }: EntryGatewayProps) {
   const [hoveredPanel, setHoveredPanel] = useState<'left' | 'right' | null>(null);
   const [isDesktop, setIsDesktop] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches,
@@ -99,31 +147,34 @@ function EntryGateway({ onJoinMission, onShopOnShopee, shopeeUrl, shopeeMissing 
 
   return (
     <div
-      className="min-h-dvh w-full bg-white font-['SF-Pro-Display',_sans-serif]"
-      style={{ minHeight: '100dvh' }}
+      className="fixed inset-0 z-[9999] flex flex-col bg-white font-['SF-Pro-Display',_sans-serif]"
+      style={{ height: '100dvh' }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="One Mission entry"
     >
-      {/* ─── BRAND HEADER ─────────────────────────────────────────────── */}
-      <div
-        className="relative z-10 flex items-baseline gap-3 px-5 py-4 lg:absolute lg:inset-x-0 lg:top-0 lg:px-10 lg:py-5 lg:[mix-blend-mode:difference]"
-      >
-        <span className="text-sm font-bold uppercase tracking-[0.28em] text-neutral-900 lg:text-white">
-          One Mission
-        </span>
-        <span className="hidden text-[10px] font-semibold uppercase tracking-[0.32em] text-neutral-400 sm:inline lg:text-white/80">
+      {/* ─── BRAND MARK (navbar is hidden while the gate is open) ──────── */}
+      <div className="pointer-events-none absolute left-5 top-5 z-30 flex items-center gap-3 lg:left-8 lg:top-6">
+        <img
+          src="/white_om_logo.png"
+          alt="One Mission"
+          className="h-7 w-auto lg:h-8 [mix-blend-mode:difference]"
+        />
+        <span className="hidden text-[10px] font-semibold uppercase tracking-[0.32em] text-neutral-400 sm:inline lg:text-white/70 lg:[mix-blend-mode:difference]">
           Values In Motion.
         </span>
       </div>
 
       {/* ─── SPLIT PANELS ─────────────────────────────────────────────── */}
-      <div className="flex min-h-dvh flex-col lg:flex-row" style={{ minHeight: '100dvh' }}>
-        {/* LEFT — JOIN THE MISSION (dark, image-driven) */}
+      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+        {/* LEFT — ENTER ONEMISSION (dark, image-driven, brand) */}
         <button
           type="button"
-          onClick={onJoinMission}
+          onClick={onEnterOnemission}
           onMouseEnter={() => setHoveredPanel('left')}
           onMouseLeave={() => setHoveredPanel(null)}
-          aria-label="Join the Mission — enter the One Mission website"
-          className="group relative flex min-h-[52dvh] w-full flex-col justify-end overflow-hidden bg-[#0A0A0A] p-6 text-left text-white transition-all duration-500 ease-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-white sm:p-10 lg:min-h-0 lg:p-14"
+          aria-label="Enter Onemission — open the complete One Mission website"
+          className="group relative flex w-full flex-1 flex-col justify-end overflow-hidden bg-[#0A0A0A] p-6 text-left text-white transition-all duration-500 ease-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-white sm:p-10 lg:p-14"
           style={{ flexBasis: isDesktop ? leftBasis : 'auto' }}
         >
           <div
@@ -138,44 +189,42 @@ function EntryGateway({ onJoinMission, onShopOnShopee, shopeeUrl, shopeeMissing 
 
           <div className="relative z-10 max-w-md">
             <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-white/60">
-              The Movement
+              Onemission Exclusive
             </p>
             <h2 className="mt-3 text-4xl font-bold uppercase leading-[0.95] tracking-tight sm:text-5xl lg:text-6xl">
-              Join The
-              <span className="block">Mission</span>
+              Enter
+              <span className="block">Onemission</span>
             </h2>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/80">
-              Be part of what we're building.
-              <span className="block">Move with purpose.</span>
+              The movement, the stories, and exclusive pieces you won't find everywhere.
             </p>
             <span className="mt-8 inline-flex items-center gap-3 rounded-full bg-white px-7 py-3.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-900 transition-transform duration-300 group-hover:scale-[1.03]">
-              Enter The Mission
+              Enter Onemission
               <ArrowRight size={15} strokeWidth={2.5} />
             </span>
           </div>
         </button>
 
-        {/* RIGHT — SHOP ON SHOPEE (light, product-oriented) */}
+        {/* RIGHT — SHOP ON SHOPEE (light, commerce-oriented) */}
         <a
           href={shopeeUrl || undefined}
           onClick={onShopOnShopee}
           onMouseEnter={() => setHoveredPanel('right')}
           onMouseLeave={() => setHoveredPanel(null)}
           aria-label="Shop on Shopee — open the official One Mission Shopee store"
-          className="group relative flex min-h-[48dvh] w-full flex-col justify-end bg-white p-6 text-left text-neutral-900 transition-all duration-500 ease-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-neutral-900 sm:p-10 lg:min-h-0 lg:p-14"
+          className="group relative flex w-full flex-1 flex-col justify-end bg-white p-6 text-left text-neutral-900 transition-all duration-500 ease-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-neutral-900 sm:p-10 lg:p-14"
           style={{ flexBasis: isDesktop ? rightBasis : 'auto' }}
         >
           <div className="relative z-10 max-w-md">
             <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-neutral-400">
-              The Gear
+              Official Store
             </p>
             <h2 className="mt-3 text-4xl font-bold uppercase leading-[0.95] tracking-tight sm:text-5xl lg:text-6xl">
               Shop On
               <span className="block">Shopee</span>
             </h2>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-neutral-500">
-              Wear the movement.
-              <span className="block">Explore our latest gear.</span>
+              Explore our everyday collection through the One Mission official Shopee store.
             </p>
             <span className="mt-8 inline-flex items-center gap-3 rounded-full bg-neutral-900 px-7 py-3.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-white transition-transform duration-300 group-hover:scale-[1.03]">
               Shop Now

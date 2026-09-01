@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, ChevronDown, Instagram, Loader2, Music2, Youtube } from 'lucide-react';
+import { AlertCircle, ArrowUpRight, CheckCircle2, ChevronDown, Instagram, Loader2, Music2, Youtube } from 'lucide-react';
 import {
   useCallback,
   useEffect,
@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '../../app/config/routes';
+import { env } from '../../app/config/env';
 import { NewsletterSubscribeError, subscribeNewsletter } from '../../services/api/newsletterService';
 
 type FooterLinkItem = {
@@ -253,6 +254,91 @@ function isValidNewsletterEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+const SHOPEE_ORANGE = '#EE4D2D';
+
+/**
+ * Recognizable Shopee wordmark (inline SVG) — the footer destination keeps
+ * the brand treatment without needing a new image asset.
+ */
+function ShopeeWordmark() {
+  return (
+    <svg
+      viewBox="0 0 76 24"
+      role="img"
+      aria-label="Shopee"
+      style={{ width: '76px', height: '24px', display: 'block' }}
+    >
+      <text
+        x="0"
+        y="19"
+        fill={SHOPEE_ORANGE}
+        fontFamily="'SF-Pro-Display', Arial, sans-serif"
+        fontSize="20"
+        fontWeight="800"
+        letterSpacing="-0.5"
+      >
+        Shopee
+      </text>
+    </svg>
+  );
+}
+
+/**
+ * Compact Shopee marketplace destination for the footer.
+ * Uses the SAME URL source of truth as the Entry Gateway (env.shopeeStoreUrl).
+ * Hidden entirely when the URL is not configured — no broken link is rendered.
+ */
+function ShopeeDestination() {
+  const shopeeUrl = env.shopeeStoreUrl.trim();
+  if (!shopeeUrl) return null;
+
+  return (
+    <a
+      href={shopeeUrl}
+      target="_blank"
+      rel="noreferrer"
+      aria-label="Shop One Mission products on Shopee."
+      title="Shop One Mission products on Shopee"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '14px',
+        width: '100%',
+        maxWidth: '420px',
+        padding: '14px 18px',
+        borderRadius: '16px',
+        border: `1px solid ${FOOTER_BORDER}`,
+        backgroundColor: 'rgba(255,255,255,0.03)',
+        color: FOOTER_TEXT,
+        textDecoration: 'none',
+        transition: 'border-color 180ms ease, background-color 180ms ease',
+      }}
+      onMouseEnter={(event) => {
+        event.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)';
+        event.currentTarget.style.backgroundColor = FOOTER_HOVER;
+      }}
+      onMouseLeave={(event) => {
+        event.currentTarget.style.borderColor = FOOTER_BORDER;
+        event.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)';
+      }}
+    >
+      <ShopeeWordmark />
+      <span
+        style={{
+          flex: 1,
+          fontSize: '13px',
+          fontWeight: 600,
+          letterSpacing: '0.14em',
+          textTransform: 'uppercase',
+        }}
+      >
+        Shop On Shopee
+      </span>
+      <ArrowUpRight size={16} strokeWidth={2} style={{ color: FOOTER_MUTED }} />
+    </a>
+  );
+}
+
 export function HomepageFooter() {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -407,6 +493,8 @@ export function HomepageFooter() {
                 So, Let's Bring Back The Value, Because Muslim Values Matter. Barakallahu fiikum.
               </p>
             </div>
+
+            <ShopeeDestination />
 
             <div className="homepage-footer-desktop-links gap-12 sm:grid-cols-2 xl:grid-cols-3" style={{ alignItems: 'start' }}>
               <FooterColumn title="Navigation">

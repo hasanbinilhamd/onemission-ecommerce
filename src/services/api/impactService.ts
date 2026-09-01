@@ -122,9 +122,15 @@ async function fetchJson<T>(path = '', init?: RequestInit): Promise<T> {
 }
 
 export const impactService = {
-  async getImpactList(category: string, offset = 0, limit = 4): Promise<ImpactListPayload> {
+  async getImpactList(
+    status: string,
+    sort: string,
+    offset = 0,
+    limit = 12,
+  ): Promise<ImpactListPayload> {
     const query = new URLSearchParams({
-      category,
+      status,
+      sort,
       offset: String(offset),
       limit: String(limit),
     });

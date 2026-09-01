@@ -52,8 +52,8 @@ function statusLabel(status: ImpactStoryStatus): string {
 }
 
 function statusBadgeClass(status: ImpactStoryStatus): string {
-  if (status === 'NOW_LIVE') return 'bg-neutral-900 text-white';
-  if (status === 'COMING_SOON') return 'bg-neutral-200 text-neutral-700';
+  if (status === 'NOW_LIVE') return 'bg-emerald-100 text-emerald-900';
+  if (status === 'COMING_SOON') return 'bg-amber-100 text-amber-900';
   return 'bg-neutral-200 text-neutral-700';
 }
 

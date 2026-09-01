@@ -183,18 +183,6 @@ export function MovementHomePage() {
               {content.home.ctaLabel}
               <ArrowRight size={18} strokeWidth={2.5} />
             </Link>
-
-            <div className="mt-12 flex items-center gap-4">
-              <div className="flex -space-x-3">
-                <div className="w-10 h-10 rounded-full border-2 border-[#0A0A0A] bg-neutral-800" />
-                <div className="w-10 h-10 rounded-full border-2 border-[#0A0A0A] bg-neutral-700" />
-                <div className="w-10 h-10 rounded-full border-2 border-[#0A0A0A] bg-neutral-600" />
-              </div>
-              <div>
-                <p className="font-bold text-lg leading-none">{content.home.socialProofNumber}</p>
-                <p className="text-xs text-neutral-400">{content.home.socialProofText}</p>
-              </div>
-            </div>
           </div>
         </section>
 
@@ -224,9 +212,6 @@ export function MovementHomePage() {
                     {cardNumber}
                   </div>
                   <div className="absolute inset-0 p-5 sm:p-6 flex flex-col justify-end sm:justify-between z-20 text-white">
-                    <div className="hidden sm:flex justify-between items-start">
-                      <span className="text-xs font-semibold tracking-widest text-white/80">{cardNumber}</span>
-                    </div>
                     <div className="flex justify-between items-end gap-4">
                       <div>
                         <h3 className="text-lg sm:text-2xl font-bold uppercase tracking-tight mb-1 sm:mb-2 leading-tight">

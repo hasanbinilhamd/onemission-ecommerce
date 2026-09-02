@@ -262,6 +262,36 @@ function EntryGateway({
             }}
           />
 
+          {/* "VALUES MATTER" background typography — the exact Shop hero
+              treatment (zIndex 2: behind the model, above the gradient). */}
+          <div
+            className="absolute inset-x-0 flex items-center justify-center pointer-events-none select-none"
+            style={{
+              zIndex: 2,
+              top: isMobile ? "10%" : "18%",
+              fontFamily: "'SF-Pro-Display', sans-serif",
+              fontSize: isMobile ? "clamp(120px, 36vw, 170px)" : "clamp(70px, 19vw, 380px)",
+              fontWeight: 400,
+              color: "#ffffff",
+              opacity: 0.6,
+              lineHeight: isMobile ? 0.68 : 1,
+              textTransform: "lowercase",
+              letterSpacing: "-0.08em",
+              whiteSpace: "nowrap",
+              padding: "0 10px",
+            }}
+          >
+            {isMobile ? (
+              <>
+                values
+                <br />
+                matter
+              </>
+            ) : (
+              "VALUES MATTER"
+            )}
+          </div>
+
           <HeroCarouselImages
             items={heroItems}
             activeIndex={resolvedActiveIndex}

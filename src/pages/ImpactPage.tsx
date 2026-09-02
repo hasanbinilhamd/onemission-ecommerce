@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, SkeletonBlock, CmsStatePanel } from '../components/shared';
+import { Button, SkeletonBlock, CmsStatePanel, ComingSoonPage } from '../components/shared';
 import { HomepageFooter } from '../features/footer';
 import {
   impactService,
@@ -34,7 +34,7 @@ type SortMode = (typeof SORT_OPTIONS)[number];
 type ImpactState =
   | { status: 'loading' }
   | { status: 'error' }
-  | { status: 'success'; settings: ImpactPageSettings; items: ImpactListItem[]; total: number; isCmsActive: boolean };
+  | { status: 'success'; settings: ImpactPageSettings; items: ImpactListItem[]; total: number; isCmsActive: boolean; pageAvailability: 'AVAILABLE' | 'COMING_SOON' };
 
 function statusLabel(status: ImpactStoryStatus): string {
   if (status === 'NOW_LIVE') return 'NOW LIVE';
@@ -115,6 +115,7 @@ export function ImpactPage() {
           items: result.items ?? [],
           total: result.total ?? 0,
           isCmsActive: true,
+          pageAvailability: result.pageAvailability ?? 'AVAILABLE',
         });
       } else {
         setState((current) => {
@@ -181,6 +182,22 @@ export function ImpactPage() {
             }}
           />
         </div>
+        <div className="bg-white pb-[100px] lg:pb-0">
+          <HomepageFooter />
+        </div>
+      </div>
+    );
+  }
+
+  // Page-level CMS availability — independent from per-story statuses.
+  if (state.pageAvailability === 'COMING_SOON') {
+    return (
+      <div className="min-h-screen bg-white">
+        <ComingSoonPage
+          eyebrow="Impact"
+          title="We're Documenting The Impact."
+          description="The stories of what we're building together are coming soon."
+        />
         <div className="bg-white pb-[100px] lg:pb-0">
           <HomepageFooter />
         </div>

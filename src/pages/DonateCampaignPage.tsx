@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { HomepageFooter } from '../features/footer';
 import { TopBackNavigation } from '../features/navigation';
 import { ROUTES } from '../app/config/routes';
-import { SkeletonBlock, CmsStatePanel } from '../components/shared';
+import { SkeletonBlock, CmsStatePanel, ComingSoonPage } from '../components/shared';
 import { donationService, type CampaignDetailPayload } from '../services/api/donationService';
 import { formatRupiah } from './DonatePage';
 
@@ -98,7 +98,25 @@ export function DonateCampaignPage() {
     );
   }
 
-  const { campaign, story, updates, disbursements, partners } = payload;
+  const { campaign, story, updates, disbursements, partners, pageAvailability } = payload;
+
+  // Page-level CMS availability gates the ENTIRE Donate section.
+  if (pageAvailability === 'COMING_SOON') {
+    return (
+      <div className="min-h-screen bg-white">
+        <TopBackNavigation label="Back to Donate" fallbackTo={ROUTES.DONATE} />
+        <ComingSoonPage
+          eyebrow="Donate"
+          title="The Next Cause Is Taking Shape."
+          description="We're preparing the next opportunity to give with purpose."
+        />
+        <div className="bg-white pb-[100px] lg:pb-0">
+          <HomepageFooter />
+        </div>
+      </div>
+    );
+  }
+
   const storyParagraphs = String(story.content || '')
     .split(/\n\s*\n/)
     .map((paragraph) => paragraph.trim())

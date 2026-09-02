@@ -35,6 +35,8 @@ export interface ImpactListPayload {
   items: ImpactListItem[];
   total: number;
   hasMore: boolean;
+  /** CMS section availability: AVAILABLE | COMING_SOON. */
+  pageAvailability: 'AVAILABLE' | 'COMING_SOON';
 }
 
 export interface ImpactContentBlock {
@@ -59,6 +61,8 @@ export interface ImpactDetailPayload {
   story: ImpactListItem;
   blocks: ImpactContentBlock[];
   related: ImpactRelatedItem[];
+  /** CMS section availability: AVAILABLE | COMING_SOON. */
+  pageAvailability: 'AVAILABLE' | 'COMING_SOON';
 }
 
 export class ImpactServiceError extends Error {

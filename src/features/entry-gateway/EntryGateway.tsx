@@ -39,24 +39,23 @@ import {
  * carousel.
  */
 
-const ENTRY_SEEN_KEY = "onemission_entry_seen";
+/**
+ * In-memory entry state.
+ *
+ * The gateway is evaluated on EVERY full load of the root route (refresh →
+ * module reloads → flag resets → gateway appears again), but survives SPA
+ * navigation within the same page session, so moving between internal
+ * routes never re-triggers the gateway. No localStorage/sessionStorage —
+ * deliberately no persistence.
+ */
+let entryGatewayShown = false;
 
-function readEntryGatewaySeen(): boolean {
-  if (typeof window === "undefined") return true;
-  try {
-    return window.localStorage.getItem(ENTRY_SEEN_KEY) === "true";
-  } catch {
-    return true;
-  }
+function markEntryGatewayShown() {
+  entryGatewayShown = true;
 }
 
-function persistEntryGatewaySeen() {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(ENTRY_SEEN_KEY, "true");
-  } catch {
-    // Persistence is best-effort; the gateway may re-appear if storage fails.
-  }
+function shouldShowEntryGateway(): boolean {
+  return !entryGatewayShown;
 }
 
 interface HomeEntryGateProps {
@@ -68,7 +67,7 @@ interface HomeEntryGateProps {
  * /donate never pass through here.
  */
 export function HomeEntryGate({ children }: HomeEntryGateProps) {
-  const [showGateway, setShowGateway] = useState(() => !readEntryGatewaySeen());
+  const [showGateway, setShowGateway] = useState(() => shouldShowEntryGateway());
   const [shopeeMissing, setShopeeMissing] = useState(false);
 
   useEffect(() => {
@@ -105,7 +104,7 @@ export function HomeEntryGate({ children }: HomeEntryGateProps) {
   const shopeeUrl = env.shopeeStoreUrl.trim();
 
   const handleEnterOnemission = () => {
-    persistEntryGatewaySeen();
+    markEntryGatewayShown();
     setShowGateway(false);
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   };
@@ -116,7 +115,7 @@ export function HomeEntryGate({ children }: HomeEntryGateProps) {
       setShopeeMissing(true);
       return;
     }
-    persistEntryGatewaySeen();
+    markEntryGatewayShown();
   };
 
   if (typeof document === "undefined") return null;

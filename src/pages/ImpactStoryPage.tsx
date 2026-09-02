@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { LayoutGrid, Rows3, Columns2 } from 'lucide-react';
-import { SkeletonBlock, CmsStatePanel } from '../components/shared';
+import { SkeletonBlock, CmsStatePanel, ComingSoonPage } from '../components/shared';
 import { HomepageFooter } from '../features/footer';
 import { TopBackNavigation } from '../features/navigation';
 import { ROUTES } from '../app/config/routes';
@@ -154,7 +154,25 @@ export function ImpactStoryPage() {
     );
   }
 
-  const { story, blocks, related } = state.payload;
+  const { story, blocks, related, pageAvailability } = state.payload;
+
+  // Page-level CMS availability gates the ENTIRE Impact section.
+  if (pageAvailability === 'COMING_SOON') {
+    return (
+      <div className="min-h-screen bg-white">
+        <TopBackNavigation label="Back to Impact" fallbackTo={ROUTES.IMPACT} />
+        <ComingSoonPage
+          eyebrow="Impact"
+          title="We're Documenting The Impact."
+          description="The stories of what we're building together are coming soon."
+        />
+        <div className="bg-white pb-[100px] lg:pb-0">
+          <HomepageFooter />
+        </div>
+      </div>
+    );
+  }
+
   const imageBlocks: ImpactContentBlock[] = blocks.filter((block) => block.type === 'IMAGE');
   const textBlocks: ImpactContentBlock[] = blocks.filter((block) => block.type === 'TEXT');
   const showGalleryToggle = imageBlocks.length >= 2;

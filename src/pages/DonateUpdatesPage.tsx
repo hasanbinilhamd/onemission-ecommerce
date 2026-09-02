@@ -1,7 +1,7 @@
 import { HomepageFooter } from '../features/footer';
 import { TopBackNavigation } from '../features/navigation';
 import { ROUTES } from '../app/config/routes';
-import { SkeletonBlock, CmsStatePanel } from '../components/shared';
+import { SkeletonBlock, CmsStatePanel, ComingSoonPage } from '../components/shared';
 import { useDonateCms } from '../features/donate/donateCms';
 
 /**
@@ -39,6 +39,23 @@ export function DonateUpdatesPage() {
             actionLabel="Try Again"
             onAction={reload}
           />
+        </div>
+      </div>
+    );
+  }
+
+  // Page-level CMS availability — independent from campaign status.
+  if (payload?.pageAvailability === 'COMING_SOON') {
+    return (
+      <div className="min-h-screen bg-white">
+        <TopBackNavigation label="Back" fallbackTo={ROUTES.DONATE} />
+        <ComingSoonPage
+          eyebrow="Donate"
+          title="The Next Cause Is Taking Shape."
+          description="We're preparing the next opportunity to give with purpose."
+        />
+        <div className="bg-white pb-[100px] lg:pb-0">
+          <HomepageFooter />
         </div>
       </div>
     );

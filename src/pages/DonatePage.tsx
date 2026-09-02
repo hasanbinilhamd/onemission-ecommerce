@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, ArrowRight } from 'lucide-react';
-import { Button, Input, SkeletonBlock, CmsStatePanel } from '../components/shared';
+import { Button, Input, SkeletonBlock, CmsStatePanel, ComingSoonPage } from '../components/shared';
 import { HomepageFooter } from '../features/footer';
 import { ROUTES } from '../app/config/routes';
 import { openMidtransSnap } from '../services/payment/midtransSnap';
@@ -213,6 +213,22 @@ export function DonatePage() {
             onAction={() => void load()}
           />
         </div>
+        <div className="bg-white pb-[100px] lg:pb-0">
+          <HomepageFooter />
+        </div>
+      </div>
+    );
+  }
+
+  // Page-level CMS availability — independent from campaign status.
+  if (payload?.pageAvailability === 'COMING_SOON') {
+    return (
+      <div className="min-h-screen bg-white">
+        <ComingSoonPage
+          eyebrow="Donate"
+          title="The Next Cause Is Taking Shape."
+          description="We're preparing the next opportunity to give with purpose."
+        />
         <div className="bg-white pb-[100px] lg:pb-0">
           <HomepageFooter />
         </div>

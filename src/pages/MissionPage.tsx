@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowRight, BookOpen, Check, Dumbbell, Sprout, Trophy, type LucideIcon } from 'lucide-react';
-import { Button, SkeletonBlock, CmsStatePanel } from '../components/shared';
+import { Button, SkeletonBlock, CmsStatePanel, ComingSoonPage } from '../components/shared';
 import { HomepageFooter } from '../features/footer';
 import {
   missionService,
@@ -184,6 +184,22 @@ export function MissionPage() {
   }
 
   const mission = payload?.mission ?? null;
+
+  // Page-level CMS availability — independent from mission/voting content.
+  if (payload?.pageAvailability === 'COMING_SOON') {
+    return (
+      <div className="min-h-screen bg-white">
+        <ComingSoonPage
+          eyebrow="Mission"
+          title="The Next Mission Is Taking Shape."
+          description="We're preparing something worth moving for."
+        />
+        <div className="bg-white pb-[100px] lg:pb-0">
+          <HomepageFooter />
+        </div>
+      </div>
+    );
+  }
 
   if (!mission) {
     return (

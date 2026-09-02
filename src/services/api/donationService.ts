@@ -51,6 +51,8 @@ export interface DonatePayload {
   highlights: DonateHighlight[];
   partners: DonatePartner[];
   pastCampaigns: DonateCampaignSummary[];
+  /** CMS section availability: AVAILABLE | COMING_SOON. */
+  pageAvailability: 'AVAILABLE' | 'COMING_SOON';
 }
 
 export interface DonationListItem {
@@ -93,6 +95,8 @@ export interface CampaignDetailPayload {
   disbursements: CampaignDisbursementItem[];
   partners: DonatePartner[];
   isActive: boolean;
+  /** CMS section availability: AVAILABLE | COMING_SOON. */
+  pageAvailability: 'AVAILABLE' | 'COMING_SOON';
 }
 
 export interface CreateDonationInput {

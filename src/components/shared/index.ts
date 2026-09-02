@@ -3,6 +3,8 @@ export type { ButtonVariant, ButtonSize } from './Button';
 
 export { SkeletonBlock, CmsStatePanel } from './CmsStates';
 
+export { ComingSoonPage, PageAvailabilityGate } from './ComingSoonPage';
+
 export { Input } from './Input';
 export { Select } from './Select';
 

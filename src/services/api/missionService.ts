@@ -36,12 +36,14 @@ export interface MissionResultRow {
 }
 
 export interface MissionPayload {
-  mission: MissionPageContent;
+  mission: MissionPageContent | null;
   options: MissionOptionPayload[];
   results: MissionResultRow[];
   totalVotes: number;
   /** Whether the current voter identity (authenticated or anonymous cookie) already voted. */
   hasVoted: boolean;
+  /** CMS section availability: AVAILABLE | COMING_SOON. */
+  pageAvailability: 'AVAILABLE' | 'COMING_SOON';
 }
 
 export class MissionServiceError extends Error {

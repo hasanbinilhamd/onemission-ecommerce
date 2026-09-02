@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react';
-import { env } from '../../app/config/env';
-import { websiteService, type WebsiteHeroItem } from '../../services/api/websiteService';
-import { createHeroGradient } from '../hero/theme';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
+import { env } from "../../app/config/env";
+import {
+  websiteService,
+  type WebsiteHeroItem,
+} from "../../services/api/websiteService";
+import { createHeroGradient } from "../hero/theme";
 import {
   GRAIN_SVG,
   HERO_GRADIENTS,
@@ -12,7 +15,7 @@ import {
   mapHeroItems,
   useHeroGesture,
   type Direction,
-} from '../hero/carousel';
+} from "../hero/carousel";
 
 /**
  * Entry Gateway — the Shop hero adapted as the opening screen.
@@ -36,21 +39,21 @@ import {
  * carousel.
  */
 
-const ENTRY_SEEN_KEY = 'onemission_entry_seen';
+const ENTRY_SEEN_KEY = "onemission_entry_seen";
 
 function readEntryGatewaySeen(): boolean {
-  if (typeof window === 'undefined') return true;
+  if (typeof window === "undefined") return true;
   try {
-    return window.localStorage.getItem(ENTRY_SEEN_KEY) === 'true';
+    return window.localStorage.getItem(ENTRY_SEEN_KEY) === "true";
   } catch {
     return true;
   }
 }
 
 function persistEntryGatewaySeen() {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(ENTRY_SEEN_KEY, 'true');
+    window.localStorage.setItem(ENTRY_SEEN_KEY, "true");
   } catch {
     // Persistence is best-effort; the gateway may re-appear if storage fails.
   }
@@ -71,24 +74,24 @@ export function HomeEntryGate({ children }: HomeEntryGateProps) {
   useEffect(() => {
     if (!showGateway) return undefined;
 
-    const rootElement = document.getElementById('root');
+    const rootElement = document.getElementById("root");
     if (rootElement) {
       try {
         (rootElement as HTMLElement & { inert?: boolean }).inert = true;
       } catch {
-        rootElement.setAttribute('inert', '');
+        rootElement.setAttribute("inert", "");
       }
     }
 
     const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = "hidden";
 
     return () => {
       if (rootElement) {
         try {
           (rootElement as HTMLElement & { inert?: boolean }).inert = false;
         } catch {
-          rootElement.removeAttribute('inert');
+          rootElement.removeAttribute("inert");
         }
       }
       document.body.style.overflow = previousOverflow;
@@ -104,7 +107,7 @@ export function HomeEntryGate({ children }: HomeEntryGateProps) {
   const handleEnterOnemission = () => {
     persistEntryGatewaySeen();
     setShowGateway(false);
-    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   };
 
   const handleShopOnShopee = (event: React.MouseEvent<HTMLAnchorElement>) => {
@@ -116,7 +119,7 @@ export function HomeEntryGate({ children }: HomeEntryGateProps) {
     persistEntryGatewaySeen();
   };
 
-  if (typeof document === 'undefined') return null;
+  if (typeof document === "undefined") return null;
   return createPortal(
     <EntryGateway
       onEnterOnemission={handleEnterOnemission}
@@ -135,10 +138,15 @@ interface EntryGatewayProps {
   shopeeMissing: boolean;
 }
 
-function EntryGateway({ onEnterOnemission, onShopOnShopee, shopeeUrl, shopeeMissing }: EntryGatewayProps) {
+function EntryGateway({
+  onEnterOnemission,
+  onShopOnShopee,
+  shopeeUrl,
+  shopeeMissing,
+}: EntryGatewayProps) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [isMobile, setIsMobile] = useState(
-    () => typeof window !== 'undefined' && window.innerWidth < 640,
+    () => typeof window !== "undefined" && window.innerWidth < 640,
   );
   const [heroCmsItems, setHeroCmsItems] = useState<WebsiteHeroItem[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -146,8 +154,8 @@ function EntryGateway({ onEnterOnemission, onShopOnShopee, shopeeUrl, shopeeMiss
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < 640);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   // Same approved hero media source as Shop (Website CMS hero items).
@@ -160,7 +168,11 @@ function EntryGateway({ onEnterOnemission, onShopOnShopee, shopeeUrl, shopeeMiss
         setHeroCmsItems(
           (Array.isArray(items) ? items : [])
             .filter((item) => item.active !== false)
-            .sort((left, right) => Number(left.displayOrder || 0) - Number(right.displayOrder || 0)),
+            .sort(
+              (left, right) =>
+                Number(left.displayOrder || 0) -
+                Number(right.displayOrder || 0),
+            ),
         );
         setActiveIndex(0);
       })
@@ -181,18 +193,23 @@ function EntryGateway({ onEnterOnemission, onShopOnShopee, shopeeUrl, shopeeMiss
     return heroItems.map((item) => createHeroGradient(item.theme.accentColor));
   }, [heroItems]);
 
-  const resolvedActiveIndex = heroItems.length > 0 ? activeIndex % heroItems.length : 0;
+  const resolvedActiveIndex =
+    heroItems.length > 0 ? activeIndex % heroItems.length : 0;
 
-  const rotateHero = useCallback((direction: Direction) => {
-    if (isAnimating || heroItems.length <= 1) return;
+  const rotateHero = useCallback(
+    (direction: Direction) => {
+      if (isAnimating || heroItems.length <= 1) return;
 
-    setIsAnimating(true);
-    const nextIndex = direction === 'next'
-      ? (resolvedActiveIndex + 1) % heroItems.length
-      : (resolvedActiveIndex + heroItems.length - 1) % heroItems.length;
-    setActiveIndex(nextIndex);
-    window.setTimeout(() => setIsAnimating(false), 650);
-  }, [heroItems.length, isAnimating, resolvedActiveIndex]);
+      setIsAnimating(true);
+      const nextIndex =
+        direction === "next"
+          ? (resolvedActiveIndex + 1) % heroItems.length
+          : (resolvedActiveIndex + heroItems.length - 1) % heroItems.length;
+      setActiveIndex(nextIndex);
+      window.setTimeout(() => setIsAnimating(false), 650);
+    },
+    [heroItems.length, isAnimating, resolvedActiveIndex],
+  );
 
   const heroGesture = useHeroGesture({
     surfaceRef: heroSceneRef,
@@ -202,7 +219,7 @@ function EntryGateway({ onEnterOnemission, onShopOnShopee, shopeeUrl, shopeeMiss
   return (
     <div
       className="fixed inset-0 z-[9999] overflow-hidden font-['SF-Pro-Display',_sans-serif]"
-      style={{ height: '100dvh' }}
+      style={{ height: "100dvh" }}
       role="dialog"
       aria-modal="true"
       aria-label="One Mission entry"
@@ -216,10 +233,13 @@ function EntryGateway({ onEnterOnemission, onShopOnShopee, shopeeUrl, shopeeMiss
         aria-live="off"
         onKeyDown={heroGesture.onKeyDown}
         className="relative h-full w-full overflow-hidden outline-none"
-        style={{ height: '100dvh' }}
+        style={{ height: "100dvh" }}
       >
-        <div className="relative h-full w-full" style={{ overflow: 'hidden' }}>
-          <HeroGradientBackground activeIndex={resolvedActiveIndex} gradients={heroGradients} />
+        <div className="relative h-full w-full" style={{ overflow: "hidden" }}>
+          <HeroGradientBackground
+            activeIndex={resolvedActiveIndex}
+            gradients={heroGradients}
+          />
 
           {/* Same subtle atmosphere overlay as Shop */}
           <div
@@ -227,7 +247,8 @@ function EntryGateway({ onEnterOnemission, onShopOnShopee, shopeeUrl, shopeeMiss
             className="absolute inset-0 pointer-events-none"
             style={{
               zIndex: 1,
-              background: 'linear-gradient(180deg, rgba(10,10,10,0.12) 0%, rgba(10,10,10,0.04) 44%, rgba(229,228,226,0.08) 100%)',
+              background:
+                "linear-gradient(180deg, rgba(10,10,10,0.12) 0%, rgba(10,10,10,0.04) 44%, rgba(229,228,226,0.08) 100%)",
             }}
           />
 
@@ -236,8 +257,8 @@ function EntryGateway({ onEnterOnemission, onShopOnShopee, shopeeUrl, shopeeMiss
             style={{
               zIndex: 50,
               backgroundImage: `url("${GRAIN_SVG}")`,
-              backgroundRepeat: 'repeat',
-              backgroundSize: '200px 200px',
+              backgroundRepeat: "repeat",
+              backgroundSize: "200px 200px",
               opacity: 0.4,
             }}
           />
@@ -262,20 +283,22 @@ function EntryGateway({ onEnterOnemission, onShopOnShopee, shopeeUrl, shopeeMiss
                 <button
                   type="button"
                   aria-label="Previous"
-                  onClick={() => rotateHero('prev')}
+                  onClick={() => rotateHero("prev")}
                   className="w-12 h-12 rounded-full flex items-center justify-center"
                   style={{
-                    backgroundColor: 'transparent',
-                    color: '#ffffff',
-                    transition: 'transform 150ms ease, background-color 150ms ease',
+                    backgroundColor: "transparent",
+                    color: "#ffffff",
+                    transition:
+                      "transform 150ms ease, background-color 150ms ease",
                   }}
                   onMouseEnter={(event) => {
-                    event.currentTarget.style.transform = 'scale(1.08)';
-                    event.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.12)';
+                    event.currentTarget.style.transform = "scale(1.08)";
+                    event.currentTarget.style.backgroundColor =
+                      "rgba(255,255,255,0.12)";
                   }}
                   onMouseLeave={(event) => {
-                    event.currentTarget.style.transform = 'scale(1)';
-                    event.currentTarget.style.backgroundColor = 'transparent';
+                    event.currentTarget.style.transform = "scale(1)";
+                    event.currentTarget.style.backgroundColor = "transparent";
                   }}
                 >
                   <ArrowLeft size={26} strokeWidth={2.25} />
@@ -283,20 +306,22 @@ function EntryGateway({ onEnterOnemission, onShopOnShopee, shopeeUrl, shopeeMiss
                 <button
                   type="button"
                   aria-label="Next"
-                  onClick={() => rotateHero('next')}
+                  onClick={() => rotateHero("next")}
                   className="w-12 h-12 rounded-full flex items-center justify-center"
                   style={{
-                    backgroundColor: 'transparent',
-                    color: '#ffffff',
-                    transition: 'transform 150ms ease, background-color 150ms ease',
+                    backgroundColor: "transparent",
+                    color: "#ffffff",
+                    transition:
+                      "transform 150ms ease, background-color 150ms ease",
                   }}
                   onMouseEnter={(event) => {
-                    event.currentTarget.style.transform = 'scale(1.08)';
-                    event.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.12)';
+                    event.currentTarget.style.transform = "scale(1.08)";
+                    event.currentTarget.style.backgroundColor =
+                      "rgba(255,255,255,0.12)";
                   }}
                   onMouseLeave={(event) => {
-                    event.currentTarget.style.transform = 'scale(1)';
-                    event.currentTarget.style.backgroundColor = 'transparent';
+                    event.currentTarget.style.transform = "scale(1)";
+                    event.currentTarget.style.backgroundColor = "transparent";
                   }}
                 >
                   <ArrowRight size={26} strokeWidth={2.25} />
@@ -319,8 +344,11 @@ function EntryGateway({ onEnterOnemission, onShopOnShopee, shopeeUrl, shopeeMiss
 
           {/* ─── BOTTOM ACTIONS (small editorial navigation) ───────────── */}
           <div
-            className="absolute inset-x-0 bottom-0 z-[70] flex items-end justify-between gap-4 px-5 pb-6 sm:px-10 sm:pb-8 lg:px-14 lg:pb-10"
-            style={{ paddingBottom: 'max(1.5rem, calc(env(safe-area-inset-bottom) + 1rem))' }}
+            className="absolute inset-x-0 bottom-10 z-[70] flex items-end justify-between gap-4 px-5 pb-6 sm:px-10 sm:pb-8 lg:px-14 lg:pb-10"
+            style={{
+              paddingBottom:
+                "max(1.5rem, calc(env(safe-area-inset-bottom) + 1rem))",
+            }}
           >
             <button
               type="button"
@@ -328,8 +356,8 @@ function EntryGateway({ onEnterOnemission, onShopOnShopee, shopeeUrl, shopeeMiss
               aria-label="Enter Onemission — open the complete One Mission website"
               className="group inline-flex items-center gap-2 text-left text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             >
-              <span className="text-[11px] font-semibold uppercase tracking-[0.24em] sm:text-xs">
-                Enter Onemission
+              <span className="text-[10px] font-semibold uppercase tracking-[0.24em] sm:text-xs">
+                Enter Oneworld
               </span>
               <ArrowRight
                 size={13}
@@ -342,12 +370,12 @@ function EntryGateway({ onEnterOnemission, onShopOnShopee, shopeeUrl, shopeeMiss
               <a
                 href={shopeeUrl || undefined}
                 onClick={onShopOnShopee}
-                target={shopeeUrl ? '_blank' : undefined}
-                rel={shopeeUrl ? 'noreferrer' : undefined}
+                target={shopeeUrl ? "_blank" : undefined}
+                rel={shopeeUrl ? "noreferrer" : undefined}
                 aria-label="Shop in Shopee — open the official One Mission Shopee store"
                 className="group inline-flex items-center gap-2 text-right text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               >
-                <span className="text-[11px] font-semibold uppercase tracking-[0.24em] sm:text-xs">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.24em] sm:text-xs">
                   Shop in Shopee
                 </span>
                 <ArrowUpRight
@@ -357,8 +385,12 @@ function EntryGateway({ onEnterOnemission, onShopOnShopee, shopeeUrl, shopeeMiss
                 />
               </a>
               {shopeeMissing && (
-                <p className="max-w-[220px] text-right text-[10px] font-medium text-amber-300" role="alert">
-                  Shopee destination is not configured. Set VITE_SHOPEE_STORE_URL.
+                <p
+                  className="max-w-[220px] text-right text-[10px] font-medium text-amber-300"
+                  role="alert"
+                >
+                  Shopee destination is not configured. Set
+                  VITE_SHOPEE_STORE_URL.
                 </p>
               )}
             </div>

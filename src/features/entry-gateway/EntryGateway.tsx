@@ -1,28 +1,29 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { env } from '../../app/config/env';
+import { websiteService, type WebsiteHeroItem } from '../../services/api/websiteService';
 
 /**
- * Entry Gateway — TRUE full-screen entry gate.
+ * Entry Gateway — hero-first entry experience (redesigned).
  *
- * Shown once per browser (localStorage "onemission_entry_seen") before the
- * Home experience. While active, the gateway is rendered as a fixed overlay
- * ABOVE the entire application shell (navbar, bottom nav, search, cart,
- * account, page content) and blocks all underlying interaction:
- *   - pointer events are covered by the overlay itself
- *   - the app root is marked `inert` so keyboard focus cannot escape
- *   - body scrolling is locked while the gate is open
+ * ONE full-screen hero (reusing the SAME approved Shop hero media source —
+ * the Website CMS hero items, active + ordered by displayOrder) with the
+ * One Mission brand mark and TWO simple bottom actions:
  *
- * Two paths:
- *   ENTER ONEMISSION → the complete One Mission website (Home at /)
- *   SHOP ON SHOPEE   → configured VITE_SHOPEE_STORE_URL (single source of truth)
+ *   ENTER ONEMISSION →   (the complete One Mission website at /)
+ *   SHOP IN SHOPEE ↗     (configured VITE_SHOPEE_STORE_URL)
  *
- * Desktop: 50/50 editorial split, subtle hover expansion (56/44) via CSS.
- * Mobile: stacked large panels, tap to navigate (no hover simulation).
+ * TRUE ENTRY GATE behavior is preserved: while open, the gateway renders as
+ * a fixed overlay above the entire application shell (navbar, bottom nav,
+ * search/cart/account, page content) via a portal to document.body; the app
+ * root is marked inert (keyboard/a11y), body scrolling is locked, and the
+ * underlying website is unreachable until a path is chosen.
  *
- * Dev testing: remove localStorage["onemission_entry_seen"] and refresh.
- * No CMS, no analytics, no new dependencies.
+ * Loading → full-screen dark skeleton, then a fade into the real hero
+ * (never dummy imagery). No hero media → minimal brand-safe presentation
+ * (never fabricated images). Persistence (`onemission_entry_seen`) and the
+ * Shopee URL source of truth are unchanged. No new CMS.
  */
 
 const ENTRY_SEEN_KEY = 'onemission_entry_seen';
@@ -45,6 +46,29 @@ function persistEntryGatewaySeen() {
   }
 }
 
+function useIsMobileViewport(): boolean {
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches,
+  );
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 639px)');
+    const update = () => setIsMobile(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+
+  return isMobile;
+}
+
+/** Same media resolution rule as the approved Shop hero. */
+function resolveHeroMediaSource(item: WebsiteHeroItem, isMobile: boolean): string {
+  const mobileUrl = String(item.mobileUrl || '').trim();
+  if (isMobile && mobileUrl) return mobileUrl;
+  return String(item.desktopUrl || '').trim();
+}
+
 interface HomeEntryGateProps {
   children: React.ReactNode;
 }
@@ -57,9 +81,6 @@ export function HomeEntryGate({ children }: HomeEntryGateProps) {
   const [showGateway, setShowGateway] = useState(() => !readEntryGatewaySeen());
   const [shopeeMissing, setShopeeMissing] = useState(false);
 
-  // While the gate is open, the underlying website is completely inert:
-  // pointer events are covered by the fixed overlay, the app root is marked
-  // inert (keyboard/a11y), and body scrolling is locked.
   useEffect(() => {
     if (!showGateway) return undefined;
 
@@ -108,17 +129,16 @@ export function HomeEntryGate({ children }: HomeEntryGateProps) {
     persistEntryGatewaySeen();
   };
 
-  const gateway = (
+  if (typeof document === 'undefined') return null;
+  return createPortal(
     <EntryGateway
       onEnterOnemission={handleEnterOnemission}
       onShopOnShopee={handleShopOnShopee}
       shopeeUrl={shopeeUrl}
       shopeeMissing={shopeeMissing}
-    />
+    />,
+    document.body,
   );
-
-  if (typeof document === 'undefined') return null;
-  return createPortal(gateway, document.body);
 }
 
 interface EntryGatewayProps {
@@ -128,117 +148,274 @@ interface EntryGatewayProps {
   shopeeMissing: boolean;
 }
 
+type HeroState =
+  | { status: 'loading' }
+  | { status: 'ready'; sources: string[] };
+
 function EntryGateway({ onEnterOnemission, onShopOnShopee, shopeeUrl, shopeeMissing }: EntryGatewayProps) {
-  const [hoveredPanel, setHoveredPanel] = useState<'left' | 'right' | null>(null);
-  const [isDesktop, setIsDesktop] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches,
-  );
+  const isMobile = useIsMobileViewport();
+  const [heroState, setHeroState] = useState<HeroState>({ status: 'loading' });
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [heroRevealed, setHeroRevealed] = useState(false);
+  const pointerStartRef = useRef<{ x: number; y: number; id: number } | null>(null);
 
+  // Reuse the approved Shop hero media source (Website CMS hero items).
   useEffect(() => {
-    const media = window.matchMedia('(min-width: 1024px)');
-    const update = () => setIsDesktop(media.matches);
-    update();
-    media.addEventListener('change', update);
-    return () => media.removeEventListener('change', update);
-  }, []);
+    let isActive = true;
+    websiteService
+      .getHeroItems()
+      .then((items) => {
+        if (!isActive) return;
+        const sources = [...(Array.isArray(items) ? items : [])]
+          .filter((item) => item.active !== false)
+          .sort((left, right) => Number(left.displayOrder || 0) - Number(right.displayOrder || 0))
+          .map((item) => resolveHeroMediaSource(item, isMobile))
+          .filter(Boolean);
 
-  const leftBasis = hoveredPanel === 'left' ? '56%' : hoveredPanel === 'right' ? '44%' : '50%';
-  const rightBasis = hoveredPanel === 'right' ? '56%' : hoveredPanel === 'left' ? '44%' : '50%';
+        setHeroState({ status: 'ready', sources });
+        setActiveIndex(0);
+      })
+      .catch(() => {
+        if (isActive) setHeroState({ status: 'ready', sources: [] });
+      });
+    return () => {
+      isActive = false;
+    };
+  }, [isMobile]);
+
+  const sources = useMemo(
+    () => (heroState.status === 'ready' ? heroState.sources : []),
+    [heroState],
+  );
+  const resolvedIndex = sources.length > 0 ? activeIndex % sources.length : 0;
+
+  // Fade into the real hero once the first asset has actually loaded.
+  const firstSource = sources[0] || '';
+  useEffect(() => {
+    setHeroRevealed(false);
+    if (!firstSource) return undefined;
+    let isActive = true;
+    const image = new Image();
+    image.onload = () => {
+      if (isActive) setHeroRevealed(true);
+    };
+    image.onerror = () => {
+      // Even a broken first asset shouldn't block the gate — reveal the
+      // brand-safe backdrop.
+      if (isActive) setHeroRevealed(true);
+    };
+    image.src = firstSource;
+    return () => {
+      isActive = false;
+    };
+  }, [firstSource]);
+
+  const goTo = useCallback((index: number) => {
+    if (sources.length <= 1) return;
+    setActiveIndex((current) => {
+      const base = current % sources.length;
+      return (base + index + sources.length) % sources.length;
+    });
+  }, [sources.length]);
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      goTo(-1);
+    }
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      goTo(1);
+    }
+  };
+
+  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    pointerStartRef.current = { x: event.clientX, y: event.clientY, id: event.pointerId };
+  };
+
+  const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const start = pointerStartRef.current;
+    pointerStartRef.current = null;
+    if (!start || start.id !== event.pointerId) return;
+    const deltaX = event.clientX - start.x;
+    const deltaY = event.clientY - start.y;
+    if (Math.abs(deltaX) < 48 || Math.abs(deltaX) < Math.abs(deltaY)) return;
+    goTo(deltaX > 0 ? -1 : 1);
+  };
+
+  const preloadedSources = useMemo(() => {
+    if (sources.length === 0) return [];
+    const next = (resolvedIndex + 1) % sources.length;
+    return Array.from(new Set([sources[resolvedIndex], sources[next]])).filter(Boolean);
+  }, [sources, resolvedIndex]);
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex flex-col bg-white font-['SF-Pro-Display',_sans-serif]"
+      className="fixed inset-0 z-[9999] overflow-hidden bg-[#0A0A0A] font-['SF-Pro-Display',_sans-serif]"
       style={{ height: '100dvh' }}
       role="dialog"
       aria-modal="true"
       aria-label="One Mission entry"
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
     >
+      {/* ─── HERO (edge-to-edge, unified surface) ─────────────────────── */}
+      <div
+        className="absolute inset-0"
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+      >
+        {sources.length > 0 ? (
+          <div
+            aria-roledescription="carousel"
+            aria-label="One Mission hero"
+            className="absolute inset-0"
+          >
+            {preloadedSources.map((source) => {
+              const isActiveLayer = source === sources[resolvedIndex];
+              return (
+                <img
+                  key={source}
+                  src={source}
+                  alt=""
+                  aria-hidden="true"
+                  draggable={false}
+                  className="absolute inset-0 h-full w-full select-none object-cover"
+                  style={{
+                    opacity: isActiveLayer ? 1 : 0,
+                    transition: 'opacity 900ms ease',
+                  }}
+                />
+              );
+            })}
+
+            {/* Subtle bottom gradient keeps the actions readable on any image */}
+            <div
+              aria-hidden="true"
+              className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/70 via-black/25 to-transparent"
+            />
+
+            {/* Carousel controls (desktop + tablet) */}
+            {sources.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => goTo(-1)}
+                  aria-label="Previous image"
+                  className="absolute left-4 top-1/2 hidden -translate-y-1/2 items-center justify-center rounded-full text-white/70 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:flex"
+                  style={{ width: 44, height: 44 }}
+                >
+                  <ChevronLeft size={26} strokeWidth={1.75} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => goTo(1)}
+                  aria-label="Next image"
+                  className="absolute right-4 top-1/2 hidden -translate-y-1/2 items-center justify-center rounded-full text-white/70 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:flex"
+                  style={{ width: 44, height: 44 }}
+                >
+                  <ChevronRight size={26} strokeWidth={1.75} />
+                </button>
+              </>
+            )}
+          </div>
+        ) : (
+          /* No hero media → minimal brand-safe backdrop (never fabricated) */
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-gradient-to-b from-[#16181D] via-[#0A0A0A] to-[#0A0A0A]"
+          />
+        )}
+
+        {/* Loading skeleton → fades out when the real hero is ready */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 transition-opacity duration-700"
+          style={{
+            opacity: heroRevealed ? 0 : 1,
+            pointerEvents: 'none',
+            background: 'linear-gradient(180deg, #16181D 0%, #0A0A0A 100%)',
+          }}
+        >
+          <div className="h-full w-full animate-pulse bg-neutral-800/25" />
+        </div>
+      </div>
+
       {/* ─── BRAND MARK (navbar is hidden while the gate is open) ──────── */}
-      <div className="pointer-events-none absolute left-5 top-5 z-30 flex items-center gap-3 lg:left-8 lg:top-6">
+      <div className="pointer-events-none absolute left-5 top-5 z-20 lg:left-8 lg:top-6">
         <img
           src="/white_om_logo.png"
           alt="One Mission"
           className="h-7 w-auto lg:h-8 [mix-blend-mode:difference]"
         />
-        <span className="hidden text-[10px] font-semibold uppercase tracking-[0.32em] text-neutral-400 sm:inline lg:text-white/70 lg:[mix-blend-mode:difference]">
-          Values In Motion.
-        </span>
       </div>
 
-      {/* ─── SPLIT PANELS ─────────────────────────────────────────────── */}
-      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-        {/* LEFT — ENTER ONEMISSION (dark, image-driven, brand) */}
+      {/* ─── BOTTOM ACTIONS (two simple, semantic choices) ─────────────── */}
+      <div
+        className="absolute inset-x-0 bottom-0 z-20 flex items-end justify-between gap-4 px-5 pb-6 sm:px-10 sm:pb-8 lg:px-14 lg:pb-10"
+        style={{ paddingBottom: 'max(1.5rem, calc(env(safe-area-inset-bottom) + 1rem))' }}
+      >
         <button
           type="button"
           onClick={onEnterOnemission}
-          onMouseEnter={() => setHoveredPanel('left')}
-          onMouseLeave={() => setHoveredPanel(null)}
           aria-label="Enter Onemission — open the complete One Mission website"
-          className="group relative flex w-full flex-1 flex-col justify-end overflow-hidden bg-[#0A0A0A] p-6 text-left text-white transition-all duration-500 ease-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-white sm:p-10 lg:p-14"
-          style={{ flexBasis: isDesktop ? leftBasis : 'auto' }}
+          className="group inline-flex items-center gap-2.5 text-left text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
         >
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-[1.03]"
-            style={{ backgroundImage: "url('/images/donate/donate-hero.jpg')" }}
+          <span className="text-sm font-semibold uppercase tracking-[0.22em] sm:text-base">
+            Enter Onemission
+          </span>
+          <ArrowRight
+            size={16}
+            strokeWidth={2}
+            className="shrink-0 text-white/80 transition-transform duration-300 group-hover:translate-x-1"
           />
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/55 to-[#0A0A0A]/25"
-          />
-
-          <div className="relative z-10 max-w-md">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-white/60">
-              Onemission Exclusive
-            </p>
-            <h2 className="mt-3 text-4xl font-bold uppercase leading-[0.95] tracking-tight sm:text-5xl lg:text-6xl">
-              Enter
-              <span className="block">Onemission</span>
-            </h2>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/80">
-              The movement, the stories, and exclusive pieces you won't find everywhere.
-            </p>
-            <span className="mt-8 inline-flex items-center gap-3 rounded-full bg-white px-7 py-3.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-900 transition-transform duration-300 group-hover:scale-[1.03]">
-              Enter Onemission
-              <ArrowRight size={15} strokeWidth={2.5} />
-            </span>
-          </div>
         </button>
 
-        {/* RIGHT — SHOP ON SHOPEE (light, commerce-oriented) */}
-        <a
-          href={shopeeUrl || undefined}
-          onClick={onShopOnShopee}
-          onMouseEnter={() => setHoveredPanel('right')}
-          onMouseLeave={() => setHoveredPanel(null)}
-          aria-label="Shop on Shopee — open the official One Mission Shopee store"
-          className="group relative flex w-full flex-1 flex-col justify-end bg-white p-6 text-left text-neutral-900 transition-all duration-500 ease-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-neutral-900 sm:p-10 lg:p-14"
-          style={{ flexBasis: isDesktop ? rightBasis : 'auto' }}
-        >
-          <div className="relative z-10 max-w-md">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-neutral-400">
-              Official Store
-            </p>
-            <h2 className="mt-3 text-4xl font-bold uppercase leading-[0.95] tracking-tight sm:text-5xl lg:text-6xl">
-              Shop On
-              <span className="block">Shopee</span>
-            </h2>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-neutral-500">
-              Explore our everyday collection through the One Mission official Shopee store.
-            </p>
-            <span className="mt-8 inline-flex items-center gap-3 rounded-full bg-neutral-900 px-7 py-3.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-white transition-transform duration-300 group-hover:scale-[1.03]">
-              Shop Now
-              <ArrowRight size={15} strokeWidth={2.5} />
+        <div className="flex flex-col items-end gap-2">
+          <a
+            href={shopeeUrl || undefined}
+            onClick={onShopOnShopee}
+            target={shopeeUrl ? '_blank' : undefined}
+            rel={shopeeUrl ? 'noreferrer' : undefined}
+            aria-label="Shop in Shopee — open the official One Mission Shopee store"
+            className="group inline-flex items-center gap-2.5 text-right text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+          >
+            <span className="text-sm font-semibold uppercase tracking-[0.22em] sm:text-base">
+              Shop in Shopee
             </span>
-
-            {shopeeMissing && (
-              <p className="mt-4 text-xs font-medium text-red-600" role="alert">
-                Shopee destination is not configured. Set VITE_SHOPEE_STORE_URL.
-              </p>
-            )}
-          </div>
-        </a>
+            <ArrowUpRight
+              size={16}
+              strokeWidth={2}
+              className="shrink-0 text-white/80 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+            />
+          </a>
+          {shopeeMissing && (
+            <p className="max-w-[220px] text-right text-[11px] font-medium text-amber-300" role="alert">
+              Shopee destination is not configured. Set VITE_SHOPEE_STORE_URL.
+            </p>
+          )}
+        </div>
       </div>
+
+      {/* ─── HERO INDICATORS (multi-image only) ────────────────────────── */}
+      {sources.length > 1 && (
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 bottom-0 z-10 flex justify-center gap-1.5"
+          style={{ paddingBottom: 'max(6.5rem, calc(env(safe-area-inset-bottom) + 6rem))' }}
+        >
+          {sources.map((source, index) => (
+            <span
+              key={source}
+              className="h-1 rounded-full transition-all duration-500"
+              style={{
+                width: index === resolvedIndex ? 22 : 6,
+                backgroundColor: index === resolvedIndex ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.35)',
+              }}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

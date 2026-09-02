@@ -67,7 +67,9 @@ interface HomeEntryGateProps {
  * /donate never pass through here.
  */
 export function HomeEntryGate({ children }: HomeEntryGateProps) {
-  const [showGateway, setShowGateway] = useState(() => shouldShowEntryGateway());
+  const [showGateway, setShowGateway] = useState(() =>
+    shouldShowEntryGateway(),
+  );
   const [shopeeMissing, setShopeeMissing] = useState(false);
 
   useEffect(() => {
@@ -270,7 +272,9 @@ function EntryGateway({
               zIndex: 2,
               top: isMobile ? "10%" : "18%",
               fontFamily: "'SF-Pro-Display', sans-serif",
-              fontSize: isMobile ? "clamp(120px, 36vw, 170px)" : "clamp(70px, 19vw, 380px)",
+              fontSize: isMobile
+                ? "clamp(120px, 36vw, 170px)"
+                : "clamp(70px, 19vw, 380px)",
               fontWeight: 400,
               color: "#ffffff",
               opacity: 0.6,
@@ -373,7 +377,7 @@ function EntryGateway({
 
           {/* ─── BOTTOM ACTIONS (small editorial navigation) ───────────── */}
           <div
-            className="absolute inset-x-0 bottom-10 z-[70] flex items-end justify-between gap-4 px-5 pb-6 sm:px-10 sm:pb-8 lg:px-14 lg:pb-10"
+            className="absolute inset-x-0 bottom-16 z-[70] flex items-end justify-between gap-4 px-5 pb-6 sm:px-10 sm:pb-8 lg:px-14 lg:pb-10"
             style={{
               paddingBottom:
                 "max(1.5rem, calc(env(safe-area-inset-bottom) + 1rem))",

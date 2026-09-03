@@ -53,6 +53,34 @@ export interface WebsiteHomepageContent {
   productStoryItems: WebsiteProductStoryItem[];
 }
 
+// ─── Movement CMS content ────────────────────────────────────────────────────
+
+export interface MovementHomePageContent {
+  headline: string;
+  description: string;
+  ctaLabel: string;
+  ctaDestination: string;
+  socialProofNumber: string;
+  socialProofText: string;
+  desktopImage: string;
+  mobileImage: string;
+}
+
+export interface MovementHomeCard {
+  id: string;
+  title: string;
+  description: string;
+  image: string;
+  destination: string;
+  displayOrder: number;
+  isActive?: boolean;
+}
+
+export interface MovementHomeContent {
+  home: MovementHomePageContent | null;
+  cards: MovementHomeCard[];
+}
+
 class WebsiteServiceError extends Error {
   code: string;
   statusCode: number;
@@ -65,13 +93,14 @@ class WebsiteServiceError extends Error {
   }
 }
 
-function getBaseUrl(): string {
-  const apiBaseUrl = env.apiBaseUrl.trim().replace(/\/$/, '');
-  return apiBaseUrl ? `${apiBaseUrl}/website` : '';
+async function fetchJson<T>(path = ''): Promise<T> {
+  return fetchApiJson<T>(path, 'website');
 }
 
-async function fetchJson<T>(path = ''): Promise<T> {
-  const baseUrl = getBaseUrl();
+async function fetchApiJson<T>(path = '', basePath = 'website'): Promise<T> {
+  const apiBaseUrl = env.apiBaseUrl.trim().replace(/\/$/, '');
+  const baseUrl = apiBaseUrl ? `${apiBaseUrl}/${basePath}` : '';
+
   if (!baseUrl) {
     throw new WebsiteServiceError('Website API base URL is not configured.', 'WEBSITE_API_CONFIGURATION_MISSING', 500);
   }
@@ -120,5 +149,9 @@ export const websiteService = {
 
   async getCollectionHero(): Promise<WebsiteCollectionHero | null> {
     return fetchJson<WebsiteCollectionHero | null>('collection');
+  },
+
+  async getMovementHome(): Promise<MovementHomeContent> {
+    return fetchApiJson<MovementHomeContent>('home', 'movement');
   },
 };

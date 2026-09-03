@@ -4,6 +4,11 @@
 
 export const ROUTES = {
   HOME: '/',
+  MISSION: '/mission',
+  SHOP: '/shop',
+  JOURNAL: '/journal',
+  IMPACT: '/impact',
+  DONATE: '/donate',
   PRODUCT: '/product/:slug',
   COLLECTION: '/collection',
   TERMS: '/terms',

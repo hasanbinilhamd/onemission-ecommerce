@@ -91,75 +91,64 @@ export function PrimaryNavigation() {
       
       </div>
 
-      {/* Mobile/tablet: floating glass bottom bar */}
+      {/* Mobile/tablet: simple fixed full-width bottom bar (Shopee-like).
+          White, rectangular, attached to the bottom edge; safe-area aware.
+          Item content (icons, labels, colors, active treatment) is unchanged. */}
       <nav
         aria-label="Primary"
-        className="fixed left-0 right-0 z-40 flex lg:hidden items-center justify-center pointer-events-none"
+        className="fixed bottom-0 left-0 right-0 z-40 flex lg:hidden"
         style={{
-          bottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
           fontFamily: NAV_FONT_FAMILY,
+          backgroundColor: '#FFFFFF',
+          borderTop: '1px solid rgba(17, 24, 39, 0.08)',
+          borderBottom: 'none',
+          borderRadius: 0,
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
-        <div 
-          className="flex w-full max-w-[400px] p-1.5 pointer-events-auto"
-          style={{
-            width: 'calc(100% - 32px)',
-            margin: '0 auto',
-            borderRadius: '9999px',
-            backgroundColor: theme === 'dark' ? 'rgba(255, 255, 255, 0.45)' : 'rgba(20, 20, 20, 0.40)',
-            backdropFilter: 'blur(24px) saturate(160%)',
-            WebkitBackdropFilter: 'blur(24px) saturate(160%)',
-            border: theme === 'dark' 
-              ? '1px solid rgba(255, 255, 255, 0.65)' 
-              : '1px solid rgba(255, 255, 255, 0.15)',
-            boxShadow: theme === 'dark'
-              ? 'inset 0 1px 0 rgba(255,255,255,0.6), inset 0 0 0 1px rgba(255,255,255,0.15), 0 12px 35px rgba(0,0,0,0.12)'
-              : 'inset 0 1px 0 rgba(255,255,255,0.15), inset 0 0 0 1px rgba(255,255,255,0.05), 0 12px 35px rgba(0,0,0,0.3)',
-            transition: 'background-color 240ms ease, border-color 240ms ease, box-shadow 240ms ease',
-          }}
-        >
-          {PRIMARY_NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end
-                className="flex-1 relative flex flex-col items-center justify-center gap-1 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
-                style={({ isActive }) => {
-                  // Text & icon color calculation
-                  const activeColor = theme === 'dark' ? '#111827' : '#FFFFFF';
-                  const inactiveColor = theme === 'dark' ? 'rgba(17,24,39,0.45)' : 'rgba(255,255,255,0.45)';
-                  const color = isActive ? activeColor : inactiveColor;
-                  
-                  return {
-                    color,
-                    height: '52px',
-                    textDecoration: 'none',
-                    transition: 'color 200ms ease, background-color 200ms ease',
-                    // Very subtle background highlight for active state
-                    backgroundColor: isActive 
-                      ? (theme === 'dark' ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.12)') 
-                      : 'transparent',
-                  };
+        {PRIMARY_NAV_ITEMS.map((item) => {
+          const Icon = item.icon;
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end
+              className="flex-1 relative flex flex-col items-center justify-center gap-1 outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+              style={({ isActive }) => {
+                // Solid white bar → items use the dark ink treatment on
+                // every page (the light/white variant belonged to the old
+                // translucent pill surface).
+                const activeColor = '#111827';
+                const inactiveColor = 'rgba(17, 24, 39, 0.45)';
+                const color = isActive ? activeColor : inactiveColor;
+
+                return {
+                  color,
+                  height: '52px',
+                  textDecoration: 'none',
+                  transition: 'color 200ms ease, background-color 200ms ease',
+                  backgroundColor: isActive
+                    ? 'rgba(17, 24, 39, 0.04)'
+                    : 'transparent',
+                };
+              }}
+            >
+              <Icon size={20} strokeWidth={2.2} />
+              <span
+                style={{
+                  fontSize: '9px',
+                  fontWeight: 600,
+                  letterSpacing: '0.08em',
+                  lineHeight: 1,
                 }}
               >
-                <Icon size={20} strokeWidth={2.2} />
-                <span
-                  style={{
-                    fontSize: '9px',
-                    fontWeight: 600,
-                    letterSpacing: '0.08em',
-                    lineHeight: 1,
-                  }}
-                >
-                  {item.label}
-                </span>
-              </NavLink>
-            );
-          })}
-        </div>
+                {item.label}
+              </span>
+            </NavLink>
+          );
+        })}
       </nav>
     </>
   );
 }
+

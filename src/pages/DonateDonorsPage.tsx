@@ -1,16 +1,21 @@
-import { useEffect, useState } from 'react';
-import { HomepageFooter } from '../features/footer';
-import { TopBackNavigation } from '../features/navigation';
-import { ROUTES } from '../app/config/routes';
-import { Button, SkeletonBlock, CmsStatePanel, ComingSoonPage } from '../components/shared';
-import { formatRupiah } from './DonatePage';
-import { useDonateCms } from '../features/donate/donateCms';
+import { useEffect, useState } from "react";
+import { HomepageFooter } from "../features/footer";
+import { TopBackNavigation } from "../features/navigation";
+import { ROUTES } from "../app/config/routes";
+import {
+  Button,
+  SkeletonBlock,
+  CmsStatePanel,
+  ComingSoonPage,
+} from "../components/shared";
+import { formatRupiah } from "./DonatePage";
+import { useDonateCms } from "../features/donate/donateCms";
 import {
   donationService,
   type DonationListItem,
-} from '../services/api/donationService';
+} from "../services/api/donationService";
 
-type SortOrder = 'TERBARU' | 'TERBESAR';
+type SortOrder = "TERBARU" | "TERBESAR";
 
 const PAGE_SIZE = 10;
 
@@ -20,7 +25,7 @@ const PAGE_SIZE = 10;
  */
 export function DonateDonorsPage() {
   const { status, payload, reload } = useDonateCms();
-  const [sortOrder, setSortOrder] = useState<SortOrder>('TERBARU');
+  const [sortOrder, setSortOrder] = useState<SortOrder>("TERBARU");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [donations, setDonations] = useState<DonationListItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -29,11 +34,15 @@ export function DonateDonorsPage() {
   const campaign = payload?.campaign ?? null;
 
   useEffect(() => {
-    if (status !== 'success') return undefined;
+    if (status !== "success") return undefined;
     let isActive = true;
     setIsLoadingDonations(true);
     donationService
-      .getDonations(sortOrder === 'TERBARU' ? 'LATEST' : 'LARGEST', 0, visibleCount)
+      .getDonations(
+        sortOrder === "TERBARU" ? "LATEST" : "LARGEST",
+        0,
+        visibleCount,
+      )
       .then((result) => {
         if (!isActive) return;
         setDonations(result.items ?? []);
@@ -51,23 +60,23 @@ export function DonateDonorsPage() {
   }, [sortOrder, status, visibleCount]);
 
   // Page-level CMS availability — independent from campaign status.
-  if (payload?.pageAvailability === 'COMING_SOON') {
+  if (payload?.pageAvailability === "COMING_SOON") {
     return (
       <div className="min-h-screen bg-white">
         <TopBackNavigation label="Back" fallbackTo={ROUTES.DONATE} />
         <ComingSoonPage
           eyebrow="Donate"
-          title="The Next Cause Is Taking Shape."
+          title="Something Worth Giving For."
           description="We're preparing the next opportunity to give with purpose."
         />
-        <div className="bg-white pb-[100px] lg:pb-0">
+        <div className="bg-white">
           <HomepageFooter />
         </div>
       </div>
     );
   }
 
-  if (status === 'loading') {
+  if (status === "loading") {
     return (
       <div className="min-h-screen bg-white font-['SF-Pro-Display',_sans-serif]">
         <div className="mx-auto max-w-3xl px-4 pt-28 sm:px-6 sm:pt-32">
@@ -77,14 +86,14 @@ export function DonateDonorsPage() {
           <SkeletonBlock className="mt-4 h-4 w-full" />
           <SkeletonBlock className="mt-4 h-4 w-full" />
         </div>
-        <div className="mt-16 bg-white pb-[100px] lg:pb-0">
+        <div className="mt-16 bg-white">
           <HomepageFooter />
         </div>
       </div>
     );
   }
 
-  if (status === 'error') {
+  if (status === "error") {
     return (
       <div className="min-h-screen bg-white">
         <TopBackNavigation label="Back" fallbackTo={ROUTES.DONATE} />
@@ -116,31 +125,37 @@ export function DonateDonorsPage() {
           Donasi
         </h1>
         <p className="mt-2 text-sm font-semibold uppercase tracking-[0.2em] text-neutral-500">
-          {campaign ? `${campaign.donorCount.toLocaleString('id-ID')} Donors` : 'Donors'}
+          {campaign
+            ? `${campaign.donorCount.toLocaleString("id-ID")} Donors`
+            : "Donors"}
         </p>
 
         <div className="mt-8 flex gap-4 border-b border-neutral-200 pb-4">
           <button
             onClick={() => {
-              setSortOrder('TERBARU');
+              setSortOrder("TERBARU");
               setVisibleCount(PAGE_SIZE);
             }}
             className={[
-              'text-xs font-bold uppercase tracking-widest transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900',
-              sortOrder === 'TERBARU' ? 'text-neutral-900' : 'text-neutral-400 hover:text-neutral-600'
-            ].join(' ')}
+              "text-xs font-bold uppercase tracking-widest transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900",
+              sortOrder === "TERBARU"
+                ? "text-neutral-900"
+                : "text-neutral-400 hover:text-neutral-600",
+            ].join(" ")}
           >
             Terbaru
           </button>
           <button
             onClick={() => {
-              setSortOrder('TERBESAR');
+              setSortOrder("TERBESAR");
               setVisibleCount(PAGE_SIZE);
             }}
             className={[
-              'text-xs font-bold uppercase tracking-widest transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900',
-              sortOrder === 'TERBESAR' ? 'text-neutral-900' : 'text-neutral-400 hover:text-neutral-600'
-            ].join(' ')}
+              "text-xs font-bold uppercase tracking-widest transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900",
+              sortOrder === "TERBESAR"
+                ? "text-neutral-900"
+                : "text-neutral-400 hover:text-neutral-600",
+            ].join(" ")}
           >
             Terbesar
           </button>
@@ -151,11 +166,20 @@ export function DonateDonorsPage() {
             <p className="text-sm text-neutral-500">Belum ada donasi.</p>
           ) : (
             donations.map((donor) => (
-              <div key={donor.id} className="flex justify-between items-start gap-4">
+              <div
+                key={donor.id}
+                className="flex justify-between items-start gap-4"
+              >
                 <div className="flex-1">
-                  <p className="text-base font-bold text-neutral-900">{donor.donorName}</p>
+                  <p className="text-base font-bold text-neutral-900">
+                    {donor.donorName}
+                  </p>
                   <p className="text-neutral-500 text-xs mt-1">
-                    {new Date(donor.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {new Date(donor.createdAt).toLocaleDateString("id-ID", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
                   </p>
                 </div>
                 <p className="text-base font-bold text-neutral-900 shrink-0">
@@ -188,7 +212,7 @@ export function DonateDonorsPage() {
         )}
       </main>
 
-      <div className="mt-16 bg-white pb-[100px] sm:mt-20 lg:pb-0">
+      <div className="mt-16 bg-white sm:mt-20">
         <HomepageFooter />
       </div>
     </div>

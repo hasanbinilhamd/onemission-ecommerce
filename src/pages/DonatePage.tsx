@@ -1,19 +1,28 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
-import { Check, ArrowRight } from 'lucide-react';
-import { Button, Input, SkeletonBlock, CmsStatePanel, ComingSoonPage } from '../components/shared';
-import { HomepageFooter } from '../features/footer';
-import { ROUTES } from '../app/config/routes';
-import { openMidtransSnap } from '../services/payment/midtransSnap';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
+import { Link } from "react-router-dom";
+import { Check, ArrowRight } from "lucide-react";
+import {
+  Button,
+  Input,
+  SkeletonBlock,
+  CmsStatePanel,
+  ComingSoonPage,
+} from "../components/shared";
+import { HomepageFooter } from "../features/footer";
+import { ROUTES } from "../app/config/routes";
+import { openMidtransSnap } from "../services/payment/midtransSnap";
 import {
   donationService,
   type DonatePayload,
   type DonateCampaignSummary,
-} from '../services/api/donationService';
-import {
-  CUSTOM_AMOUNT_KEY,
-  SUPPORT_PRESET_AMOUNTS,
-} from '../features/donate';
+} from "../services/api/donationService";
+import { CUSTOM_AMOUNT_KEY, SUPPORT_PRESET_AMOUNTS } from "../features/donate";
 
 /**
  * DonatePage — ONE active campaign + guest donation via the existing
@@ -29,10 +38,10 @@ import {
  */
 
 type PresetSelection = number | typeof CUSTOM_AMOUNT_KEY;
-type PaymentState = 'idle' | 'submitting' | 'success' | 'pending' | 'failed';
+type PaymentState = "idle" | "submitting" | "success" | "pending" | "failed";
 
 export function formatRupiah(value: number): string {
-  return `Rp${value.toLocaleString('id-ID')}`;
+  return `Rp${value.toLocaleString("id-ID")}`;
 }
 
 function formatPresetLabel(value: number): string {
@@ -43,21 +52,21 @@ function formatPresetLabel(value: number): string {
 
 function formatRelativeTime(value: string): string {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
+  if (Number.isNaN(date.getTime())) return "";
   const diffMs = Date.now() - date.getTime();
   const diffMinutes = Math.floor(diffMs / 60_000);
-  if (diffMinutes < 1) return 'just now';
+  if (diffMinutes < 1) return "just now";
   if (diffMinutes < 60) return `${diffMinutes} min ago`;
   const diffHours = Math.floor(diffMinutes / 60);
   if (diffHours < 24) return `${diffHours} hr ago`;
   const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
 }
 
 type DonateState =
-  | { status: 'loading' }
-  | { status: 'error' }
-  | { status: 'success'; payload: DonatePayload };
+  | { status: "loading" }
+  | { status: "error" }
+  | { status: "success"; payload: DonatePayload };
 
 function DonateSkeleton() {
   return (
@@ -88,7 +97,7 @@ function DonateSkeleton() {
           </div>
         </section>
       </main>
-      <div className="mt-16 bg-white pb-[100px] sm:mt-20 lg:pb-0">
+      <div className="mt-16 bg-white sm:mt-20">
         <HomepageFooter />
       </div>
     </div>
@@ -96,16 +105,18 @@ function DonateSkeleton() {
 }
 
 export function DonatePage() {
-  const [state, setState] = useState<DonateState>({ status: 'loading' });
+  const [state, setState] = useState<DonateState>({ status: "loading" });
   const [isSupportOpen, setIsSupportOpen] = useState(false);
-  const [selectedPreset, setSelectedPreset] = useState<PresetSelection | null>(null);
-  const [customAmount, setCustomAmount] = useState('');
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [selectedPreset, setSelectedPreset] = useState<PresetSelection | null>(
+    null,
+  );
+  const [customAmount, setCustomAmount] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [showName, setShowName] = useState(true);
-  const [paymentState, setPaymentState] = useState<PaymentState>('idle');
+  const [paymentState, setPaymentState] = useState<PaymentState>("idle");
   const [paymentError, setPaymentError] = useState<string | null>(null);
-  const paymentStateRef = useRef<PaymentState>('idle');
+  const paymentStateRef = useRef<PaymentState>("idle");
 
   const updatePaymentState = (next: PaymentState) => {
     paymentStateRef.current = next;
@@ -113,12 +124,12 @@ export function DonatePage() {
   };
 
   const load = useCallback(async () => {
-    setState({ status: 'loading' });
+    setState({ status: "loading" });
     try {
       const payload = await donationService.getDonate();
-      setState({ status: 'success', payload });
+      setState({ status: "success", payload });
     } catch {
-      setState({ status: 'error' });
+      setState({ status: "error" });
     }
   }, []);
 
@@ -126,7 +137,7 @@ export function DonatePage() {
     void load();
   }, [load]);
 
-  const payload = state.status === 'success' ? state.payload : null;
+  const payload = state.status === "success" ? state.payload : null;
   const campaign: DonateCampaignSummary | null = payload?.campaign ?? null;
   const partners = payload?.partners ?? [];
   const highlights = payload?.highlights ?? [];
@@ -138,19 +149,21 @@ export function DonatePage() {
       : Number(customAmount);
 
   const amountValid = Number.isFinite(resolvedAmount) && resolvedAmount >= 1000;
-  const formValid = amountValid && paymentState !== 'submitting';
+  const formValid = amountValid && paymentState !== "submitting";
 
   const openSupport = () => {
     setIsSupportOpen(true);
     window.requestAnimationFrame(() => {
-      document.getElementById('donation-support')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document
+        .getElementById("donation-support")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   };
 
   const handlePresetSelect = (value: PresetSelection) => {
-    if (paymentState === 'submitting') return;
+    if (paymentState === "submitting") return;
     setSelectedPreset(value);
-    updatePaymentState('idle');
+    updatePaymentState("idle");
     setPaymentError(null);
   };
 
@@ -158,7 +171,7 @@ export function DonatePage() {
     event.preventDefault();
     if (!formValid) return;
 
-    updatePaymentState('submitting');
+    updatePaymentState("submitting");
     setPaymentError(null);
 
     try {
@@ -172,36 +185,38 @@ export function DonatePage() {
       await openMidtransSnap({
         token: result.snapToken,
         onSuccess: () => {
-          updatePaymentState('success');
+          updatePaymentState("success");
           void load();
         },
         onPending: () => {
-          updatePaymentState('pending');
+          updatePaymentState("pending");
         },
         onError: () => {
-          updatePaymentState('failed');
-          setPaymentError('Payment was not completed. Please try again.');
+          updatePaymentState("failed");
+          setPaymentError("Payment was not completed. Please try again.");
         },
         onClose: () => {
-          if (paymentStateRef.current !== 'success') {
-            updatePaymentState('failed');
-            setPaymentError('Payment was not completed. Please try again.');
+          if (paymentStateRef.current !== "success") {
+            updatePaymentState("failed");
+            setPaymentError("Payment was not completed. Please try again.");
           }
         },
       });
     } catch (error) {
-      updatePaymentState('failed');
+      updatePaymentState("failed");
       setPaymentError(
-        error instanceof Error ? error.message : 'Your donation could not be created. Please try again.',
+        error instanceof Error
+          ? error.message
+          : "Your donation could not be created. Please try again.",
       );
     }
   };
 
-  if (state.status === 'loading') {
+  if (state.status === "loading") {
     return <DonateSkeleton />;
   }
 
-  if (state.status === 'error') {
+  if (state.status === "error") {
     return (
       <div className="min-h-screen bg-white">
         <div className="pt-16">
@@ -213,7 +228,7 @@ export function DonatePage() {
             onAction={() => void load()}
           />
         </div>
-        <div className="bg-white pb-[100px] lg:pb-0">
+        <div className="bg-white">
           <HomepageFooter />
         </div>
       </div>
@@ -221,15 +236,15 @@ export function DonatePage() {
   }
 
   // Page-level CMS availability — independent from campaign status.
-  if (payload?.pageAvailability === 'COMING_SOON') {
+  if (payload?.pageAvailability === "COMING_SOON") {
     return (
       <div className="min-h-screen bg-white">
         <ComingSoonPage
           eyebrow="Donate"
-          title="The Next Cause Is Taking Shape."
+          title="Something Worth Giving For."
           description="We're preparing the next opportunity to give with purpose."
         />
-        <div className="bg-white pb-[100px] lg:pb-0">
+        <div className="bg-white">
           <HomepageFooter />
         </div>
       </div>
@@ -246,7 +261,7 @@ export function DonatePage() {
             description="Donations will open here when the next campaign goes live."
           />
         </div>
-        <div className="bg-white pb-[100px] lg:pb-0">
+        <div className="bg-white">
           <HomepageFooter />
         </div>
       </div>
@@ -300,8 +315,11 @@ export function DonatePage() {
 
             <div className="flex flex-col justify-center">
               <span className="inline-flex w-fit items-center gap-2 rounded-full bg-neutral-900 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-white">
-                <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-white" />
-                {campaign.status === 'CLOSED' ? 'CLOSED' : 'ACTIVE'}
+                <span
+                  aria-hidden="true"
+                  className="h-1.5 w-1.5 rounded-full bg-white"
+                />
+                {campaign.status === "CLOSED" ? "CLOSED" : "ACTIVE"}
               </span>
               <h2 className="mt-4 text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl lg:text-5xl">
                 {campaign.title}
@@ -324,7 +342,9 @@ export function DonatePage() {
                   <span className="text-sm font-medium text-neutral-400">
                     of {formatRupiah(campaign.targetAmount)}
                   </span>
-                  <div className="mt-1.5 text-sm font-bold text-neutral-900">{campaign.progressPercent}%</div>
+                  <div className="mt-1.5 text-sm font-bold text-neutral-900">
+                    {campaign.progressPercent}%
+                  </div>
                 </div>
                 <div
                   role="progressbar"
@@ -343,7 +363,7 @@ export function DonatePage() {
                 <div className="mt-7 grid grid-cols-2 divide-x divide-neutral-200">
                   <div className="pr-3 text-center">
                     <p className="text-2xl font-bold tracking-tight sm:text-3xl">
-                      {campaign.donorCount.toLocaleString('id-ID')}
+                      {campaign.donorCount.toLocaleString("id-ID")}
                     </p>
                     <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
                       Donors
@@ -377,7 +397,9 @@ export function DonatePage() {
                         ) : null}
                       </p>
                       {partner.statement && (
-                        <p className="mt-1 text-sm leading-relaxed text-neutral-500">{partner.statement}</p>
+                        <p className="mt-1 text-sm leading-relaxed text-neutral-500">
+                          {partner.statement}
+                        </p>
                       )}
                     </div>
                   ))}
@@ -385,7 +407,7 @@ export function DonatePage() {
               )}
 
               {/* ─── ONE CLEAR CTA ────────────────────────────────────── */}
-              {campaign.status !== 'CLOSED' && (
+              {campaign.status !== "CLOSED" && (
                 <Button
                   type="button"
                   onClick={openSupport}
@@ -399,13 +421,13 @@ export function DonatePage() {
         </section>
 
         {/* ─── SUPPORT INTERACTION (hidden until Donate Now) ────────────── */}
-        {isSupportOpen && campaign.status !== 'CLOSED' && (
+        {isSupportOpen && campaign.status !== "CLOSED" && (
           <section
             id="donation-support"
             aria-label="Donation support"
             className="mx-auto mt-14 max-w-5xl scroll-mt-20 px-4 sm:mt-20 sm:px-6 lg:px-8"
           >
-            {paymentState === 'success' || paymentState === 'pending' ? (
+            {paymentState === "success" || paymentState === "pending" ? (
               <div
                 role="status"
                 aria-live="polite"
@@ -415,12 +437,14 @@ export function DonatePage() {
                   <Check size={22} strokeWidth={3} />
                 </span>
                 <h3 className="mt-5 text-xl font-bold uppercase tracking-tight sm:text-2xl">
-                  {paymentState === 'success' ? 'You Helped Move This Forward.' : 'Your Donation Is Being Processed.'}
+                  {paymentState === "success"
+                    ? "You Helped Move This Forward."
+                    : "Your Donation Is Being Processed."}
                 </h3>
                 <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-neutral-500">
-                  {paymentState === 'success'
-                    ? 'Thank you for supporting this cause.'
-                    : 'Your payment is pending confirmation. The donation will be counted once payment is verified.'}
+                  {paymentState === "success"
+                    ? "Thank you for supporting this cause."
+                    : "Your payment is pending confirmation. The donation will be counted once payment is verified."}
                 </p>
               </div>
             ) : (
@@ -446,11 +470,11 @@ export function DonatePage() {
                         onClick={() => handlePresetSelect(amount)}
                         aria-pressed={isSelected}
                         className={[
-                          'rounded-full border px-4 py-3.5 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2',
+                          "rounded-full border px-4 py-3.5 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2",
                           isSelected
-                            ? 'border-neutral-900 bg-neutral-900 text-white'
-                            : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-400 hover:text-neutral-900',
-                        ].join(' ')}
+                            ? "border-neutral-900 bg-neutral-900 text-white"
+                            : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-400 hover:text-neutral-900",
+                        ].join(" ")}
                       >
                         {formatPresetLabel(amount)}
                       </button>
@@ -461,11 +485,11 @@ export function DonatePage() {
                     onClick={() => handlePresetSelect(CUSTOM_AMOUNT_KEY)}
                     aria-pressed={selectedPreset === CUSTOM_AMOUNT_KEY}
                     className={[
-                      'rounded-full border px-4 py-3.5 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2',
+                      "rounded-full border px-4 py-3.5 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2",
                       selectedPreset === CUSTOM_AMOUNT_KEY
-                        ? 'border-neutral-900 bg-neutral-900 text-white'
-                        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-400 hover:text-neutral-900',
-                    ].join(' ')}
+                        ? "border-neutral-900 bg-neutral-900 text-white"
+                        : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-400 hover:text-neutral-900",
+                    ].join(" ")}
                   >
                     Custom
                   </button>
@@ -473,7 +497,10 @@ export function DonatePage() {
 
                 {selectedPreset === CUSTOM_AMOUNT_KEY && (
                   <div className="mt-5 max-w-xs">
-                    <label htmlFor="donate-custom-amount" className="mb-1 block text-sm font-medium text-neutral-700">
+                    <label
+                      htmlFor="donate-custom-amount"
+                      className="mb-1 block text-sm font-medium text-neutral-700"
+                    >
                       Custom amount
                     </label>
                     <div className="relative">
@@ -486,7 +513,9 @@ export function DonatePage() {
                         min={1000}
                         inputMode="numeric"
                         value={customAmount}
-                        onChange={(event) => setCustomAmount(event.target.value)}
+                        onChange={(event) =>
+                          setCustomAmount(event.target.value)
+                        }
                         placeholder="Enter amount"
                         aria-label="Custom support amount in Rupiah"
                         className="w-full rounded border border-neutral-300 py-2.5 pl-9 pr-3 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-black"
@@ -525,11 +554,15 @@ export function DonatePage() {
                     Show my name as a supporter.
                   </label>
                   <p className="mt-1 text-xs text-neutral-400">
-                    Unchecked — your donation appears as Anonymous. No login required.
+                    Unchecked — your donation appears as Anonymous. No login
+                    required.
                   </p>
 
                   {paymentError && (
-                    <p className="mt-3 text-sm font-medium text-red-600" role="alert">
+                    <p
+                      className="mt-3 text-sm font-medium text-red-600"
+                      role="alert"
+                    >
                       {paymentError}
                     </p>
                   )}
@@ -539,7 +572,9 @@ export function DonatePage() {
                     disabled={!formValid}
                     className="mt-6 w-full rounded-full py-4 text-[11px] font-semibold uppercase tracking-[0.24em]"
                   >
-                    {paymentState === 'submitting' ? 'Opening Payment…' : 'Support This Mission'}
+                    {paymentState === "submitting"
+                      ? "Opening Payment…"
+                      : "Support This Mission"}
                   </Button>
                 </div>
               </form>
@@ -556,10 +591,19 @@ export function DonatePage() {
               </p>
               <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
                 {highlights.map((donation) => (
-                  <div key={donation.id} className="rounded-xl bg-neutral-50 p-4">
-                    <p className="truncate text-sm font-bold text-neutral-900">{donation.donorName}</p>
-                    <p className="mt-1 text-sm font-bold text-neutral-900">{formatRupiah(donation.amount)}</p>
-                    <p className="mt-1 text-xs text-neutral-400">{formatRelativeTime(donation.createdAt)}</p>
+                  <div
+                    key={donation.id}
+                    className="rounded-xl bg-neutral-50 p-4"
+                  >
+                    <p className="truncate text-sm font-bold text-neutral-900">
+                      {donation.donorName}
+                    </p>
+                    <p className="mt-1 text-sm font-bold text-neutral-900">
+                      {formatRupiah(donation.amount)}
+                    </p>
+                    <p className="mt-1 text-xs text-neutral-400">
+                      {formatRelativeTime(donation.createdAt)}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -577,7 +621,10 @@ export function DonatePage() {
               <h3 className="text-lg font-bold uppercase tracking-tight sm:text-xl">
                 Cerita Penggalangan Dana
               </h3>
-              <ArrowRight size={20} className="text-neutral-900 transition-transform group-hover:translate-x-1" />
+              <ArrowRight
+                size={20}
+                className="text-neutral-900 transition-transform group-hover:translate-x-1"
+              />
             </Link>
 
             <Link
@@ -587,7 +634,10 @@ export function DonatePage() {
               <h3 className="text-lg font-bold uppercase tracking-tight sm:text-xl">
                 Kabar Terbaru
               </h3>
-              <ArrowRight size={20} className="text-neutral-900 transition-transform group-hover:translate-x-1" />
+              <ArrowRight
+                size={20}
+                className="text-neutral-900 transition-transform group-hover:translate-x-1"
+              />
             </Link>
 
             <Link
@@ -597,31 +647,48 @@ export function DonatePage() {
               <h3 className="text-lg font-bold uppercase tracking-tight sm:text-xl">
                 Pencairan Dana
               </h3>
-              <ArrowRight size={20} className="text-neutral-900 transition-transform group-hover:translate-x-1" />
+              <ArrowRight
+                size={20}
+                className="text-neutral-900 transition-transform group-hover:translate-x-1"
+              />
             </Link>
 
             <div className="py-6 border-b border-neutral-200 flex flex-col sm:flex-row sm:items-start justify-between gap-6">
               <div className="flex-1">
-                <Link to={`/donate/${campaign.id}/donors`} className="group inline-flex items-center justify-between w-full sm:w-auto sm:gap-4 hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900">
+                <Link
+                  to={`/donate/${campaign.id}/donors`}
+                  className="group inline-flex items-center justify-between w-full sm:w-auto sm:gap-4 hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
+                >
                   <h3 className="text-lg font-bold uppercase tracking-tight sm:text-xl">
                     Donasi
                   </h3>
-                  <ArrowRight size={20} className="text-neutral-900 sm:hidden transition-transform group-hover:translate-x-1" />
+                  <ArrowRight
+                    size={20}
+                    className="text-neutral-900 sm:hidden transition-transform group-hover:translate-x-1"
+                  />
                 </Link>
                 <p className="mt-2 text-sm text-neutral-500 font-medium">
-                  {campaign.donorCount.toLocaleString('id-ID')} PEOPLE HAVE SUPPORTED THIS MISSION.
+                  {campaign.donorCount.toLocaleString("id-ID")} PEOPLE HAVE
+                  SUPPORTED THIS MISSION.
                 </p>
                 <div className="pt-2">
                   <Link
                     to={`/donate/${campaign.id}/donors`}
                     className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-neutral-900 hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
                   >
-                    Lihat Semua Donasi <ArrowRight size={14} strokeWidth={2.5} />
+                    Lihat Semua Donasi{" "}
+                    <ArrowRight size={14} strokeWidth={2.5} />
                   </Link>
                 </div>
               </div>
-              <Link to={`/donate/${campaign.id}/donors`} className="hidden sm:inline-block group p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 rounded">
-                <ArrowRight size={20} className="text-neutral-900 transition-transform group-hover:translate-x-1" />
+              <Link
+                to={`/donate/${campaign.id}/donors`}
+                className="hidden sm:inline-block group p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 rounded"
+              >
+                <ArrowRight
+                  size={20}
+                  className="text-neutral-900 transition-transform group-hover:translate-x-1"
+                />
               </Link>
             </div>
           </div>
@@ -702,7 +769,7 @@ export function DonatePage() {
 
       {/* Footer with bottom-nav clearance on mobile — same pattern as the
           approved Movement pages. */}
-      <div className="mt-16 bg-white pb-[100px] sm:mt-20 lg:pb-0">
+      <div className="mt-16 bg-white sm:mt-20">
         <HomepageFooter />
       </div>
     </div>

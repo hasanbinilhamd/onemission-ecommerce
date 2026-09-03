@@ -1,12 +1,25 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowRight, BookOpen, Check, Dumbbell, Sprout, Trophy, type LucideIcon } from 'lucide-react';
-import { Button, SkeletonBlock, CmsStatePanel, ComingSoonPage } from '../components/shared';
-import { HomepageFooter } from '../features/footer';
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  ArrowRight,
+  BookOpen,
+  Check,
+  Dumbbell,
+  Sprout,
+  Trophy,
+  type LucideIcon,
+} from "lucide-react";
+import {
+  Button,
+  SkeletonBlock,
+  CmsStatePanel,
+  ComingSoonPage,
+} from "../components/shared";
+import { HomepageFooter } from "../features/footer";
 import {
   missionService,
   type MissionPayload,
   type MissionOptionPayload,
-} from '../services/api/missionService';
+} from "../services/api/missionService";
 
 /**
  * MissionPage — approved Mission voting experience, CMS-driven content ONLY.
@@ -22,26 +35,38 @@ import {
  */
 
 type MissionState =
-  | { status: 'loading' }
-  | { status: 'error' }
-  | { status: 'success'; payload: MissionPayload };
+  | { status: "loading" }
+  | { status: "error" }
+  | { status: "success"; payload: MissionPayload };
 
-const RESULT_ICONS: readonly LucideIcon[] = [BookOpen, Trophy, Dumbbell, Sprout] as const;
+const RESULT_ICONS: readonly LucideIcon[] = [
+  BookOpen,
+  Trophy,
+  Dumbbell,
+  Sprout,
+] as const;
 
-const SOCIAL_PROOF_AVATARS = ['#D1D5DB', '#9CA3AF', '#6B7280'] as const;
+const SOCIAL_PROOF_AVATARS = ["#D1D5DB", "#9CA3AF", "#6B7280"] as const;
 
-function sortOptionsByDisplayOrder(options: MissionOptionPayload[]): MissionOptionPayload[] {
+function sortOptionsByDisplayOrder(
+  options: MissionOptionPayload[],
+): MissionOptionPayload[] {
   return [...options].sort(
-    (left, right) => Number(left.displayOrder || 0) - Number(right.displayOrder || 0) || left.id.localeCompare(right.id),
+    (left, right) =>
+      Number(left.displayOrder || 0) - Number(right.displayOrder || 0) ||
+      left.id.localeCompare(right.id),
   );
 }
 
 /** Preserves the approved two-line headline treatment for any CMS title. */
 function splitTitleLines(title: string): [string, string] {
-  const words = String(title || '').trim().split(/\s+/).filter(Boolean);
-  if (words.length <= 1) return ['The Next Mission', 'Is Yours.'];
+  const words = String(title || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (words.length <= 1) return ["The Next Mission", "Is Yours."];
   const midpoint = Math.ceil(words.length / 2);
-  return [words.slice(0, midpoint).join(' '), words.slice(midpoint).join(' ')];
+  return [words.slice(0, midpoint).join(" "), words.slice(midpoint).join(" ")];
 }
 
 function MissionSkeleton() {
@@ -57,7 +82,10 @@ function MissionSkeleton() {
         <section className="mx-auto mt-10 max-w-5xl px-4 sm:mt-12 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-6">
             {[0, 1, 2, 3].map((index) => (
-              <SkeletonBlock key={index} className="aspect-[3/4] w-full rounded-2xl" />
+              <SkeletonBlock
+                key={index}
+                className="aspect-[3/4] w-full rounded-2xl"
+              />
             ))}
           </div>
         </section>
@@ -65,7 +93,7 @@ function MissionSkeleton() {
           <SkeletonBlock className="h-14 w-full rounded-full" />
         </section>
       </main>
-      <div className="bg-white pb-[100px] sm:mt-20 lg:pb-0">
+      <div className="bg-white sm:mt-20">
         <HomepageFooter />
       </div>
     </div>
@@ -73,7 +101,7 @@ function MissionSkeleton() {
 }
 
 export function MissionPage() {
-  const [state, setState] = useState<MissionState>({ status: 'loading' });
+  const [state, setState] = useState<MissionState>({ status: "loading" });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [alreadyVoted, setAlreadyVoted] = useState(false);
@@ -81,10 +109,10 @@ export function MissionPage() {
   const [voteError, setVoteError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setState({ status: 'loading' });
+    setState({ status: "loading" });
     try {
       const payload = await missionService.getMission();
-      setState({ status: 'success', payload });
+      setState({ status: "success", payload });
       if (payload.hasVoted) {
         setHasVoted(true);
         setAlreadyVoted(true);
@@ -94,7 +122,7 @@ export function MissionPage() {
         setSelectedId(null);
       }
     } catch {
-      setState({ status: 'error' });
+      setState({ status: "error" });
     }
   }, []);
 
@@ -102,10 +130,13 @@ export function MissionPage() {
     void load();
   }, [load]);
 
-  const payload = state.status === 'success' ? state.payload : null;
+  const payload = state.status === "success" ? state.payload : null;
 
   const options = useMemo(
-    () => (payload && payload.options.length > 0 ? sortOptionsByDisplayOrder(payload.options) : []),
+    () =>
+      payload && payload.options.length > 0
+        ? sortOptionsByDisplayOrder(payload.options)
+        : [],
     [payload],
   );
 
@@ -122,20 +153,23 @@ export function MissionPage() {
     });
   }, [payload, options]);
 
-  const votingAllowed = payload?.mission?.status === 'OPEN';
+  const votingAllowed = payload?.mission?.status === "OPEN";
   const voteButtonDisabled =
     !selectedId || hasVoted || isSubmitting || !votingAllowed;
 
-  const handleSelect = useCallback((id: string) => {
-    if (hasVoted) return;
-    setSelectedId(id);
-    setVoteError(null);
-  }, [hasVoted]);
+  const handleSelect = useCallback(
+    (id: string) => {
+      if (hasVoted) return;
+      setSelectedId(id);
+      setVoteError(null);
+    },
+    [hasVoted],
+  );
 
   const handleVote = useCallback(async () => {
     if (!selectedId || hasVoted || isSubmitting) return;
     if (!votingAllowed) {
-      setVoteError('Voting is currently closed.');
+      setVoteError("Voting is currently closed.");
       return;
     }
 
@@ -144,27 +178,27 @@ export function MissionPage() {
 
     try {
       const updated = await missionService.vote(selectedId);
-      setState({ status: 'success', payload: updated });
+      setState({ status: "success", payload: updated });
       setHasVoted(true);
       setAlreadyVoted(false);
     } catch (error) {
       const errorCode = (error as { code?: string } | null)?.code;
-      if (errorCode === 'MISSION_ALREADY_VOTED') {
+      if (errorCode === "MISSION_ALREADY_VOTED") {
         setAlreadyVoted(true);
         setHasVoted(true);
       } else {
-        setVoteError('Your vote could not be recorded. Please try again.');
+        setVoteError("Your vote could not be recorded. Please try again.");
       }
     } finally {
       setIsSubmitting(false);
     }
   }, [hasVoted, isSubmitting, selectedId, votingAllowed]);
 
-  if (state.status === 'loading') {
+  if (state.status === "loading") {
     return <MissionSkeleton />;
   }
 
-  if (state.status === 'error') {
+  if (state.status === "error") {
     return (
       <div className="min-h-screen bg-white">
         <div className="pt-16">
@@ -176,7 +210,7 @@ export function MissionPage() {
             onAction={() => void load()}
           />
         </div>
-        <div className="bg-white pb-[100px] lg:pb-0">
+        <div className="bg-white">
           <HomepageFooter />
         </div>
       </div>
@@ -186,15 +220,15 @@ export function MissionPage() {
   const mission = payload?.mission ?? null;
 
   // Page-level CMS availability — independent from mission/voting content.
-  if (payload?.pageAvailability === 'COMING_SOON') {
+  if (payload?.pageAvailability === "COMING_SOON") {
     return (
       <div className="min-h-screen bg-white">
         <ComingSoonPage
           eyebrow="Mission"
-          title="The Next Mission Is Taking Shape."
+          title="The Next Mission ."
           description="We're preparing something worth moving for."
         />
-        <div className="bg-white pb-[100px] lg:pb-0">
+        <div className="bg-white">
           <HomepageFooter />
         </div>
       </div>
@@ -211,7 +245,7 @@ export function MissionPage() {
             description="Voting will open here when the next mission goes live."
           />
         </div>
-        <div className="bg-white pb-[100px] lg:pb-0">
+        <div className="bg-white">
           <HomepageFooter />
         </div>
       </div>
@@ -251,7 +285,9 @@ export function MissionPage() {
             >
               {options.map((option, index) => {
                 const isSelected = selectedId === option.id;
-                const cardNumber = String(Number(option.displayOrder) || index + 1).padStart(2, '0');
+                const cardNumber = String(
+                  Number(option.displayOrder) || index + 1,
+                ).padStart(2, "0");
                 return (
                   <button
                     key={option.id}
@@ -259,16 +295,16 @@ export function MissionPage() {
                     onClick={() => handleSelect(option.id)}
                     disabled={hasVoted}
                     aria-pressed={isSelected}
-                    aria-label={`${option.title}${isSelected ? ', selected' : ''}`}
+                    aria-label={`${option.title}${isSelected ? ", selected" : ""}`}
                     className={[
-                      'group relative block w-full overflow-hidden rounded-2xl text-left',
-                      'transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2',
+                      "group relative block w-full overflow-hidden rounded-2xl text-left",
+                      "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2",
                       isSelected
-                        ? 'ring-2 ring-neutral-900 ring-offset-2'
-                        : 'ring-1 ring-neutral-200 hover:ring-neutral-400',
-                      hasVoted ? 'cursor-default' : 'cursor-pointer',
-                    ].join(' ')}
-                    style={{ aspectRatio: '3 / 4' }}
+                        ? "ring-2 ring-neutral-900 ring-offset-2"
+                        : "ring-1 ring-neutral-200 hover:ring-neutral-400",
+                      hasVoted ? "cursor-default" : "cursor-pointer",
+                    ].join(" ")}
+                    style={{ aspectRatio: "3 / 4" }}
                   >
                     {option.image ? (
                       <img
@@ -295,15 +331,21 @@ export function MissionPage() {
                     <span
                       aria-hidden="true"
                       className={[
-                        'absolute right-2.5 top-2.5 z-20 flex h-6 w-6 items-center justify-center rounded-full transition-all duration-200',
-                        isSelected ? 'scale-100 opacity-100' : 'scale-75 opacity-0',
-                      ].join(' ')}
+                        "absolute right-2.5 top-2.5 z-20 flex h-6 w-6 items-center justify-center rounded-full transition-all duration-200",
+                        isSelected
+                          ? "scale-100 opacity-100"
+                          : "scale-75 opacity-0",
+                      ].join(" ")}
                       style={{
-                        backgroundColor: '#FFFFFF',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+                        backgroundColor: "#FFFFFF",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
                       }}
                     >
-                      <Check size={14} strokeWidth={3} className="text-neutral-900" />
+                      <Check
+                        size={14}
+                        strokeWidth={3}
+                        className="text-neutral-900"
+                      />
                     </span>
 
                     <div className="absolute inset-x-0 bottom-0 z-10 p-3.5 text-white sm:p-5">
@@ -340,7 +382,7 @@ export function MissionPage() {
               </span>
             ) : (
               <span className="inline-flex items-center gap-2">
-                {isSubmitting ? 'Recording…' : 'Vote Now'}
+                {isSubmitting ? "Recording…" : "Vote Now"}
                 {!isSubmitting && <ArrowRight size={16} strokeWidth={2.5} />}
               </span>
             )}
@@ -356,7 +398,9 @@ export function MissionPage() {
                 <Check size={14} strokeWidth={3} />
                 Your Vote Has Been Recorded
               </p>
-              <p className="text-xs text-neutral-500">Thank you for moving with us.</p>
+              <p className="text-xs text-neutral-500">
+                Thank you for moving with us.
+              </p>
             </div>
           )}
 
@@ -377,7 +421,9 @@ export function MissionPage() {
 
           {voteError && (
             <div className="mt-4 text-center" role="alert">
-              <p className="text-sm font-medium text-neutral-700">{voteError}</p>
+              <p className="text-sm font-medium text-neutral-700">
+                {voteError}
+              </p>
             </div>
           )}
 
@@ -401,7 +447,7 @@ export function MissionPage() {
               ))}
             </div>
             <p className="text-sm font-medium text-neutral-600">
-              {payload.totalVotes.toLocaleString('id-ID')} people have voted
+              {payload.totalVotes.toLocaleString("id-ID")} people have voted
             </p>
           </section>
         )}
@@ -417,7 +463,10 @@ export function MissionPage() {
               {resultRows.map((result) => {
                 const ResultIcon = result.icon;
                 return (
-                  <div key={result.optionId} className="flex items-center gap-3 sm:gap-4">
+                  <div
+                    key={result.optionId}
+                    className="flex items-center gap-3 sm:gap-4"
+                  >
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-700">
                       <ResultIcon size={18} strokeWidth={2} />
                     </span>
@@ -454,7 +503,7 @@ export function MissionPage() {
 
       {/* Footer with bottom-nav clearance on mobile — same pattern as the
           approved Movement Homepage. */}
-      <div className="mt-16 bg-white pb-[100px] sm:mt-20 lg:pb-0">
+      <div className="mt-16 bg-white sm:mt-20">
         <HomepageFooter />
       </div>
     </div>

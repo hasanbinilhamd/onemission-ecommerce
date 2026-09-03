@@ -1,11 +1,18 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { HomepageFooter } from '../features/footer';
-import { TopBackNavigation } from '../features/navigation';
-import { ROUTES } from '../app/config/routes';
-import { SkeletonBlock, CmsStatePanel, ComingSoonPage } from '../components/shared';
-import { donationService, type CampaignDetailPayload } from '../services/api/donationService';
-import { formatRupiah } from './DonatePage';
+import { useCallback, useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { HomepageFooter } from "../features/footer";
+import { TopBackNavigation } from "../features/navigation";
+import { ROUTES } from "../app/config/routes";
+import {
+  SkeletonBlock,
+  CmsStatePanel,
+  ComingSoonPage,
+} from "../components/shared";
+import {
+  donationService,
+  type CampaignDetailPayload,
+} from "../services/api/donationService";
+import { formatRupiah } from "./DonatePage";
 
 /**
  * DonateCampaignPage — public historical campaign detail.
@@ -15,7 +22,7 @@ import { formatRupiah } from './DonatePage';
  * campaigns are not donation choices. CMS content only, no static fallback.
  */
 export function DonateCampaignPage() {
-  const { slug = '' } = useParams<{ slug: string }>();
+  const { slug = "" } = useParams<{ slug: string }>();
   const [payload, setPayload] = useState<CampaignDetailPayload | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -29,7 +36,7 @@ export function DonateCampaignPage() {
       setPayload(result);
     } catch (error) {
       const code = (error as { code?: string } | null)?.code;
-      if (code === 'DONATION_CAMPAIGN_NOT_FOUND') {
+      if (code === "DONATION_CAMPAIGN_NOT_FOUND") {
         setNotFound(true);
       } else {
         setLoadFailed(true);
@@ -91,33 +98,40 @@ export function DonateCampaignPage() {
           <SkeletonBlock className="mt-3 h-4 w-full" />
           <SkeletonBlock className="mt-3 h-4 w-2/3" />
         </div>
-        <div className="mt-16 bg-white pb-[100px] lg:pb-0">
+        <div className="mt-16 bg-white">
           <HomepageFooter />
         </div>
       </div>
     );
   }
 
-  const { campaign, story, updates, disbursements, partners, pageAvailability } = payload;
+  const {
+    campaign,
+    story,
+    updates,
+    disbursements,
+    partners,
+    pageAvailability,
+  } = payload;
 
   // Page-level CMS availability gates the ENTIRE Donate section.
-  if (pageAvailability === 'COMING_SOON') {
+  if (pageAvailability === "COMING_SOON") {
     return (
       <div className="min-h-screen bg-white">
         <TopBackNavigation label="Back to Donate" fallbackTo={ROUTES.DONATE} />
         <ComingSoonPage
           eyebrow="Donate"
-          title="The Next Cause Is Taking Shape."
+          title="Something Worth Giving For."
           description="We're preparing the next opportunity to give with purpose."
         />
-        <div className="bg-white pb-[100px] lg:pb-0">
+        <div className="bg-white">
           <HomepageFooter />
         </div>
       </div>
     );
   }
 
-  const storyParagraphs = String(story.content || '')
+  const storyParagraphs = String(story.content || "")
     .split(/\n\s*\n/)
     .map((paragraph) => paragraph.trim())
     .filter(Boolean);
@@ -137,8 +151,9 @@ export function DonateCampaignPage() {
           {campaign.shortDescription}
         </p>
         <p className="mt-3 text-sm font-bold text-neutral-900">
-          {formatRupiah(campaign.raised)} raised of {formatRupiah(campaign.targetAmount)} ·{' '}
-          {campaign.donorCount.toLocaleString('id-ID')} donors
+          {formatRupiah(campaign.raised)} raised of{" "}
+          {formatRupiah(campaign.targetAmount)} ·{" "}
+          {campaign.donorCount.toLocaleString("id-ID")} donors
         </p>
 
         {campaign.coverImage && (
@@ -152,7 +167,9 @@ export function DonateCampaignPage() {
         )}
 
         {story.title && (
-          <h2 className="mt-10 text-2xl font-bold uppercase tracking-tight">{story.title}</h2>
+          <h2 className="mt-10 text-2xl font-bold uppercase tracking-tight">
+            {story.title}
+          </h2>
         )}
         <div className="mt-5 space-y-5 text-[15px] leading-relaxed text-neutral-700">
           {storyParagraphs.map((paragraph) => (
@@ -171,15 +188,21 @@ export function DonateCampaignPage() {
                   {update.image && (
                     <img
                       src={update.image}
-                      alt={update.imageAlt || ''}
+                      alt={update.imageAlt || ""}
                       className="h-16 w-16 shrink-0 rounded-lg object-cover"
                     />
                   )}
                   <div>
                     <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
-                      {new Date(update.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      {new Date(update.date).toLocaleDateString("id-ID", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}
                     </p>
-                    <p className="mt-1 text-sm font-semibold text-neutral-900">{update.title}</p>
+                    <p className="mt-1 text-sm font-semibold text-neutral-900">
+                      {update.title}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -194,12 +217,21 @@ export function DonateCampaignPage() {
             </p>
             <div className="mt-5 space-y-3">
               {disbursements.map((item) => (
-                <div key={item.id} className="flex items-center justify-between gap-4 rounded-xl bg-neutral-50 p-4">
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between gap-4 rounded-xl bg-neutral-50 p-4"
+                >
                   <div>
-                    <p className="text-sm font-bold text-neutral-900">{item.title}</p>
-                    <p className="mt-0.5 text-xs text-neutral-500">{item.partnerName}</p>
+                    <p className="text-sm font-bold text-neutral-900">
+                      {item.title}
+                    </p>
+                    <p className="mt-0.5 text-xs text-neutral-500">
+                      {item.partnerName}
+                    </p>
                   </div>
-                  <p className="text-sm font-bold text-neutral-900">{formatRupiah(item.amount)}</p>
+                  <p className="text-sm font-bold text-neutral-900">
+                    {formatRupiah(item.amount)}
+                  </p>
                 </div>
               ))}
             </div>
@@ -223,7 +255,9 @@ export function DonateCampaignPage() {
                     ) : null}
                   </p>
                   {partner.statement && (
-                    <p className="mt-1 text-sm text-neutral-500">{partner.statement}</p>
+                    <p className="mt-1 text-sm text-neutral-500">
+                      {partner.statement}
+                    </p>
                   )}
                 </div>
               ))}
@@ -232,7 +266,7 @@ export function DonateCampaignPage() {
         )}
       </article>
 
-      <div className="mt-16 bg-white pb-[100px] lg:pb-0">
+      <div className="mt-16 bg-white">
         <HomepageFooter />
       </div>
     </div>

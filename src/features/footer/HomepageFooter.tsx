@@ -493,6 +493,7 @@ export function HomepageFooter() {
   return (
     <footer
       aria-label="Homepage footer"
+      className="pb-12 lg:pb-0"
       style={{
         position: "relative",
         overflow: "hidden",

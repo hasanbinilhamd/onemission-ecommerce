@@ -1,9 +1,13 @@
-import { HomepageFooter } from '../features/footer';
-import { TopBackNavigation } from '../features/navigation';
-import { ROUTES } from '../app/config/routes';
-import { SkeletonBlock, CmsStatePanel, ComingSoonPage } from '../components/shared';
-import { useDonateCms } from '../features/donate/donateCms';
-import { formatRupiah } from './DonatePage';
+import { HomepageFooter } from "../features/footer";
+import { TopBackNavigation } from "../features/navigation";
+import { ROUTES } from "../app/config/routes";
+import {
+  SkeletonBlock,
+  CmsStatePanel,
+  ComingSoonPage,
+} from "../components/shared";
+import { useDonateCms } from "../features/donate/donateCms";
+import { formatRupiah } from "./DonatePage";
 
 /**
  * DonateDisbursementsPage — fund disbursement information, from the CMS only.
@@ -14,16 +18,16 @@ export function DonateDisbursementsPage() {
   const { status, payload, reload } = useDonateCms();
 
   // Page-level CMS availability — independent from campaign status.
-  if (payload?.pageAvailability === 'COMING_SOON') {
+  if (payload?.pageAvailability === "COMING_SOON") {
     return (
       <div className="min-h-screen bg-white">
         <TopBackNavigation label="Back" fallbackTo={ROUTES.DONATE} />
         <ComingSoonPage
           eyebrow="Donate"
-          title="The Next Cause Is Taking Shape."
+          title="Something Worth Giving For."
           description="We're preparing the next opportunity to give with purpose."
         />
-        <div className="bg-white pb-[100px] lg:pb-0">
+        <div className="bg-white">
           <HomepageFooter />
         </div>
       </div>
@@ -33,11 +37,14 @@ export function DonateDisbursementsPage() {
   const disbursements = payload?.disbursements ?? [];
   const campaign = payload?.campaign ?? null;
 
-  const totalDisbursed = disbursements.reduce((acc, item) => acc + (Number(item.amount) || 0), 0);
+  const totalDisbursed = disbursements.reduce(
+    (acc, item) => acc + (Number(item.amount) || 0),
+    0,
+  );
   const raised = campaign ? Number(campaign.raised) || 0 : 0;
   const remaining = Math.max(0, raised - totalDisbursed);
 
-  if (status === 'loading') {
+  if (status === "loading") {
     return (
       <div className="min-h-screen bg-white font-['SF-Pro-Display',_sans-serif]">
         <div className="mx-auto max-w-3xl px-4 pt-28 sm:px-6 sm:pt-32">
@@ -46,14 +53,14 @@ export function DonateDisbursementsPage() {
           <SkeletonBlock className="mt-10 h-24 w-full rounded-2xl" />
           <SkeletonBlock className="mt-4 h-16 w-full rounded-xl" />
         </div>
-        <div className="mt-16 bg-white pb-[100px] lg:pb-0">
+        <div className="mt-16 bg-white">
           <HomepageFooter />
         </div>
       </div>
     );
   }
 
-  if (status === 'error') {
+  if (status === "error") {
     return (
       <div className="min-h-screen bg-white">
         <TopBackNavigation label="Back" fallbackTo={ROUTES.DONATE} />
@@ -97,29 +104,48 @@ export function DonateDisbursementsPage() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-400">
               TOTAL DISALURKAN
             </p>
-            <p className="mt-2 text-xl font-bold tracking-tight sm:text-2xl">{formatRupiah(totalDisbursed)}</p>
+            <p className="mt-2 text-xl font-bold tracking-tight sm:text-2xl">
+              {formatRupiah(totalDisbursed)}
+            </p>
           </div>
           <div className="py-6 sm:px-6 sm:py-8 sm:first:pl-0 sm:last:pr-0">
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-400">
               SISA DANA
             </p>
-            <p className="mt-2 text-xl font-bold tracking-tight sm:text-2xl">{formatRupiah(remaining)}</p>
+            <p className="mt-2 text-xl font-bold tracking-tight sm:text-2xl">
+              {formatRupiah(remaining)}
+            </p>
           </div>
         </div>
 
         <div className="mt-12 space-y-8">
           {disbursements.length === 0 ? (
-            <p className="text-sm text-neutral-500">Belum ada pencairan dana untuk campaign ini.</p>
+            <p className="text-sm text-neutral-500">
+              Belum ada pencairan dana untuk campaign ini.
+            </p>
           ) : (
             disbursements.map((item) => (
-              <div key={item.id} className="border-b border-neutral-200 pb-8 last:border-0 last:pb-0">
+              <div
+                key={item.id}
+                className="border-b border-neutral-200 pb-8 last:border-0 last:pb-0"
+              >
                 <p className="text-[11px] font-bold tracking-widest uppercase text-neutral-400">
-                  {new Date(item.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}
+                  {new Date(item.date)
+                    .toLocaleDateString("id-ID", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })
+                    .toUpperCase()}
                 </p>
-                <h3 className="mt-2 text-lg font-bold leading-snug text-neutral-900">{item.title}</h3>
+                <h3 className="mt-2 text-lg font-bold leading-snug text-neutral-900">
+                  {item.title}
+                </h3>
                 <div className="mt-2 flex items-center justify-between gap-4">
                   <p className="text-sm text-neutral-500">{item.partnerName}</p>
-                  <p className="text-base font-bold text-neutral-900">{formatRupiah(item.amount)}</p>
+                  <p className="text-base font-bold text-neutral-900">
+                    {formatRupiah(item.amount)}
+                  </p>
                 </div>
               </div>
             ))
@@ -127,7 +153,7 @@ export function DonateDisbursementsPage() {
         </div>
       </main>
 
-      <div className="mt-16 bg-white pb-[100px] sm:mt-20 lg:pb-0">
+      <div className="mt-16 bg-white sm:mt-20">
         <HomepageFooter />
       </div>
     </div>

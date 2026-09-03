@@ -1,10 +1,13 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ROUTES } from '../../app/config/routes';
-import { HomepageFooter } from '../footer';
-import { ArrowRight } from 'lucide-react';
-import { SkeletonBlock, CmsStatePanel } from '../../components/shared';
-import { websiteService, type MovementHomeContent } from '../../services/api/websiteService';
+import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { ROUTES } from "../../app/config/routes";
+import { HomepageFooter } from "../footer";
+import { ArrowRight } from "lucide-react";
+import { SkeletonBlock, CmsStatePanel } from "../../components/shared";
+import {
+  websiteService,
+  type MovementHomeContent,
+} from "../../services/api/websiteService";
 
 /**
  * MovementHomePage — approved Home design, CMS-driven content ONLY.
@@ -20,14 +23,14 @@ import { websiteService, type MovementHomeContent } from '../../services/api/web
  */
 
 type HomeState =
-  | { status: 'loading' }
-  | { status: 'error' }
-  | { status: 'success'; content: MovementHomeContent };
+  | { status: "loading" }
+  | { status: "error" }
+  | { status: "success"; content: MovementHomeContent };
 
 /** Splits the CMS headline into the existing multi-line treatment. */
 function splitHeadlineLines(headline: string): string[] {
-  const parts = String(headline || '')
-    .split('.')
+  const parts = String(headline || "")
+    .split(".")
     .map((part) => part.trim())
     .filter(Boolean);
   if (parts.length <= 1) return parts.length === 1 ? [parts[0]] : [];
@@ -36,15 +39,17 @@ function splitHeadlineLines(headline: string): string[] {
 
 function useIsMobileViewport(): boolean {
   const [isMobile, setIsMobile] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches,
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 639px)").matches,
   );
 
   useEffect(() => {
-    const media = window.matchMedia('(max-width: 639px)');
+    const media = window.matchMedia("(max-width: 639px)");
     const update = () => setIsMobile(media.matches);
     update();
-    media.addEventListener('change', update);
-    return () => media.removeEventListener('change', update);
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
   }, []);
 
   return isMobile;
@@ -58,7 +63,9 @@ const HOME_DESTINATION_ROUTES: Record<string, string> = {
 };
 
 function resolveHomeDestination(destination: string | undefined): string {
-  return HOME_DESTINATION_ROUTES[String(destination || 'mission')] || ROUTES.MISSION;
+  return (
+    HOME_DESTINATION_ROUTES[String(destination || "mission")] || ROUTES.MISSION
+  );
 }
 
 function HomeSkeleton() {
@@ -78,11 +85,14 @@ function HomeSkeleton() {
         <SkeletonBlock className="mt-3 h-9 w-64" />
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
           {[0, 1, 2, 3].map((index) => (
-            <SkeletonBlock key={index} className="aspect-[2/1] w-full rounded-2xl sm:aspect-[4/5]" />
+            <SkeletonBlock
+              key={index}
+              className="aspect-[2/1] w-full rounded-2xl sm:aspect-[4/5]"
+            />
           ))}
         </div>
       </div>
-      <div className="bg-white pb-[100px] lg:pb-0">
+      <div className="bg-white">
         <HomepageFooter />
       </div>
     </div>
@@ -90,16 +100,16 @@ function HomeSkeleton() {
 }
 
 export function MovementHomePage() {
-  const [state, setState] = useState<HomeState>({ status: 'loading' });
+  const [state, setState] = useState<HomeState>({ status: "loading" });
   const isMobile = useIsMobileViewport();
 
   const load = useCallback(async () => {
-    setState({ status: 'loading' });
+    setState({ status: "loading" });
     try {
       const content = await websiteService.getMovementHome();
-      setState({ status: 'success', content });
+      setState({ status: "success", content });
     } catch {
-      setState({ status: 'error' });
+      setState({ status: "error" });
     }
   }, []);
 
@@ -107,11 +117,11 @@ export function MovementHomePage() {
     void load();
   }, [load]);
 
-  if (state.status === 'loading') {
+  if (state.status === "loading") {
     return <HomeSkeleton />;
   }
 
-  if (state.status === 'error') {
+  if (state.status === "error") {
     return (
       <div className="min-h-screen bg-white">
         <div className="pt-16">
@@ -123,7 +133,7 @@ export function MovementHomePage() {
             onAction={() => void load()}
           />
         </div>
-        <div className="bg-white pb-[100px] lg:pb-0">
+        <div className="bg-white">
           <HomepageFooter />
         </div>
       </div>
@@ -142,7 +152,7 @@ export function MovementHomePage() {
             description="Content will appear here once it is published."
           />
         </div>
-        <div className="bg-white pb-[100px] lg:pb-0">
+        <div className="bg-white">
           <HomepageFooter />
         </div>
       </div>
@@ -155,9 +165,7 @@ export function MovementHomePage() {
   const headlineLines = splitHeadlineLines(home.headline);
 
   return (
-    <div
-      className="bg-[#0A0A0A] min-h-screen text-white flex flex-col font-['SF-Pro-Display',_sans-serif]"
-    >
+    <div className="bg-[#0A0A0A] min-h-screen text-white flex flex-col font-['SF-Pro-Display',_sans-serif]">
       <main className="flex-grow flex flex-col">
         {/* HERO SECTION */}
         <section className="relative w-full min-h-[85vh] sm:min-h-screen flex flex-col justify-end pb-24 sm:pb-32 px-6 sm:px-12 lg:px-24">
@@ -178,7 +186,10 @@ export function MovementHomePage() {
             {headlineLines.length > 0 && (
               <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight uppercase leading-[0.95] mb-6">
                 {headlineLines.map((line, index) => (
-                  <span key={index} className={`block ${index % 2 === 1 ? 'text-neutral-400' : ''}`}>
+                  <span
+                    key={index}
+                    className={`block ${index % 2 === 1 ? "text-neutral-400" : ""}`}
+                  >
                     {line}
                   </span>
                 ))}
@@ -207,14 +218,18 @@ export function MovementHomePage() {
         {cards.length > 0 && (
           <section className="px-4 sm:px-12 lg:px-24 py-12 sm:py-24 bg-white relative z-20 text-neutral-900">
             <div className="mb-8 sm:mb-12">
-              <h2 className="text-xs sm:text-sm font-semibold tracking-[0.2em] text-neutral-500 uppercase mb-2 sm:mb-3">One Mission</h2>
-              <p className="text-2xl sm:text-4xl font-bold uppercase tracking-tight">Join The Mission</p>
+              <h2 className="text-xs sm:text-sm font-semibold tracking-[0.2em] text-neutral-500 uppercase mb-2 sm:mb-3">
+                One Mission
+              </h2>
+              <p className="text-2xl sm:text-4xl font-bold uppercase tracking-tight">
+                Join The Mission
+              </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {cards.map((card, index) => {
                 const displayOrder = Number(card.displayOrder) || index + 1;
-                const cardNumber = String(displayOrder).padStart(2, '0');
+                const cardNumber = String(displayOrder).padStart(2, "0");
                 return (
                   <Link
                     key={card.id ?? index}
@@ -259,7 +274,7 @@ export function MovementHomePage() {
       </main>
 
       {/* Adjust footer padding on mobile so it doesn't get hidden behind bottom nav */}
-      <div className="pb-[100px] lg:pb-0 bg-white">
+      <div className="bg-white">
         <HomepageFooter />
       </div>
     </div>

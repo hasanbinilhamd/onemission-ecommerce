@@ -1,13 +1,13 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Button } from '../components/shared';
-import { HomepageFooter } from '../features/footer';
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { Button } from "../components/shared";
+import { HomepageFooter } from "../features/footer";
 import {
   JOURNAL_CATEGORIES,
   JOURNAL_COLLECTION_STORIES,
   JOURNAL_FEATURED_STORY,
   type JournalCategory,
-} from '../features/journal';
+} from "../features/journal";
 
 /**
  * JournalPage — Phase 4: the stories behind the movement.
@@ -24,29 +24,38 @@ import {
 const INITIAL_BATCH_SIZE = 4;
 const BATCH_SIZE = 4;
 
-const FILTER_OPTIONS: readonly ('ALL' | JournalCategory)[] = ['ALL', ...JOURNAL_CATEGORIES];
+const FILTER_OPTIONS: readonly ("ALL" | JournalCategory)[] = [
+  "ALL",
+  ...JOURNAL_CATEGORIES,
+];
 
 export function JournalPage() {
-  const [activeCategory, setActiveCategory] = useState<'ALL' | JournalCategory>('ALL');
+  const [activeCategory, setActiveCategory] = useState<"ALL" | JournalCategory>(
+    "ALL",
+  );
   const [visibleCount, setVisibleCount] = useState(INITIAL_BATCH_SIZE);
 
   const visibleStories = useMemo(() => {
     const filtered =
-      activeCategory === 'ALL'
+      activeCategory === "ALL"
         ? JOURNAL_COLLECTION_STORIES
-        : JOURNAL_COLLECTION_STORIES.filter((story) => story.category === activeCategory);
+        : JOURNAL_COLLECTION_STORIES.filter(
+            (story) => story.category === activeCategory,
+          );
     return filtered.slice(0, visibleCount);
   }, [activeCategory, visibleCount]);
 
   const totalInCategory = useMemo(() => {
-    return activeCategory === 'ALL'
+    return activeCategory === "ALL"
       ? JOURNAL_COLLECTION_STORIES.length
-      : JOURNAL_COLLECTION_STORIES.filter((story) => story.category === activeCategory).length;
+      : JOURNAL_COLLECTION_STORIES.filter(
+          (story) => story.category === activeCategory,
+        ).length;
   }, [activeCategory]);
 
   const hasMore = visibleCount < totalInCategory;
 
-  const handleCategoryChange = (category: 'ALL' | JournalCategory) => {
+  const handleCategoryChange = (category: "ALL" | JournalCategory) => {
     setActiveCategory(category);
     setVisibleCount(INITIAL_BATCH_SIZE);
   };
@@ -93,7 +102,8 @@ export function JournalPage() {
               />
               <div className="absolute inset-x-0 bottom-0 p-5 text-white sm:p-8 lg:p-10">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/70">
-                  {featured.category} · {featured.date} · {featured.readMinutes} min read
+                  {featured.category} · {featured.date} · {featured.readMinutes}{" "}
+                  min read
                 </p>
                 <h2 className="mt-2 max-w-2xl text-2xl font-bold uppercase leading-tight tracking-tight sm:text-4xl lg:text-5xl">
                   {featured.title}
@@ -125,13 +135,15 @@ export function JournalPage() {
                   onClick={() => handleCategoryChange(category)}
                   aria-pressed={isActive}
                   className={[
-                    'rounded-full border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2',
+                    "rounded-full border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2",
                     isActive
-                      ? 'border-neutral-900 bg-neutral-900 text-white'
-                      : 'border-neutral-200 bg-white text-neutral-500 hover:border-neutral-400 hover:text-neutral-900',
-                  ].join(' ')}
+                      ? "border-neutral-900 bg-neutral-900 text-white"
+                      : "border-neutral-200 bg-white text-neutral-500 hover:border-neutral-400 hover:text-neutral-900",
+                  ].join(" ")}
                 >
-                  {category === 'ALL' ? 'All' : category.charAt(0) + category.slice(1).toLowerCase()}
+                  {category === "ALL"
+                    ? "All"
+                    : category.charAt(0) + category.slice(1).toLowerCase()}
                 </button>
               );
             })}
@@ -200,7 +212,7 @@ export function JournalPage() {
 
       {/* Footer with bottom-nav clearance on mobile — same pattern as the
           approved Movement Homepage and Mission page. */}
-      <div className="mt-16 bg-white pb-[100px] sm:mt-20 lg:pb-0">
+      <div className="mt-16 bg-white sm:mt-20">
         <HomepageFooter />
       </div>
     </div>

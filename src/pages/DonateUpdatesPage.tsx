@@ -1,8 +1,12 @@
-import { HomepageFooter } from '../features/footer';
-import { TopBackNavigation } from '../features/navigation';
-import { ROUTES } from '../app/config/routes';
-import { SkeletonBlock, CmsStatePanel, ComingSoonPage } from '../components/shared';
-import { useDonateCms } from '../features/donate/donateCms';
+import { HomepageFooter } from "../features/footer";
+import { TopBackNavigation } from "../features/navigation";
+import { ROUTES } from "../app/config/routes";
+import {
+  SkeletonBlock,
+  CmsStatePanel,
+  ComingSoonPage,
+} from "../components/shared";
+import { useDonateCms } from "../features/donate/donateCms";
 
 /**
  * DonateUpdatesPage — latest campaign updates, from the CMS only.
@@ -10,7 +14,7 @@ import { useDonateCms } from '../features/donate/donateCms';
 export function DonateUpdatesPage() {
   const { status, payload, reload } = useDonateCms();
 
-  if (status === 'loading') {
+  if (status === "loading") {
     return (
       <div className="min-h-screen bg-white font-['SF-Pro-Display',_sans-serif]">
         <div className="mx-auto max-w-3xl px-4 pt-28 sm:px-6 sm:pt-32">
@@ -20,14 +24,14 @@ export function DonateUpdatesPage() {
           <SkeletonBlock className="mt-3 h-4 w-full" />
           <SkeletonBlock className="mt-3 h-4 w-2/3" />
         </div>
-        <div className="mt-16 bg-white pb-[100px] lg:pb-0">
+        <div className="mt-16 bg-white">
           <HomepageFooter />
         </div>
       </div>
     );
   }
 
-  if (status === 'error') {
+  if (status === "error") {
     return (
       <div className="min-h-screen bg-white">
         <TopBackNavigation label="Back" fallbackTo={ROUTES.DONATE} />
@@ -45,16 +49,16 @@ export function DonateUpdatesPage() {
   }
 
   // Page-level CMS availability — independent from campaign status.
-  if (payload?.pageAvailability === 'COMING_SOON') {
+  if (payload?.pageAvailability === "COMING_SOON") {
     return (
       <div className="min-h-screen bg-white">
         <TopBackNavigation label="Back" fallbackTo={ROUTES.DONATE} />
         <ComingSoonPage
           eyebrow="Donate"
-          title="The Next Cause Is Taking Shape."
+          title="Something Worth Giving For."
           description="We're preparing the next opportunity to give with purpose."
         />
-        <div className="bg-white pb-[100px] lg:pb-0">
+        <div className="bg-white">
           <HomepageFooter />
         </div>
       </div>
@@ -80,12 +84,23 @@ export function DonateUpdatesPage() {
 
         <div className="mt-12 space-y-12">
           {updates.length === 0 ? (
-            <p className="text-sm text-neutral-500">Belum ada kabar terbaru untuk campaign ini.</p>
+            <p className="text-sm text-neutral-500">
+              Belum ada kabar terbaru untuk campaign ini.
+            </p>
           ) : (
             updates.map((update) => (
-              <div key={update.id} className="border-b border-neutral-200 pb-12 last:border-0 last:pb-0">
+              <div
+                key={update.id}
+                className="border-b border-neutral-200 pb-12 last:border-0 last:pb-0"
+              >
                 <p className="text-[11px] font-bold tracking-widest uppercase text-neutral-400">
-                  {new Date(update.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}
+                  {new Date(update.date)
+                    .toLocaleDateString("id-ID", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })
+                    .toUpperCase()}
                 </p>
                 {update.title && (
                   <h3 className="mt-3 text-lg font-bold leading-snug sm:text-xl text-neutral-900">
@@ -94,7 +109,11 @@ export function DonateUpdatesPage() {
                 )}
                 {update.image && (
                   <div className="mt-6 overflow-hidden rounded-2xl bg-neutral-100">
-                    <img src={update.image} alt={update.imageAlt} className="w-full aspect-[4/3] sm:aspect-[16/9] object-cover" />
+                    <img
+                      src={update.image}
+                      alt={update.imageAlt}
+                      className="w-full aspect-[4/3] sm:aspect-[16/9] object-cover"
+                    />
                   </div>
                 )}
               </div>
@@ -103,7 +122,7 @@ export function DonateUpdatesPage() {
         </div>
       </main>
 
-      <div className="mt-16 bg-white pb-[100px] sm:mt-20 lg:pb-0">
+      <div className="mt-16 bg-white sm:mt-20">
         <HomepageFooter />
       </div>
     </div>

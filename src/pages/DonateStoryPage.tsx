@@ -1,8 +1,12 @@
-import { HomepageFooter } from '../features/footer';
-import { TopBackNavigation } from '../features/navigation';
-import { ROUTES } from '../app/config/routes';
-import { SkeletonBlock, CmsStatePanel, ComingSoonPage } from '../components/shared';
-import { useDonateCms } from '../features/donate/donateCms';
+import { HomepageFooter } from "../features/footer";
+import { TopBackNavigation } from "../features/navigation";
+import { ROUTES } from "../app/config/routes";
+import {
+  SkeletonBlock,
+  CmsStatePanel,
+  ComingSoonPage,
+} from "../components/shared";
+import { useDonateCms } from "../features/donate/donateCms";
 
 /**
  * DonateStoryPage — the active campaign story, from the CMS only.
@@ -11,7 +15,7 @@ import { useDonateCms } from '../features/donate/donateCms';
 export function DonateStoryPage() {
   const { status, payload, reload } = useDonateCms();
 
-  if (status === 'loading') {
+  if (status === "loading") {
     return (
       <div className="min-h-screen bg-white font-['SF-Pro-Display',_sans-serif]">
         <div className="mx-auto max-w-3xl px-4 pt-28 sm:px-6 sm:pt-32">
@@ -22,14 +26,14 @@ export function DonateStoryPage() {
           <SkeletonBlock className="mt-3 h-4 w-full" />
           <SkeletonBlock className="mt-3 h-4 w-2/3" />
         </div>
-        <div className="mt-16 bg-white pb-[100px] lg:pb-0">
+        <div className="mt-16 bg-white">
           <HomepageFooter />
         </div>
       </div>
     );
   }
 
-  if (status === 'error') {
+  if (status === "error") {
     return (
       <div className="min-h-screen bg-white">
         <TopBackNavigation label="Back" fallbackTo={ROUTES.DONATE} />
@@ -47,16 +51,16 @@ export function DonateStoryPage() {
   }
 
   // Page-level CMS availability — independent from campaign status.
-  if (payload?.pageAvailability === 'COMING_SOON') {
+  if (payload?.pageAvailability === "COMING_SOON") {
     return (
       <div className="min-h-screen bg-white">
         <TopBackNavigation label="Back" fallbackTo={ROUTES.DONATE} />
         <ComingSoonPage
           eyebrow="Donate"
-          title="The Next Cause Is Taking Shape."
+          title="Something Worth Giving For."
           description="We're preparing the next opportunity to give with purpose."
         />
-        <div className="bg-white pb-[100px] lg:pb-0">
+        <div className="bg-white">
           <HomepageFooter />
         </div>
       </div>
@@ -78,7 +82,7 @@ export function DonateStoryPage() {
     );
   }
 
-  const storyParagraphs = String(story?.content || '')
+  const storyParagraphs = String(story?.content || "")
     .split(/\n\s*\n/)
     .map((paragraph) => paragraph.trim())
     .filter(Boolean);
@@ -114,7 +118,9 @@ export function DonateStoryPage() {
             ))}
           </div>
         ) : (
-          <p className="mt-8 text-sm text-neutral-400">The story is still being prepared.</p>
+          <p className="mt-8 text-sm text-neutral-400">
+            The story is still being prepared.
+          </p>
         )}
 
         {partners.length > 0 && (
@@ -138,7 +144,7 @@ export function DonateStoryPage() {
         )}
       </article>
 
-      <div className="mt-16 bg-white pb-[100px] sm:mt-20 lg:pb-0">
+      <div className="mt-16 bg-white sm:mt-20">
         <HomepageFooter />
       </div>
     </div>

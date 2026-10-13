@@ -20,7 +20,7 @@ import {
 } from "../services/api/websiteService";
 import {
   getHomepageContentForInitialExperience,
-  ONEMISSION_LOGO_URL,
+  // ONEMISSION_LOGO_URL,
 } from "../features/homepage/initialHomepageResources";
 
 const DEFAULT_WEBSITE_HERO_ITEMS: WebsiteHeroCmsItem[] = [

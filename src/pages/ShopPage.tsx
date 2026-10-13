@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { CatalogLayer, CollectionPageCatalog } from '../features/catalog';
-import { createHeroGradient } from '../features/hero/theme';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
+import { CatalogLayer, CollectionPageCatalog } from "../features/catalog";
+import { createHeroGradient } from "../features/hero/theme";
 import {
   DURATION,
   GRAIN_SVG,
@@ -12,62 +12,61 @@ import {
   mapHeroItems,
   useHeroGesture,
   type Direction,
-} from '../features/hero/carousel';
-import { HomepageFooter } from '../features/footer';
+} from "../features/hero/carousel";
+import { HomepageFooter } from "../features/footer";
 import {
   type WebsiteBrandVideo,
   type WebsiteHeroItem as WebsiteHeroCmsItem,
-} from '../services/api/websiteService';
+} from "../services/api/websiteService";
 import {
   getHomepageContentForInitialExperience,
   ONEMISSION_LOGO_URL,
-} from '../features/homepage/initialHomepageResources';
+} from "../features/homepage/initialHomepageResources";
 
 const DEFAULT_WEBSITE_HERO_ITEMS: WebsiteHeroCmsItem[] = [
   {
-    id: 'default-hero-1',
-    mediaType: 'image',
-    desktopUrl: '',
-    mobileUrl: '',
+    id: "default-hero-1",
+    mediaType: "image",
+    desktopUrl: "",
+    mobileUrl: "",
     displayOrder: 1,
     active: true,
   },
   {
-    id: 'default-hero-2',
-    mediaType: 'image',
-    desktopUrl: '',
-    mobileUrl: '',
+    id: "default-hero-2",
+    mediaType: "image",
+    desktopUrl: "",
+    mobileUrl: "",
     displayOrder: 2,
     active: true,
   },
   {
-    id: 'default-hero-3',
-    mediaType: 'image',
-    desktopUrl: '',
-    mobileUrl: '',
+    id: "default-hero-3",
+    mediaType: "image",
+    desktopUrl: "",
+    mobileUrl: "",
     displayOrder: 3,
     active: true,
   },
   {
-    id: 'default-hero-4',
-    mediaType: 'image',
-    desktopUrl: '',
-    mobileUrl: '',
+    id: "default-hero-4",
+    mediaType: "image",
+    desktopUrl: "",
+    mobileUrl: "",
     displayOrder: 4,
     active: true,
   },
 ];
 
 const DEFAULT_BRAND_VIDEO: WebsiteBrandVideo = {
-  id: 'default-brand-video',
-  videoUrl: '',
-  posterUrl: '',
+  id: "default-brand-video",
+  videoUrl: "",
+  posterUrl: "",
   active: true,
 };
 
-
 const COLLECTION_REVEAL_SCROLL_RANGE = 220;
-const COLLECTION_OVERLAP = 'max(0px, -10vh)';
+const COLLECTION_OVERLAP = "max(0px, -10vh)";
 
 interface ShopPageProps {
   activeIndex: number;
@@ -76,14 +75,23 @@ interface ShopPageProps {
   onCollectionSelect: () => void;
 }
 
-export function ShopPage({ activeIndex, onActiveIndexChange, onProductSelect, onCollectionSelect }: ShopPageProps) {
+export function ShopPage({
+  activeIndex,
+  onActiveIndexChange,
+  onProductSelect,
+  onCollectionSelect,
+}: ShopPageProps) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [isMobile, setIsMobile] = useState(
-    typeof window !== 'undefined' ? window.innerWidth < 640 : false,
+    typeof window !== "undefined" ? window.innerWidth < 640 : false,
   );
   const [collectionRevealProgress, setCollectionRevealProgress] = useState(0);
-  const [heroCmsItems, setHeroCmsItems] = useState<WebsiteHeroCmsItem[]>(DEFAULT_WEBSITE_HERO_ITEMS);
-  const [brandVideo, setBrandVideo] = useState<WebsiteBrandVideo | null>(DEFAULT_BRAND_VIDEO);
+  const [heroCmsItems, setHeroCmsItems] = useState<WebsiteHeroCmsItem[]>(
+    DEFAULT_WEBSITE_HERO_ITEMS,
+  );
+  const [brandVideo, setBrandVideo] = useState<WebsiteBrandVideo | null>(
+    DEFAULT_BRAND_VIDEO,
+  );
   // Keep CMS brand video state loaded for future section reactivation without rendering it in the current Homepage flow.
   void brandVideo;
   const heroItems = useMemo(() => mapHeroItems(heroCmsItems), [heroCmsItems]);
@@ -94,14 +102,15 @@ export function ShopPage({ activeIndex, onActiveIndexChange, onProductSelect, on
 
     return heroItems.map((item) => createHeroGradient(item.theme.accentColor));
   }, [heroItems]);
-  const resolvedActiveIndex = heroItems.length > 0 ? activeIndex % heroItems.length : 0;
+  const resolvedActiveIndex =
+    heroItems.length > 0 ? activeIndex % heroItems.length : 0;
   const heroSceneRef = useRef<HTMLElement | null>(null);
   const collectionSceneRef = useRef<HTMLElement | null>(null);
   const rafRef = useRef<number | null>(null);
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < 640);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   useEffect(() => {
@@ -114,7 +123,9 @@ export function ShopPage({ activeIndex, onActiveIndexChange, onProductSelect, on
           return;
         }
 
-        setHeroCmsItems(Array.isArray(response.heroItems) ? response.heroItems : []);
+        setHeroCmsItems(
+          Array.isArray(response.heroItems) ? response.heroItems : [],
+        );
         setBrandVideo(response.brandVideo ?? null);
       } catch {
         // Keep the existing fallback content when the CMS request is unavailable.
@@ -143,7 +154,11 @@ export function ShopPage({ activeIndex, onActiveIndexChange, onProductSelect, on
       if (rafRef.current !== null) return;
 
       rafRef.current = window.requestAnimationFrame(() => {
-        const nextProgress = clamp(window.scrollY / COLLECTION_REVEAL_SCROLL_RANGE, 0, 1);
+        const nextProgress = clamp(
+          window.scrollY / COLLECTION_REVEAL_SCROLL_RANGE,
+          0,
+          1,
+        );
         setCollectionRevealProgress((currentProgress) => {
           if (Math.abs(currentProgress - nextProgress) < 0.01) {
             return currentProgress;
@@ -152,11 +167,20 @@ export function ShopPage({ activeIndex, onActiveIndexChange, onProductSelect, on
         });
 
         const viewportHeight = window.innerHeight || 1;
-        const collectionSceneTop = collectionSceneRef.current?.getBoundingClientRect().top ?? viewportHeight;
-        const synchronizedHeroShift = clamp(collectionSceneTop, -viewportHeight, 0);
+        const collectionSceneTop =
+          collectionSceneRef.current?.getBoundingClientRect().top ??
+          viewportHeight;
+        const synchronizedHeroShift = clamp(
+          collectionSceneTop,
+          -viewportHeight,
+          0,
+        );
 
         if (heroSceneRef.current) {
-          heroSceneRef.current.style.setProperty('--scene-shift-y', `${synchronizedHeroShift}px`);
+          heroSceneRef.current.style.setProperty(
+            "--scene-shift-y",
+            `${synchronizedHeroShift}px`,
+          );
         }
 
         rafRef.current = null;
@@ -164,28 +188,32 @@ export function ShopPage({ activeIndex, onActiveIndexChange, onProductSelect, on
     };
 
     handleScroll();
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll);
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleScroll);
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
       if (rafRef.current !== null) {
         window.cancelAnimationFrame(rafRef.current);
       }
     };
   }, []);
 
-  const rotateHero = useCallback((direction: Direction) => {
-    if (isAnimating || heroItems.length <= 1) return;
+  const rotateHero = useCallback(
+    (direction: Direction) => {
+      if (isAnimating || heroItems.length <= 1) return;
 
-    setIsAnimating(true);
-    const nextIndex = direction === 'next'
-      ? (resolvedActiveIndex + 1) % heroItems.length
-      : (resolvedActiveIndex + heroItems.length - 1) % heroItems.length;
-    onActiveIndexChange(nextIndex);
-    window.setTimeout(() => setIsAnimating(false), DURATION);
-  }, [heroItems.length, isAnimating, onActiveIndexChange, resolvedActiveIndex]);
+      setIsAnimating(true);
+      const nextIndex =
+        direction === "next"
+          ? (resolvedActiveIndex + 1) % heroItems.length
+          : (resolvedActiveIndex + heroItems.length - 1) % heroItems.length;
+      onActiveIndexChange(nextIndex);
+      window.setTimeout(() => setIsAnimating(false), DURATION);
+    },
+    [heroItems.length, isAnimating, onActiveIndexChange, resolvedActiveIndex],
+  );
 
   const heroGesture = useHeroGesture({
     surfaceRef: heroSceneRef,
@@ -193,12 +221,11 @@ export function ShopPage({ activeIndex, onActiveIndexChange, onProductSelect, on
     onTap: onCollectionSelect,
   });
 
-
   return (
     <div
       style={{
         fontFamily: "'SF-Pro-Display', sans-serif",
-        backgroundColor: '#0A0A0A',
+        backgroundColor: "#0A0A0A",
       }}
     >
       <section
@@ -210,23 +237,27 @@ export function ShopPage({ activeIndex, onActiveIndexChange, onProductSelect, on
         onKeyDown={heroGesture.onKeyDown}
         className="relative w-full overflow-hidden outline-none"
         style={{
-          position: 'sticky',
+          position: "sticky",
           top: 0,
-          height: '100vh',
-          overflow: 'hidden',
-          transform: 'translate3d(0, var(--scene-shift-y, 0px), 0)',
-          willChange: 'transform',
+          height: "100vh",
+          overflow: "hidden",
+          transform: "translate3d(0, var(--scene-shift-y, 0px), 0)",
+          willChange: "transform",
         }}
       >
-        <div className="relative w-full h-full" style={{ overflow: 'hidden' }}>
-          <HeroGradientBackground activeIndex={resolvedActiveIndex} gradients={heroGradients} />
+        <div className="relative w-full h-full" style={{ overflow: "hidden" }}>
+          <HeroGradientBackground
+            activeIndex={resolvedActiveIndex}
+            gradients={heroGradients}
+          />
 
           <div
             aria-hidden="true"
             className="absolute inset-0 pointer-events-none"
             style={{
               zIndex: 1,
-              background: 'linear-gradient(180deg, rgba(10,10,10,0.12) 0%, rgba(10,10,10,0.04) 44%, rgba(229,228,226,0.08) 100%)',
+              background:
+                "linear-gradient(180deg, rgba(10,10,10,0.12) 0%, rgba(10,10,10,0.04) 44%, rgba(229,228,226,0.08) 100%)",
             }}
           />
 
@@ -235,8 +266,8 @@ export function ShopPage({ activeIndex, onActiveIndexChange, onProductSelect, on
             style={{
               zIndex: 50,
               backgroundImage: `url("${GRAIN_SVG}")`,
-              backgroundRepeat: 'repeat',
-              backgroundSize: '200px 200px',
+              backgroundRepeat: "repeat",
+              backgroundSize: "200px 200px",
               opacity: 0.4,
             }}
           />
@@ -245,17 +276,19 @@ export function ShopPage({ activeIndex, onActiveIndexChange, onProductSelect, on
             className="absolute inset-x-0 flex items-center justify-center pointer-events-none select-none"
             style={{
               zIndex: 2,
-              top: isMobile ? '10%' : '18%',
+              top: isMobile ? "10%" : "18%",
               fontFamily: "'SF-Pro-Display', sans-serif",
-              fontSize: isMobile ? 'clamp(120px, 36vw, 170px)' : 'clamp(70px, 19vw, 380px)',
+              fontSize: isMobile
+                ? "clamp(120px, 36vw, 170px)"
+                : "clamp(70px, 19vw, 380px)",
               fontWeight: 400,
-              color: '#ffffff',
+              color: "#ffffff",
               opacity: 0.6,
               lineHeight: isMobile ? 0.68 : 1,
-              textTransform: 'lowercase',
-              letterSpacing: '-0.08em',
-              whiteSpace: 'nowrap',
-              padding: '0 10px',
+              textTransform: "lowercase",
+              letterSpacing: "-0.08em",
+              whiteSpace: "nowrap",
+              padding: "0 10px",
             }}
           >
             {isMobile ? (
@@ -265,7 +298,7 @@ export function ShopPage({ activeIndex, onActiveIndexChange, onProductSelect, on
                 matter
               </>
             ) : (
-              'VALUES MATTER'
+              "VALUES MATTER"
             )}
           </div>
 
@@ -279,7 +312,7 @@ export function ShopPage({ activeIndex, onActiveIndexChange, onProductSelect, on
             onPointerCancel={heroGesture.onPointerCancel}
           />
 
-          <div
+          {/* <div
             className="absolute top-3 left-4 sm:left-8"
             style={{
               zIndex: 60,
@@ -293,8 +326,7 @@ export function ShopPage({ activeIndex, onActiveIndexChange, onProductSelect, on
               alt="ONEMISSION"
               className="h-8 md:h-14 w-auto"
             />
-          </div>
-
+          </div> */}
 
           <div
             className="hidden sm:block absolute sm:bottom-1/3 sm:left-0 w-screen"
@@ -327,21 +359,23 @@ export function ShopPage({ activeIndex, onActiveIndexChange, onProductSelect, on
               <button
                 type="button"
                 aria-label="Previous"
-                onClick={() => rotateHero('prev')}
+                onClick={() => rotateHero("prev")}
                 className="w-12 h-12 rounded-full flex items-center justify-center"
                 style={{
-                  backgroundColor: 'transparent',
+                  backgroundColor: "transparent",
                   // border: '2px solid #ffffff',
-                  color: '#ffffff',
-                  transition: 'transform 150ms ease, background-color 150ms ease',
+                  color: "#ffffff",
+                  transition:
+                    "transform 150ms ease, background-color 150ms ease",
                 }}
                 onMouseEnter={(event) => {
-                  event.currentTarget.style.transform = 'scale(1.08)';
-                  event.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.12)';
+                  event.currentTarget.style.transform = "scale(1.08)";
+                  event.currentTarget.style.backgroundColor =
+                    "rgba(255,255,255,0.12)";
                 }}
                 onMouseLeave={(event) => {
-                  event.currentTarget.style.transform = 'scale(1)';
-                  event.currentTarget.style.backgroundColor = 'transparent';
+                  event.currentTarget.style.transform = "scale(1)";
+                  event.currentTarget.style.backgroundColor = "transparent";
                 }}
               >
                 <ArrowLeft size={26} strokeWidth={2.25} />
@@ -349,21 +383,23 @@ export function ShopPage({ activeIndex, onActiveIndexChange, onProductSelect, on
               <button
                 type="button"
                 aria-label="Next"
-                onClick={() => rotateHero('next')}
+                onClick={() => rotateHero("next")}
                 className="w-12 h-12 rounded-full flex items-center justify-center"
                 style={{
-                  backgroundColor: 'transparent',
+                  backgroundColor: "transparent",
                   // border: '2px solid #ffffff',
-                  color: '#ffffff',
-                  transition: 'transform 150ms ease, background-color 150ms ease',
+                  color: "#ffffff",
+                  transition:
+                    "transform 150ms ease, background-color 150ms ease",
                 }}
                 onMouseEnter={(event) => {
-                  event.currentTarget.style.transform = 'scale(1.08)';
-                  event.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.12)';
+                  event.currentTarget.style.transform = "scale(1.08)";
+                  event.currentTarget.style.backgroundColor =
+                    "rgba(255,255,255,0.12)";
                 }}
                 onMouseLeave={(event) => {
-                  event.currentTarget.style.transform = 'scale(1)';
-                  event.currentTarget.style.backgroundColor = 'transparent';
+                  event.currentTarget.style.transform = "scale(1)";
+                  event.currentTarget.style.backgroundColor = "transparent";
                 }}
               >
                 <ArrowRight size={26} strokeWidth={2.25} />
@@ -421,14 +457,14 @@ export function ShopPage({ activeIndex, onActiveIndexChange, onProductSelect, on
         ref={collectionSceneRef}
         aria-label="Brand quote"
         style={{
-          position: 'relative',
+          position: "relative",
           zIndex: 60,
           marginTop: COLLECTION_OVERLAP,
-          backgroundColor: 'transparent',
-          boxShadow: '0 -18px 48px rgba(0,0,0,0.16)',
-          overflow: 'hidden',
-          transform: 'translate3d(0,0,0)',
-          willChange: 'border-radius',
+          backgroundColor: "transparent",
+          boxShadow: "0 -18px 48px rgba(0,0,0,0.16)",
+          overflow: "hidden",
+          transform: "translate3d(0,0,0)",
+          willChange: "border-radius",
         }}
       >
         <CatalogLayer
@@ -438,7 +474,10 @@ export function ShopPage({ activeIndex, onActiveIndexChange, onProductSelect, on
       </section>
 
       <div id="collection">
-        <CollectionPageCatalog onProductSelect={onProductSelect} mode="homepage" />
+        <CollectionPageCatalog
+          onProductSelect={onProductSelect}
+          mode="homepage"
+        />
       </div>
 
       {/* {brandVideo ? (

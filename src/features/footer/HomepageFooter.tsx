@@ -50,7 +50,7 @@ const FOOTER_SUBTLE = "rgba(255,255,255,0.42)";
 const FOOTER_BORDER = "rgba(255,255,255,0.12)";
 const FOOTER_HOVER = "rgba(255,255,255,0.08)";
 const FOOTER_LOGO =
-  "https://ik.imagekit.io/edyl3oplm/Onemission/logos/AMAN_ONEMISSION.png?updatedAt=1782542636942";
+  "https://assets.onemissionclo.com/onemission/Logos/AMAN_ONEMISSION.png";
 const FOOTER_NEWSLETTER_SUCCESS_TITLE = "Welcome to ONEMISSION.";
 const FOOTER_NEWSLETTER_SUCCESS_DESCRIPTION =
   "Thank you for joining our movement.";

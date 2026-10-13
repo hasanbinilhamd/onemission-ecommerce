@@ -5,7 +5,7 @@ import {
 } from "../../services/api/websiteService";
 
 export const ONEMISSION_LOGO_URL =
-  "https://ik.imagekit.io/edyl3oplm/onemission/Logos/AMAN_ONEMISSION.png?updatedAt=1782542636942";
+  "https://assets.onemissionclo.com/onemission/Logos/AMAN_ONEMISSION.png";
 
 export type InitialPreloadStage =
   | "boot"

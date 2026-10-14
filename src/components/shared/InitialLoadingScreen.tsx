@@ -4,39 +4,60 @@ import { ONEMISSION_LOGO_URL, prepareInitialApplicationExperience, type InitialP
 interface InitialLoadingScreenProps {
   prepare?: (onProgress: InitialPreloadProgressHandler) => Promise<void>;
   onComplete?: () => void;
+  onTimeout?: () => void;
+  timeoutMs?: number;
 }
 
-export function InitialLoadingScreen({ prepare = prepareInitialApplicationExperience, onComplete }: InitialLoadingScreenProps) {
+export function InitialLoadingScreen({
+  prepare = prepareInitialApplicationExperience,
+  onComplete,
+  onTimeout,
+  timeoutMs = 10_000,
+}: InitialLoadingScreenProps) {
   const [progress, setProgress] = useState(0);
   const [isExiting, setIsExiting] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
 
   useEffect(() => {
     let mounted = true;
+    let completed = false;
 
     const updateProgress: InitialPreloadProgressHandler = (_stage, value) => {
       if (!mounted) return;
       setProgress((current) => Math.max(current, Math.min(100, Math.floor(value))));
     };
 
+    const finishLoading = () => {
+      if (!mounted || completed) return;
+      completed = true;
+      setProgress(100);
+      setIsExiting(true);
+
+      if (typeof performance !== 'undefined' && typeof performance.mark === 'function') {
+        performance.mark('om_homepage_reveal_ready');
+      }
+    };
+
+    const failSafeTimer = window.setTimeout(() => {
+      if (!mounted || completed) return;
+      onTimeout?.();
+      finishLoading();
+    }, timeoutMs);
+
     void prepare(updateProgress)
       .catch(() => {
         updateProgress('ready', 100);
       })
       .finally(() => {
-        if (!mounted) return;
-        setProgress(100);
-        setIsExiting(true);
-
-        if (typeof performance !== 'undefined' && typeof performance.mark === 'function') {
-          performance.mark('om_homepage_reveal_ready');
-        }
+        window.clearTimeout(failSafeTimer);
+        finishLoading();
       });
 
     return () => {
       mounted = false;
+      window.clearTimeout(failSafeTimer);
     };
-  }, [onComplete, prepare]);
+  }, [onTimeout, prepare, timeoutMs]);
 
   if (isHidden) return null;
 

@@ -65,6 +65,7 @@ export function mapHeroItems(
   items: readonly WebsiteHeroItem[],
 ): HeroCarouselItem[] {
   return [...items]
+    .filter((item) => item.active !== false)
     .sort(
       (left, right) =>
         left.displayOrder - right.displayOrder ||
@@ -104,7 +105,10 @@ export function getHeroBlurMedia(
   item: HeroCarouselItem,
   isMobile: boolean,
 ): string {
-  return item.blurMedia || getHeroPoster(item, isMobile);
+  if (item.blurMedia) return item.blurMedia;
+  return item.mediaType === "image"
+    ? resolveHeroMediaSource(item, isMobile)
+    : getHeroPoster(item, isMobile);
 }
 
 export function clamp(value: number, min: number, max: number): number {
@@ -335,10 +339,14 @@ export const HeroCarouselImages = memo(function HeroCarouselImages({
       if (!mediaItem) return;
 
       const poster = getHeroPoster(mediaItem, isMobile);
-      const blurMedia = getHeroBlurMedia(mediaItem, isMobile);
       const mediaSource = resolveHeroMediaSource(mediaItem, isMobile);
+      const isActiveMedia = index === activeIndex;
 
-      [poster, blurMedia].forEach((assetUrl) => {
+      const imageAssets = mediaItem.mediaType === "image"
+        ? [mediaSource]
+        : [poster];
+
+      imageAssets.forEach((assetUrl) => {
         const normalizedAssetUrl = String(assetUrl || "").trim();
         if (
           !isValidHeroAssetUrl(normalizedAssetUrl) ||
@@ -348,7 +356,16 @@ export const HeroCarouselImages = memo(function HeroCarouselImages({
         }
 
         const image = new Image();
-        image.onload = () => {
+        image.decoding = "async";
+        image.fetchPriority = isActiveMedia ? "high" : "low";
+        image.onload = async () => {
+          try {
+            if (typeof image.decode === "function") {
+              await image.decode();
+            }
+          } catch {
+            // onload is still sufficient when a browser rejects decode().
+          }
           markMediaLoaded(normalizedAssetUrl);
         };
         image.src = normalizedAssetUrl;
@@ -361,7 +378,7 @@ export const HeroCarouselImages = memo(function HeroCarouselImages({
         !preloadedMediaRef.current.has(mediaSource)
       ) {
         const video = document.createElement("video");
-        video.preload = "auto";
+        video.preload = isActiveMedia ? "auto" : "metadata";
         video.muted = true;
         video.playsInline = true;
         video.onloadeddata = () => {
@@ -403,24 +420,22 @@ export const HeroCarouselImages = memo(function HeroCarouselImages({
     [isMobile, items],
   );
 
-  const hasLoadedVisibleMedia = useMemo(
-    () =>
-      items.some((item) => {
-        const poster = getHeroPoster(item, isMobile);
-        const blurMedia = getHeroBlurMedia(item, isMobile);
-        const mediaSource = resolveHeroMediaSource(item, isMobile);
-        return Boolean(
-          loadedMedia[poster] ||
-          loadedMedia[blurMedia] ||
-          loadedMedia[mediaSource],
-        );
-      }),
-    [isMobile, items, loadedMedia],
-  );
+  const hasActiveMediaReady = useMemo(() => {
+    const activeItem = items[activeIndex];
+    if (!activeItem) return false;
+
+    const mediaSource = resolveHeroMediaSource(activeItem, isMobile);
+    if (activeItem.mediaType === "image") {
+      return Boolean(loadedMedia[mediaSource]);
+    }
+
+    const poster = getHeroPoster(activeItem, isMobile);
+    return Boolean(loadedMedia[mediaSource] || loadedMedia[poster]);
+  }, [activeIndex, isMobile, items, loadedMedia]);
 
   return (
     <div className="absolute inset-0" style={{ zIndex: 3 }}>
-      {!hasRenderableItems || !hasLoadedVisibleMedia ? (
+      {!hasRenderableItems || !hasActiveMediaReady ? (
         <div
           aria-hidden="true"
           style={{
@@ -536,10 +551,22 @@ export const HeroCarouselImages = memo(function HeroCarouselImages({
                 src={displayImageSource}
                 alt=""
                 draggable={false}
+                loading={role === "center" ? "eager" : "lazy"}
+                fetchPriority={role === "center" ? "high" : "low"}
+                decoding="async"
                 onLoad={(event) => {
-                  markMediaLoaded(
-                    event.currentTarget.currentSrc || displayImageSource,
-                  );
+                  const image = event.currentTarget;
+                  const loadedSource = image.currentSrc || displayImageSource;
+                  void (async () => {
+                    try {
+                      if (typeof image.decode === "function") {
+                        await image.decode();
+                      }
+                    } catch {
+                      // Keep the onload fallback for browsers that reject decode().
+                    }
+                    markMediaLoaded(loadedSource);
+                  })();
                 }}
                 style={{
                   width: "100%",

@@ -55,6 +55,7 @@ export const ProductCard = memo(function ProductCard({
 
   const [isHovered, setIsHovered] = useState(false);
   const [thumbnailLoadFailed, setThumbnailLoadFailed] = useState(false);
+  const [hoverImageRequested, setHoverImageRequested] = useState(false);
   const [hoverImageReady, setHoverImageReady] = useState(false);
 
   const thumbnailSrc = useMemo(() => {
@@ -79,10 +80,18 @@ export const ProductCard = memo(function ProductCard({
   useEffect(() => {
     setIsHovered(false);
     setThumbnailLoadFailed(false);
-  }, [product.id, product.imageUrl]);
+    setHoverImageRequested(false);
+    setHoverImageReady(false);
+  }, [product.id, product.imageUrl, product.hoverImageUrl]);
 
   useEffect(() => {
-    if ((!supportsHoverPreview && !modelViewEnabled) || !hasDedicatedHoverImage) {
+    if (modelViewEnabled && hasDedicatedHoverImage) {
+      setHoverImageRequested(true);
+    }
+  }, [hasDedicatedHoverImage, modelViewEnabled, product.id]);
+
+  useEffect(() => {
+    if (!hoverImageRequested || !hasDedicatedHoverImage) {
       setHoverImageReady(false);
       return undefined;
     }
@@ -91,8 +100,16 @@ export const ProductCard = memo(function ProductCard({
 
     let isActive = true;
     const image = new Image();
+    image.decoding = 'async';
 
-    image.onload = () => {
+    image.onload = async () => {
+      try {
+        if (typeof image.decode === 'function') {
+          await image.decode();
+        }
+      } catch {
+        // A successful onload still leaves a renderable cached image.
+      }
       if (isActive) {
         setHoverImageReady(true);
       }
@@ -107,7 +124,7 @@ export const ProductCard = memo(function ProductCard({
     return () => {
       isActive = false;
     };
-  }, [hasDedicatedHoverImage, hoverSrc, modelViewEnabled, supportsHoverPreview]);
+  }, [hasDedicatedHoverImage, hoverImageRequested, hoverSrc]);
 
   const showHoverImage = hoverImageReady
     && hasDedicatedHoverImage
@@ -144,7 +161,12 @@ export const ProductCard = memo(function ProductCard({
       <button
         type="button"
         onClick={() => onClick(product)}
-        onMouseEnter={() => setIsHovered(true)}
+        onMouseEnter={() => {
+          setIsHovered(true);
+          if (supportsHoverPreview && hasDedicatedHoverImage) {
+            setHoverImageRequested(true);
+          }
+        }}
         onMouseLeave={() => setIsHovered(false)}
         style={{
           all: 'unset',
@@ -188,6 +210,7 @@ export const ProductCard = memo(function ProductCard({
                 src={thumbnailSrc}
                 alt={product.name}
                 loading="lazy"
+                decoding="async"
                 style={{
                   position: 'absolute',
                   inset: 0,
@@ -202,12 +225,13 @@ export const ProductCard = memo(function ProductCard({
                   setThumbnailLoadFailed(true);
                 }}
               />
-              {hasDedicatedHoverImage ? (
+              {hasDedicatedHoverImage && hoverImageRequested ? (
                 <img
                   src={hoverSrc}
                   alt={product.name}
                   aria-hidden="true"
                   loading="lazy"
+                  decoding="async"
                   style={{
                     position: 'absolute',
                     inset: 0,

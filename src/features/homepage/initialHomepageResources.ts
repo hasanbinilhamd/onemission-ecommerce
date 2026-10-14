@@ -24,10 +24,10 @@ let homepageContentPromise: Promise<WebsiteHomepageContent> | null = null;
 const decodedHeroAssetUrls = new Set<string>();
 const loadedCriticalAssetUrls = new Set<string>();
 
-function isHomePath(): boolean {
+function isInitialEcommercePath(): boolean {
   if (typeof window === "undefined") return false;
   const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
-  return pathname === "/";
+  return ["/shop", "/collection", "/collections"].includes(pathname);
 }
 
 function isMobileViewport(): boolean {
@@ -41,7 +41,12 @@ function isValidAssetUrl(value: string): boolean {
 
 export function getHomepageContentForInitialExperience(): Promise<WebsiteHomepageContent> {
   if (!homepageContentPromise) {
-    homepageContentPromise = websiteService.getHomepageContent();
+    homepageContentPromise = websiteService.getHomepageContent().catch((error) => {
+      // Allow the mounted Shop page to retry after a transient boot request
+      // failure instead of permanently caching a rejected promise.
+      homepageContentPromise = null;
+      throw error;
+    });
   }
 
   return homepageContentPromise;
@@ -141,47 +146,49 @@ export async function prepareInitialApplicationExperience(
 ): Promise<void> {
   onProgress?.("boot", 15);
 
-  await Promise.all([waitForInitialPaint(), waitForCriticalFonts()]);
+  const prepareCriticalResources = async () => {
+    if (!isInitialEcommercePath()) {
+      await Promise.all([waitForInitialPaint(), waitForCriticalFonts()]);
+      return;
+    }
 
-  onProgress?.("boot", 25);
+    // Start the CMS request before waiting on paint/fonts so the critical hero
+    // can be resolved as early as possible on the ecommerce entry routes.
+    const homepageContentRequest = getHomepageContentForInitialExperience();
+    const [homepageContent] = await Promise.all([
+      homepageContentRequest,
+      waitForInitialPaint(),
+      waitForCriticalFonts(),
+    ]);
 
-  if (!isHomePath()) {
-    onProgress?.("ready", 100);
-    return;
-  }
+    onProgress?.("data", 45);
 
-  let homepageContent: WebsiteHomepageContent | null = null;
+    const heroAssetUrl = resolveCriticalHeroAssetUrl(
+      homepageContent.heroItems || [],
+    );
+    const criticalImageUrls = [heroAssetUrl, ONEMISSION_LOGO_URL].filter(
+      isValidAssetUrl,
+    );
+
+    await Promise.all(
+      criticalImageUrls.map((url) =>
+        preloadImage(url, onProgress).catch(() => undefined),
+      ),
+    );
+
+    if (
+      typeof performance !== "undefined" &&
+      typeof performance.mark === "function"
+    ) {
+      performance.mark("om_homepage_critical_assets_ready");
+    }
+  };
+
   try {
-    homepageContent = await getHomepageContentForInitialExperience();
-    onProgress?.("data", 45);
+    await prepareCriticalResources();
   } catch {
-    onProgress?.("data", 45);
+    // Network, CMS, and image failures must never trap visitors on the loader.
+  } finally {
     onProgress?.("ready", 100);
-    return;
   }
-
-  const heroAssetUrl = resolveCriticalHeroAssetUrl(
-    homepageContent.heroItems || [],
-  );
-  const criticalImageUrls = [heroAssetUrl, ONEMISSION_LOGO_URL].filter(
-    isValidAssetUrl,
-  );
-
-  if (criticalImageUrls.length === 0) {
-    onProgress?.("ready", 100);
-    return;
-  }
-
-  await Promise.all(
-    criticalImageUrls.map((url) =>
-      preloadImage(url, onProgress).catch(() => undefined),
-    ),
-  );
-  if (
-    typeof performance !== "undefined" &&
-    typeof performance.mark === "function"
-  ) {
-    performance.mark("om_homepage_critical_assets_ready");
-  }
-  onProgress?.("ready", 100);
 }

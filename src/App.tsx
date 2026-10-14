@@ -254,6 +254,12 @@ function App() {
     setLoadingInstance((current) => current + 1);
   }, []);
 
+  const handleInitialLoadingTimeout = useCallback(() => {
+    setEarlyAccessPhase((currentPhase) => (
+      currentPhase === 'unlocking' ? 'ready' : 'gated'
+    ));
+  }, []);
+
   const renderShopPage = useCallback(() => (
     <ShopPage
       activeIndex={heroIndex}
@@ -270,7 +276,11 @@ function App() {
     <NavigationThemeProvider theme={navigationTheme}>
       <>
         {shouldShowInitialLoading ? (
-          <InitialLoadingScreen key={loadingInstance} prepare={loadingPrepare} />
+          <InitialLoadingScreen
+            key={loadingInstance}
+            prepare={loadingPrepare}
+            onTimeout={handleInitialLoadingTimeout}
+          />
         ) : null}
         {earlyAccessPhase === 'gated' ? (
           <>

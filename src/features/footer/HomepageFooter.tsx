@@ -1,6 +1,5 @@
 import {
   AlertCircle,
-  ArrowUpRight,
   CheckCircle2,
   ChevronDown,
   Instagram,
@@ -345,35 +344,6 @@ function isValidNewsletterEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-const SHOPEE_ORANGE = "#EE4D2D";
-
-/**
- * Recognizable Shopee wordmark (inline SVG) — the footer destination keeps
- * the brand treatment without needing a new image asset.
- */
-function ShopeeWordmark() {
-  return (
-    <svg
-      viewBox="0 0 76 24"
-      role="img"
-      aria-label="Shopee"
-      style={{ width: "76px", height: "24px", display: "block" }}
-    >
-      <text
-        x="0"
-        y="19"
-        fill={SHOPEE_ORANGE}
-        fontFamily="'SF-Pro-Display', Arial, sans-serif"
-        fontSize="20"
-        fontWeight="800"
-        letterSpacing="-0.5"
-      >
-        Shopee
-      </text>
-    </svg>
-  );
-}
-
 /**
  * Compact Shopee marketplace destination for the footer.
  * Uses the SAME URL source of truth as the Entry Gateway (env.shopeeStoreUrl).
@@ -414,9 +384,7 @@ function ShopeeDestination() {
         event.currentTarget.style.backgroundColor = "rgba(255,255,255,0.03)";
       }}
     >
-      {/* <ShopeeWordmark /> */}
       <img src="Shopee.svg" className="h-10" alt="Shopee" />
-      {/* <ArrowUpRight size={16} strokeWidth={2} style={{ color: FOOTER_MUTED }} /> */}
     </a>
   );
 }

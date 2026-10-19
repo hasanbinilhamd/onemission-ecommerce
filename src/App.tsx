@@ -271,42 +271,42 @@ function App() {
 
           {earlyAccessPhase === 'ready' ? (
             <>
-            <Route path="/collection" element={<Navigate to={ROUTES.SHOP} replace />} />
-            <Route path="/collections" element={<Navigate to={ROUTES.SHOP} replace />} />
-            <Route path="/terms" element={<TermsPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
-            <Route path="/faq" element={<FaqPage />} />
-            <Route path="/product/:slug" element={<ProductDetailPage />} />
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/checkout" element={<CheckoutPage />} />
-            <Route path="/payment/success" element={<PaymentSuccessPage />} />
-            <Route path="/payment/pending" element={<PaymentPendingPage />} />
-            <Route path="/payment/expired" element={<PaymentExpiredPage />} />
-            <Route path="/payment/cancelled" element={<PaymentCancelledPage />} />
-            <Route path="/payment/failed" element={<PaymentFailedPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/verify-email" element={<VerifyEmailPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/track-order" element={<TrackOrderPage />} />
+              <Route path="/collection" element={<Navigate to={ROUTES.SHOP} replace />} />
+              <Route path="/collections" element={<Navigate to={ROUTES.SHOP} replace />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/faq" element={<FaqPage />} />
+              <Route path="/product/:slug" element={<ProductDetailPage />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/checkout" element={<CheckoutPage />} />
+              <Route path="/payment/success" element={<PaymentSuccessPage />} />
+              <Route path="/payment/pending" element={<PaymentPendingPage />} />
+              <Route path="/payment/expired" element={<PaymentExpiredPage />} />
+              <Route path="/payment/cancelled" element={<PaymentCancelledPage />} />
+              <Route path="/payment/failed" element={<PaymentFailedPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/verify-email" element={<VerifyEmailPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/track-order" element={<TrackOrderPage />} />
 
-            <Route path="/account" element={<AccountDashboardLayout />}>
-              <Route index element={<AccountPage />} />
-              <Route path="profile" element={<ProfilePage />} />
-              <Route path="address" element={<AddressesPage />} />
-              <Route path="orders" element={<MyOrdersPage />} />
-              <Route path="orders/:orderNumber" element={<OrderDetailPage />} />
-              <Route path="checkout-history" element={<CheckoutHistoryPage />} />
-              <Route path="wishlist" element={<WishlistPage />} />
-              <Route path="password" element={<ChangePasswordPage />} />
-            </Route>
+              <Route path="/account" element={<AccountDashboardLayout />}>
+                <Route index element={<AccountPage />} />
+                <Route path="profile" element={<ProfilePage />} />
+                <Route path="address" element={<AddressesPage />} />
+                <Route path="orders" element={<MyOrdersPage />} />
+                <Route path="orders/:orderNumber" element={<OrderDetailPage />} />
+                <Route path="checkout-history" element={<CheckoutHistoryPage />} />
+                <Route path="wishlist" element={<WishlistPage />} />
+                <Route path="password" element={<ChangePasswordPage />} />
+              </Route>
 
-            <Route path="/account/addresses" element={<Navigate to="/account/address" replace />} />
-            <Route path="/account/change-password" element={<Navigate to="/account/password" replace />} />
-            <Route path="/orders" element={<Navigate to="/account/orders" replace />} />
-            <Route path="/orders/:orderNumber" element={<LegacyOrderRedirect />} />
-            <Route path="/wishlist" element={<Navigate to="/account/wishlist" replace />} />
+              <Route path="/account/addresses" element={<Navigate to="/account/address" replace />} />
+              <Route path="/account/change-password" element={<Navigate to="/account/password" replace />} />
+              <Route path="/orders" element={<Navigate to="/account/orders" replace />} />
+              <Route path="/orders/:orderNumber" element={<LegacyOrderRedirect />} />
+              <Route path="/wishlist" element={<Navigate to="/account/wishlist" replace />} />
 
               <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
             </>
@@ -326,11 +326,11 @@ function App() {
       {/* Commerce utilities are loaded only for shopping routes, not the
           Entry Gateway's first paint. */}
       {earlyAccessPhase === 'ready' && location.pathname !== ROUTES.HOME ? (
-        <Suspense fallback={null}>
-          <FloatingNavigation />
-          <MiniCartDrawer />
-          <SearchOverlay />
-        </Suspense>
+        <>
+          <Suspense fallback={null}><FloatingNavigation /></Suspense>
+          <Suspense fallback={null}><MiniCartDrawer /></Suspense>
+          <Suspense fallback={null}><SearchOverlay /></Suspense>
+        </>
       ) : null}
       <Toaster position="top-center" richColors />
     </NavigationThemeProvider>

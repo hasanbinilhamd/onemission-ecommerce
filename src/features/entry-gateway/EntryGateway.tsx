@@ -197,66 +197,43 @@ function EntryGateway({
         </header>
 
         <section
-          className="relative mt-9 w-full overflow-hidden rounded-[26px] border border-white/12 bg-[#0b1a27] shadow-[0_28px_70px_rgba(0,0,0,0.34)] sm:mt-10 sm:rounded-[30px]"
+          className="relative isolate mt-9 w-full sm:mt-5"
           style={{ aspectRatio: isMobile ? "1.48 / 1" : "2.12 / 1" }}
-          aria-label="ONEMISSION editorial campaign"
+          aria-label="ONEMISSION Awrah Fit product"
         >
+          {/* Allow the soft white spotlight to fade naturally into the page background. */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(ellipse 34% 72% at 51% 49%, rgba(166,204,228,0.34) 0%, rgba(112,161,199,0.22) 50%, rgba(64,111,150,0.08) 80%, transparent 100%)",
-              mixBlendMode: "screen",
-            }}
-          />
+            className="pointer-events-none absolute inset-0 flex items-center justify-center"
+          >
+            <div
+              className="h-[88%] w-[74%] rounded-full"
+              style={{
+                background:
+                  "radial-gradient(ellipse at center, rgba(248,251,255,0.56) 20%, rgba(218,236,255,0.30) 40%, rgba(132,182,226,0.14) 49%, rgba(82,134,183,0.04) 68%, transparent 80%)",
+                filter: "blur(30px)",
+                transform: "scale(1.13)",
+              }}
+            />
+          </div>
 
           <img
             src={ENTRY_GATEWAY_IMAGE_URL}
-            alt="ONEMISSION Awrah Fit sportswear campaign"
-            className="absolute inset-0 h-full w-full object-cover"
+            alt="ONEMISSION Awrah Fit sportswear"
+            className="relative z-10 block h-full w-full object-contain"
             style={{
-              objectPosition: isMobile ? "50% 34%" : "50% 32%",
-              filter: "brightness(1.16) contrast(1.06)",
+              filter:
+                "brightness(1.12) contrast(1.06) drop-shadow(0 20px 35px rgba(0,0,0,0.20))",
+              // Fade any opaque edges of the image so no rectangular box remains.
+              maskImage:
+                "radial-gradient(ellipse 66% 83% at center, black 53%, transparent 100%)",
+              WebkitMaskImage:
+                "radial-gradient(ellipse 66% 83% at center, black 53%, transparent 100%)",
             }}
           />
-
-          {/* Soft spotlight over the artwork lifts the black product from the dark backdrop. */}
-
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(90deg, rgba(3,11,18,0.72) 0%, rgba(3,11,18,0.09) 35%, rgba(3,11,18,0.04) 63%, rgba(3,11,18,0.58) 100%), linear-gradient(180deg, rgba(4,12,19,0.03) 38%, rgba(4,12,19,0.23) 100%)",
-            }}
-          />
-
-          <div className="absolute left-5 top-1/2 -translate-y-1/2 text-left sm:left-8">
-            {["FAITH", "DISCIPLINE", "MOVEMENT", "A HIGHER", "PURPOSE"].map(
-              (line) => (
-                <p
-                  key={line}
-                  className="m-0 text-[7px] font-medium uppercase tracking-[0.42em] text-white/46 sm:text-[9px]"
-                  style={{ lineHeight: 2.35 }}
-                >
-                  {line}
-                </p>
-              ),
-            )}
-            <span className="mt-2 block h-px w-8 bg-white/35 sm:w-10" />
-          </div>
-
-          <div className="absolute bottom-5 right-5 max-w-[42%] text-right sm:bottom-7 sm:right-8">
-            <p className="m-0 text-[20px] italic leading-none tracking-[-0.03em] text-white/55 sm:text-[32px]">
-              Values
-              <br />
-              Matter
-            </p>
-          </div>
         </section>
 
-        <section className="mt-9 grid w-full gap-3 sm:mt-10 sm:gap-4">
+        <section className="mt-9 grid w-full gap-3 sm:mt-5 sm:gap-4">
           <a
             href={shopeeUrl || undefined}
             onClick={onShopOnShopee}
@@ -279,7 +256,7 @@ function EntryGateway({
                 Shop on Shopee
               </p>
               <p className="m-0 mt-1 text-[12px] text-white/58 sm:text-[14px]">
-                Discover our latest collection.
+                Get free ongkir.
               </p>
             </div>
             <ChevronRight
@@ -308,7 +285,7 @@ function EntryGateway({
                 Official Website
               </p>
               <p className="m-0 mt-1 text-[12px] text-white/58 sm:text-[14px]">
-                Explore the full ONEMISSION experience.
+                Grab special offers.
               </p>
             </div>
             <ChevronRight
@@ -339,7 +316,7 @@ function EntryGateway({
                 Awrah Fit
               </p>
               <p className="m-0 mt-1 text-[12px] text-white/58 sm:text-[14px]">
-                Modest fit. Higher purpose.
+                Most valuable products.
               </p>
             </div>
             <ChevronRight

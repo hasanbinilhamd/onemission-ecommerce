@@ -20,14 +20,15 @@ import { env } from "../../app/config/env";
  * Destinations:
  *   - Shop on Shopee (external)
  *   - Official Website (dismisses the gate and reveals the site)
- *   - Awrah Fit (direct product deep-link)
+ *   - Awrah Fit (direct Shopee product link)
  *
  * No localStorage/sessionStorage persistence is used by design.
  */
 
 let entryGatewayShown = false;
 
-const AWRAH_FIT_PATH = "/product/awrah-fit-ultra-stretch";
+const AWRAH_FIT_SHOPEE_URL =
+  "https://shopee.co.id/product/1115876802/54869422914/";
 const ENTRY_GATEWAY_IMAGE_URL =
   "https://assets.onemissionclo.com/Collection/awrah%20fit.png";
 const COMMUNITY_LINKS = [
@@ -121,7 +122,6 @@ export function HomeEntryGate({ children }: HomeEntryGateProps) {
 
   const handleOpenAwrahFit = () => {
     markEntryGatewayShown();
-    window.location.assign(AWRAH_FIT_PATH);
   };
 
   if (typeof document === "undefined") return null;
@@ -318,8 +318,10 @@ function EntryGateway({
             />
           </button>
 
-          <button
-            type="button"
+          <a
+            href={AWRAH_FIT_SHOPEE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
             onClick={onOpenAwrahFit}
             className="group flex min-h-[86px] w-full items-center gap-5 rounded-[24px] border border-white/16 px-5 py-4 text-left text-white transition-all duration-200 hover:-translate-y-0.5 hover:border-white/28 hover:bg-white/[0.075] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 sm:min-h-[98px] sm:px-7"
             style={{
@@ -345,7 +347,7 @@ function EntryGateway({
               strokeWidth={1.8}
               className="shrink-0 text-white/85 transition-transform duration-200 group-hover:translate-x-1"
             />
-          </button>
+          </a>
 
           {shopeeMissing ? (
             <p

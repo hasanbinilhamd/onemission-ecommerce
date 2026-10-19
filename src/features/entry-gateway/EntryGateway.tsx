@@ -163,7 +163,6 @@ function EntryGateway({
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-
   return (
     <div
       className="fixed inset-0 z-[9999] overflow-y-auto font-['SF-Pro-Display',_sans-serif] text-white"
@@ -191,34 +190,27 @@ function EntryGateway({
       <main className="relative mx-auto flex min-h-full w-full max-w-[920px] flex-col items-center px-5 pb-10 pt-9 sm:px-8 sm:pb-12 sm:pt-12">
         <header className="flex w-full flex-col items-center text-center">
           <img
-            src="/white_om_logo.png"
+            src="/white_om_full_logo.png"
             alt="ONEMISSION"
             className="h-auto w-[min(78vw,360px)] object-contain"
           />
-          <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.54em] text-white/62 sm:text-[11px]">
-            Values Matter
-          </p>
         </header>
-
-        <section className="mt-10 flex w-full flex-col items-center text-center sm:mt-12">
-          <h1
-            className="m-0 max-w-[820px] text-[clamp(44px,9vw,82px)] font-medium leading-[0.9] tracking-[-0.055em]"
-            aria-label="More Than Just Sportswear"
-          >
-            <span className="block text-white/62">More Than</span>
-            <span className="block text-white">Just Sportswear</span>
-          </h1>
-          <p className="mt-5 max-w-[560px] text-[14px] leading-6 text-[#aebdca] sm:text-[18px] sm:leading-7">
-            Modest performance wear for Muslim men
-            <br className="hidden sm:block" /> who move with purpose.
-          </p>
-        </section>
 
         <section
           className="relative mt-9 w-full overflow-hidden rounded-[26px] border border-white/12 bg-[#0b1a27] shadow-[0_28px_70px_rgba(0,0,0,0.34)] sm:mt-10 sm:rounded-[30px]"
           style={{ aspectRatio: isMobile ? "1.48 / 1" : "2.12 / 1" }}
           aria-label="ONEMISSION editorial campaign"
         >
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(ellipse 34% 72% at 51% 49%, rgba(166,204,228,0.34) 0%, rgba(112,161,199,0.22) 50%, rgba(64,111,150,0.08) 80%, transparent 100%)",
+              mixBlendMode: "screen",
+            }}
+          />
+
           <img
             src={ENTRY_GATEWAY_IMAGE_URL}
             alt="ONEMISSION Awrah Fit sportswear campaign"
@@ -230,15 +222,6 @@ function EntryGateway({
           />
 
           {/* Soft spotlight over the artwork lifts the black product from the dark backdrop. */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(ellipse 34% 72% at 51% 49%, rgba(166,204,228,0.34) 0%, rgba(112,161,199,0.22) 38%, rgba(64,111,150,0.08) 67%, transparent 100%)",
-              mixBlendMode: "screen",
-            }}
-          />
 
           <div
             aria-hidden="true"

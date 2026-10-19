@@ -1,54 +1,54 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
+import {
+  ChevronRight,
+  Globe2,
+  Instagram,
+  Music2,
+  ShoppingBag,
+  Shirt,
+  Youtube,
+} from "lucide-react";
 import { env } from "../../app/config/env";
 import {
   websiteService,
   type WebsiteHeroItem,
 } from "../../services/api/websiteService";
-import { createHeroGradient } from "../hero/theme";
-import {
-  GRAIN_SVG,
-  HERO_GRADIENTS,
-  HeroCarouselImages,
-  HeroGradientBackground,
-  mapHeroItems,
-  useHeroGesture,
-  type Direction,
-} from "../hero/carousel";
 
 /**
- * Entry Gateway — the Shop hero adapted as the opening screen.
+ * Entry Gateway — ONEMISSION's lightweight link hub.
  *
- * The gateway reuses the EXACT Shop hero system (shared module
- * features/hero/carousel): the same gradient background, the same
- * center/left/right/back model composition, the same desktop/mobile media
- * resolution, the same skeleton preload, the same transitions and gesture
- * thresholds. Visually it IS the Shop hero — without the "VALUES MATTER"
- * headline and without Shop's collection below it.
+ * The gateway appears on every full load of the root route and acts as the
+ * first choice screen before entering the complete ONEMISSION experience.
  *
- * On top of the hero sit only:
- *   - the One Mission logo (top-left, same sizing philosophy as Shop)
- *   - two small editorial bottom actions:
- *       ENTER ONEMISSION →
- *       SHOP IN SHOPEE ↗
+ * Destinations:
+ *   - Shop on Shopee (external)
+ *   - Official Website (dismisses the gate and reveals the site)
+ *   - Awrah Fit (direct product deep-link)
  *
- * TRUE GATE behavior is preserved: fixed overlay above the app shell, app
- * root inert, scroll locked, until a choice is made. Persistence and the
- * Shopee URL source of truth are unchanged. No new CMS, no duplicate
- * carousel.
+ * No localStorage/sessionStorage persistence is used by design.
  */
 
-/**
- * In-memory entry state.
- *
- * The gateway is evaluated on EVERY full load of the root route (refresh →
- * module reloads → flag resets → gateway appears again), but survives SPA
- * navigation within the same page session, so moving between internal
- * routes never re-triggers the gateway. No localStorage/sessionStorage —
- * deliberately no persistence.
- */
 let entryGatewayShown = false;
+
+const AWRAH_FIT_PATH = "/product/awrah-fit-ultra-stretch";
+const COMMUNITY_LINKS = [
+  {
+    label: "Instagram",
+    href: "https://www.instagram.com/onemissionclo/",
+    icon: Instagram,
+  },
+  {
+    label: "TikTok",
+    href: "https://www.tiktok.com/@hasanbinilhamd",
+    icon: Music2,
+  },
+  {
+    label: "YouTube",
+    href: "https://www.youtube.com/@onemissionworld",
+    icon: Youtube,
+  },
+] as const;
 
 function markEntryGatewayShown() {
   entryGatewayShown = true;
@@ -59,12 +59,12 @@ function shouldShowEntryGateway(): boolean {
 }
 
 interface HomeEntryGateProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 /**
  * Mounted ONLY on the `/` route. Direct visits to /shop, /mission, /impact,
- * /donate never pass through here.
+ * /donate and product pages never pass through here.
  */
 export function HomeEntryGate({ children }: HomeEntryGateProps) {
   const [showGateway, setShowGateway] = useState(() =>
@@ -111,20 +111,28 @@ export function HomeEntryGate({ children }: HomeEntryGateProps) {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   };
 
-  const handleShopOnShopee = (event: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleShopOnShopee = (event: MouseEvent<HTMLAnchorElement>) => {
     if (!shopeeUrl) {
       event.preventDefault();
       setShopeeMissing(true);
       return;
     }
+
     markEntryGatewayShown();
   };
 
+  const handleOpenAwrahFit = () => {
+    markEntryGatewayShown();
+    window.location.assign(AWRAH_FIT_PATH);
+  };
+
   if (typeof document === "undefined") return null;
+
   return createPortal(
     <EntryGateway
       onEnterOnemission={handleEnterOnemission}
       onShopOnShopee={handleShopOnShopee}
+      onOpenAwrahFit={handleOpenAwrahFit}
       shopeeUrl={shopeeUrl}
       shopeeMissing={shopeeMissing}
     />,
@@ -134,7 +142,8 @@ export function HomeEntryGate({ children }: HomeEntryGateProps) {
 
 interface EntryGatewayProps {
   onEnterOnemission: () => void;
-  onShopOnShopee: (event: React.MouseEvent<HTMLAnchorElement>) => void;
+  onShopOnShopee: (event: MouseEvent<HTMLAnchorElement>) => void;
+  onOpenAwrahFit: () => void;
   shopeeUrl: string;
   shopeeMissing: boolean;
 }
@@ -142,16 +151,14 @@ interface EntryGatewayProps {
 function EntryGateway({
   onEnterOnemission,
   onShopOnShopee,
+  onOpenAwrahFit,
   shopeeUrl,
   shopeeMissing,
 }: EntryGatewayProps) {
-  const [isAnimating, setIsAnimating] = useState(false);
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== "undefined" && window.innerWidth < 640,
   );
   const [heroCmsItems, setHeroCmsItems] = useState<WebsiteHeroItem[]>([]);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const heroSceneRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < 640);
@@ -159,13 +166,14 @@ function EntryGateway({
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // Same approved hero media source as Shop (Website CMS hero items).
   useEffect(() => {
     let isActive = true;
+
     websiteService
       .getHeroItems()
       .then((items) => {
         if (!isActive) return;
+
         setHeroCmsItems(
           (Array.isArray(items) ? items : [])
             .filter((item) => item.active !== false)
@@ -175,261 +183,270 @@ function EntryGateway({
                 Number(right.displayOrder || 0),
             ),
         );
-        setActiveIndex(0);
       })
       .catch(() => {
-        // No media → the shared hero renders its brand-safe skeleton state.
         if (isActive) setHeroCmsItems([]);
       });
+
     return () => {
       isActive = false;
     };
   }, []);
 
-  const heroItems = useMemo(() => mapHeroItems(heroCmsItems), [heroCmsItems]);
-  const heroGradients = useMemo(() => {
-    if (heroItems.length === 0) {
-      return [HERO_GRADIENTS[0]];
-    }
-    return heroItems.map((item) => createHeroGradient(item.theme.accentColor));
-  }, [heroItems]);
+  const activeHero = heroCmsItems[0] ?? null;
+  const heroMediaUrl = useMemo(() => {
+    if (!activeHero) return "";
 
-  const resolvedActiveIndex =
-    heroItems.length > 0 ? activeIndex % heroItems.length : 0;
+    const mobileUrl = String(activeHero.mobileUrl || "").trim();
+    const desktopUrl = String(activeHero.desktopUrl || "").trim();
 
-  const rotateHero = useCallback(
-    (direction: Direction) => {
-      if (isAnimating || heroItems.length <= 1) return;
+    return isMobile && mobileUrl ? mobileUrl : desktopUrl;
+  }, [activeHero, isMobile]);
 
-      setIsAnimating(true);
-      const nextIndex =
-        direction === "next"
-          ? (resolvedActiveIndex + 1) % heroItems.length
-          : (resolvedActiveIndex + heroItems.length - 1) % heroItems.length;
-      setActiveIndex(nextIndex);
-      window.setTimeout(() => setIsAnimating(false), 650);
-    },
-    [heroItems.length, isAnimating, resolvedActiveIndex],
-  );
-
-  const heroGesture = useHeroGesture({
-    surfaceRef: heroSceneRef,
-    rotateHero,
-  });
+  const heroMediaType = activeHero?.mediaType === "video" ? "video" : "image";
 
   return (
     <div
-      className="fixed inset-0 z-[9999] overflow-hidden font-['SF-Pro-Display',_sans-serif]"
-      style={{ height: "100dvh" }}
+      className="fixed inset-0 z-[9999] overflow-y-auto font-['SF-Pro-Display',_sans-serif] text-white"
       role="dialog"
       aria-modal="true"
       aria-label="One Mission entry"
+      style={{
+        background:
+          "radial-gradient(circle at 8% 58%, rgba(38,89,126,0.42), transparent 32%), radial-gradient(circle at 86% 8%, rgba(22,58,84,0.30), transparent 28%), linear-gradient(180deg, #081521 0%, #07131f 42%, #06111b 100%)",
+      }}
     >
-      {/* ─── THE SHOP HERO, ADAPTED ────────────────────────────────────── */}
-      <section
-        ref={heroSceneRef}
-        tabIndex={0}
-        aria-label="Featured editorial hero carousel"
-        aria-roledescription="carousel"
-        aria-live="off"
-        onKeyDown={heroGesture.onKeyDown}
-        className="relative h-full w-full overflow-hidden outline-none"
-        style={{ height: "100dvh" }}
-      >
-        <div className="relative h-full w-full" style={{ overflow: "hidden" }}>
-          <HeroGradientBackground
-            activeIndex={resolvedActiveIndex}
-            gradients={heroGradients}
-          />
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          opacity: 0.18,
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px)",
+          backgroundSize: "38px 38px",
+          maskImage:
+            "linear-gradient(to bottom, rgba(0,0,0,0.75), transparent 82%)",
+        }}
+      />
 
-          {/* Same subtle atmosphere overlay as Shop */}
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              zIndex: 1,
-              background:
-                "linear-gradient(180deg, rgba(10,10,10,0.12) 0%, rgba(10,10,10,0.04) 44%, rgba(229,228,226,0.08) 100%)",
-            }}
+      <main className="relative mx-auto flex min-h-full w-full max-w-[920px] flex-col items-center px-5 pb-10 pt-9 sm:px-8 sm:pb-12 sm:pt-12">
+        <header className="flex w-full flex-col items-center text-center">
+          <img
+            src="/white_om_logo.png"
+            alt="ONEMISSION"
+            className="h-auto w-[min(78vw,360px)] object-contain"
           />
+          <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.54em] text-white/62 sm:text-[11px]">
+            Values Matter
+          </p>
+        </header>
 
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              zIndex: 50,
-              backgroundImage: `url("${GRAIN_SVG}")`,
-              backgroundRepeat: "repeat",
-              backgroundSize: "200px 200px",
-              opacity: 0.4,
-            }}
-          />
-
-          {/* "VALUES MATTER" background typography — the exact Shop hero
-              treatment (zIndex 2: behind the model, above the gradient). */}
-          <div
-            className="absolute inset-x-0 flex items-center justify-center pointer-events-none select-none"
-            style={{
-              zIndex: 2,
-              top: isMobile ? "10%" : "18%",
-              fontFamily: "'SF-Pro-Display', sans-serif",
-              fontSize: isMobile
-                ? "clamp(120px, 36vw, 170px)"
-                : "clamp(70px, 19vw, 380px)",
-              fontWeight: 400,
-              color: "#ffffff",
-              opacity: 0.6,
-              lineHeight: isMobile ? 0.68 : 1,
-              textTransform: "lowercase",
-              letterSpacing: "-0.08em",
-              whiteSpace: "nowrap",
-              padding: "0 10px",
-            }}
+        <section className="mt-10 flex w-full flex-col items-center text-center sm:mt-12">
+          <h1
+            className="m-0 max-w-[820px] text-[clamp(44px,9vw,82px)] font-medium leading-[0.9] tracking-[-0.055em]"
+            aria-label="More Than Just Sportswear"
           >
-            {isMobile ? (
-              <>
-                values
-                <br />
-                matter
-              </>
+            <span className="block text-white/62">More Than</span>
+            <span className="block text-white">Just Sportswear</span>
+          </h1>
+          <p className="mt-5 max-w-[560px] text-[14px] leading-6 text-[#aebdca] sm:text-[18px] sm:leading-7">
+            Modest performance wear for Muslim men
+            <br className="hidden sm:block" /> who move with purpose.
+          </p>
+        </section>
+
+        <section
+          className="relative mt-9 w-full overflow-hidden rounded-[26px] border border-white/12 bg-[#0b1a27] shadow-[0_28px_70px_rgba(0,0,0,0.34)] sm:mt-10 sm:rounded-[30px]"
+          style={{ aspectRatio: isMobile ? "1.48 / 1" : "2.12 / 1" }}
+          aria-label="ONEMISSION editorial campaign"
+        >
+          {heroMediaUrl ? (
+            heroMediaType === "video" ? (
+              <video
+                src={heroMediaUrl}
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="absolute inset-0 h-full w-full object-cover"
+                style={{ objectPosition: isMobile ? "50% 34%" : "50% 32%" }}
+              />
             ) : (
-              "VALUES MATTER"
-            )}
-          </div>
-
-          <HeroCarouselImages
-            items={heroItems}
-            activeIndex={resolvedActiveIndex}
-            isMobile={isMobile}
-            onPointerDown={heroGesture.onPointerDown}
-            onPointerMove={heroGesture.onPointerMove}
-            onPointerUp={heroGesture.onPointerUp}
-            onPointerCancel={heroGesture.onPointerCancel}
-          />
-
-          {/* Shop-style desktop navigation arrows */}
-          {heroItems.length > 1 && (
+              <img
+                src={heroMediaUrl}
+                alt="ONEMISSION sportswear campaign"
+                className="absolute inset-0 h-full w-full object-cover"
+                style={{ objectPosition: isMobile ? "50% 34%" : "50% 32%" }}
+              />
+            )
+          ) : (
             <div
-              className="hidden sm:block absolute sm:bottom-1/3 sm:left-0 w-screen"
-              style={{ zIndex: 60 }}
-            >
-              <div className="flex justify-between px-10 items-center">
-                <button
-                  type="button"
-                  aria-label="Previous"
-                  onClick={() => rotateHero("prev")}
-                  className="w-12 h-12 rounded-full flex items-center justify-center"
-                  style={{
-                    backgroundColor: "transparent",
-                    color: "#ffffff",
-                    transition:
-                      "transform 150ms ease, background-color 150ms ease",
-                  }}
-                  onMouseEnter={(event) => {
-                    event.currentTarget.style.transform = "scale(1.08)";
-                    event.currentTarget.style.backgroundColor =
-                      "rgba(255,255,255,0.12)";
-                  }}
-                  onMouseLeave={(event) => {
-                    event.currentTarget.style.transform = "scale(1)";
-                    event.currentTarget.style.backgroundColor = "transparent";
-                  }}
-                >
-                  <ArrowLeft size={26} strokeWidth={2.25} />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Next"
-                  onClick={() => rotateHero("next")}
-                  className="w-12 h-12 rounded-full flex items-center justify-center"
-                  style={{
-                    backgroundColor: "transparent",
-                    color: "#ffffff",
-                    transition:
-                      "transform 150ms ease, background-color 150ms ease",
-                  }}
-                  onMouseEnter={(event) => {
-                    event.currentTarget.style.transform = "scale(1.08)";
-                    event.currentTarget.style.backgroundColor =
-                      "rgba(255,255,255,0.12)";
-                  }}
-                  onMouseLeave={(event) => {
-                    event.currentTarget.style.transform = "scale(1)";
-                    event.currentTarget.style.backgroundColor = "transparent";
-                  }}
-                >
-                  <ArrowRight size={26} strokeWidth={2.25} />
-                </button>
-              </div>
-            </div>
+              className="absolute inset-0"
+              style={{
+                background:
+                  "radial-gradient(circle at 50% 18%, rgba(87,128,157,0.36), transparent 34%), linear-gradient(135deg, #142a3b 0%, #091622 56%, #07111a 100%)",
+              }}
+            />
           )}
 
-          {/* ─── BRAND MARK (navbar is hidden while the gate is open) ──── */}
           <div
-            className="absolute top-6 left-4 sm:left-8"
-            style={{ zIndex: 60 }}
-          >
-            <img
-              src="/white_om_logo.png"
-              alt="One Mission"
-              className="h-8 md:h-14 w-auto [mix-blend-mode:difference]"
-            />
+            aria-hidden="true"
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(90deg, rgba(3,11,18,0.76) 0%, rgba(3,11,18,0.14) 34%, rgba(3,11,18,0.10) 66%, rgba(3,11,18,0.62) 100%), linear-gradient(180deg, rgba(4,12,19,0.05) 38%, rgba(4,12,19,0.34) 100%)",
+            }}
+          />
+
+          <div className="absolute left-5 top-1/2 -translate-y-1/2 text-left sm:left-8">
+            {["FAITH", "DISCIPLINE", "MOVEMENT", "A HIGHER", "PURPOSE"].map(
+              (line) => (
+                <p
+                  key={line}
+                  className="m-0 text-[7px] font-medium uppercase tracking-[0.42em] text-white/46 sm:text-[9px]"
+                  style={{ lineHeight: 2.35 }}
+                >
+                  {line}
+                </p>
+              ),
+            )}
+            <span className="mt-2 block h-px w-8 bg-white/35 sm:w-10" />
           </div>
 
-          {/* ─── BOTTOM ACTIONS (small editorial navigation) ───────────── */}
-          <div
-            className="absolute inset-x-0 bottom-16 z-[70] flex items-end justify-between gap-4 px-5 pb-6 sm:px-10 sm:pb-8 lg:px-14 lg:pb-10"
+          <div className="absolute bottom-5 right-5 max-w-[42%] text-right sm:bottom-7 sm:right-8">
+            <p className="m-0 text-[20px] italic leading-none tracking-[-0.03em] text-white/55 sm:text-[32px]">
+              Values
+              <br />
+              Matter
+            </p>
+          </div>
+        </section>
+
+        <section className="mt-9 grid w-full gap-3 sm:mt-10 sm:gap-4">
+          <a
+            href={shopeeUrl || undefined}
+            onClick={onShopOnShopee}
+            target={shopeeUrl ? "_blank" : undefined}
+            rel={shopeeUrl ? "noreferrer" : undefined}
+            className="group flex min-h-[86px] w-full items-center gap-5 rounded-[24px] border px-5 py-4 text-left text-white no-underline transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(26,94,141,0.22)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#78c9ff]/70 sm:min-h-[98px] sm:px-7"
             style={{
-              paddingBottom:
-                "max(1.5rem, calc(env(safe-area-inset-bottom) + 1rem))",
+              borderColor: "rgba(100,196,255,0.58)",
+              background:
+                "linear-gradient(100deg, rgba(31,92,130,0.86) 0%, rgba(21,57,82,0.82) 54%, rgba(13,35,51,0.92) 100%)",
+              boxShadow:
+                "inset 0 1px 0 rgba(255,255,255,0.08), 0 14px 36px rgba(0,0,0,0.16)",
             }}
           >
-            <button
-              type="button"
-              onClick={onEnterOnemission}
-              aria-label="Enter Onemission — open the complete One Mission website"
-              className="group inline-flex items-center gap-2 text-left text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-            >
-              <span className="text-[10px] font-semibold uppercase tracking-[0.24em] sm:text-xs">
-                Enter Oneworld
-              </span>
-              <ArrowRight
-                size={13}
-                strokeWidth={2}
-                className="shrink-0 text-white/80 transition-transform duration-300 group-hover:translate-x-1"
-              />
-            </button>
-
-            <div className="flex flex-col items-end gap-2">
-              <a
-                href={shopeeUrl || undefined}
-                onClick={onShopOnShopee}
-                target={shopeeUrl ? "_blank" : undefined}
-                rel={shopeeUrl ? "noreferrer" : undefined}
-                aria-label="Shop in Shopee — open the official One Mission Shopee store"
-                className="group inline-flex items-center gap-2 text-right text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-              >
-                <span className="text-[10px] font-semibold uppercase tracking-[0.24em] sm:text-xs">
-                  Shop in Shopee
-                </span>
-                <ArrowUpRight
-                  size={13}
-                  strokeWidth={2}
-                  className="shrink-0 text-white/80 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-                />
-              </a>
-              {shopeeMissing && (
-                <p
-                  className="max-w-[220px] text-right text-[10px] font-medium text-amber-300"
-                  role="alert"
-                >
-                  Shopee destination is not configured. Set
-                  VITE_SHOPEE_STORE_URL.
-                </p>
-              )}
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center border-r border-white/20 pr-5 sm:h-14 sm:w-16">
+              <ShoppingBag size={30} strokeWidth={1.7} />
             </div>
+            <div className="min-w-0 flex-1">
+              <p className="m-0 text-[19px] font-medium tracking-[-0.02em] sm:text-[24px]">
+                Shop on Shopee
+              </p>
+              <p className="m-0 mt-1 text-[12px] text-white/58 sm:text-[14px]">
+                Discover our latest collection.
+              </p>
+            </div>
+            <ChevronRight
+              size={28}
+              strokeWidth={1.8}
+              className="shrink-0 text-white/85 transition-transform duration-200 group-hover:translate-x-1"
+            />
+          </a>
+
+          <button
+            type="button"
+            onClick={onEnterOnemission}
+            className="group flex min-h-[86px] w-full items-center gap-5 rounded-[24px] border border-white/16 px-5 py-4 text-left text-white transition-all duration-200 hover:-translate-y-0.5 hover:border-white/28 hover:bg-white/[0.075] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 sm:min-h-[98px] sm:px-7"
+            style={{
+              background:
+                "linear-gradient(100deg, rgba(23,45,62,0.80) 0%, rgba(14,30,43,0.88) 100%)",
+              boxShadow:
+                "inset 0 1px 0 rgba(255,255,255,0.05), 0 12px 30px rgba(0,0,0,0.12)",
+            }}
+          >
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center border-r border-white/16 pr-5 sm:h-14 sm:w-16">
+              <Globe2 size={30} strokeWidth={1.7} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="m-0 text-[19px] font-medium tracking-[-0.02em] sm:text-[24px]">
+                Official Website
+              </p>
+              <p className="m-0 mt-1 text-[12px] text-white/58 sm:text-[14px]">
+                Explore the full ONEMISSION experience.
+              </p>
+            </div>
+            <ChevronRight
+              size={28}
+              strokeWidth={1.8}
+              className="shrink-0 text-white/85 transition-transform duration-200 group-hover:translate-x-1"
+            />
+          </button>
+
+          <button
+            type="button"
+            onClick={onOpenAwrahFit}
+            className="group flex min-h-[86px] w-full items-center gap-5 rounded-[24px] border border-white/16 px-5 py-4 text-left text-white transition-all duration-200 hover:-translate-y-0.5 hover:border-white/28 hover:bg-white/[0.075] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 sm:min-h-[98px] sm:px-7"
+            style={{
+              background:
+                "linear-gradient(100deg, rgba(23,45,62,0.80) 0%, rgba(14,30,43,0.88) 100%)",
+              boxShadow:
+                "inset 0 1px 0 rgba(255,255,255,0.05), 0 12px 30px rgba(0,0,0,0.12)",
+            }}
+          >
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center border-r border-white/16 pr-5 sm:h-14 sm:w-16">
+              <Shirt size={30} strokeWidth={1.7} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="m-0 text-[19px] font-medium tracking-[-0.02em] sm:text-[24px]">
+                Awrah Fit
+              </p>
+              <p className="m-0 mt-1 text-[12px] text-white/58 sm:text-[14px]">
+                Modest fit. Higher purpose.
+              </p>
+            </div>
+            <ChevronRight
+              size={28}
+              strokeWidth={1.8}
+              className="shrink-0 text-white/85 transition-transform duration-200 group-hover:translate-x-1"
+            />
+          </button>
+
+          {shopeeMissing ? (
+            <p
+              className="m-0 px-2 text-center text-[11px] font-medium text-amber-300"
+              role="alert"
+            >
+              Shopee destination is not configured. Set VITE_SHOPEE_STORE_URL.
+            </p>
+          ) : null}
+        </section>
+
+        <footer className="mt-10 w-full border-t border-white/14 pt-6 text-center sm:mt-12 sm:pt-7">
+          <div className="flex items-center justify-center gap-7">
+            {COMMUNITY_LINKS.map(({ label, href, icon: Icon }) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={label}
+                title={label}
+                className="text-white/82 transition-all duration-200 hover:-translate-y-0.5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+              >
+                <Icon size={21} strokeWidth={1.9} />
+              </a>
+            ))}
           </div>
-        </div>
-      </section>
+          <p className="mb-0 mt-5 text-[9px] font-medium uppercase tracking-[0.54em] text-white/58 sm:text-[10px]">
+            Values Matter
+          </p>
+          <p className="mb-0 mt-5 text-[8px] uppercase tracking-[0.26em] text-white/35 sm:text-[9px]">
+            © 2026 ONEMISSION. All rights reserved.
+          </p>
+        </footer>
+      </main>
     </div>
   );
 }

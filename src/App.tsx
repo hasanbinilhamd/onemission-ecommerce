@@ -4,25 +4,15 @@ import { Toaster } from 'sonner';
 import { MainLayout } from './layouts/MainLayout';
 import { MovementLayout } from './layouts/MovementLayout';
 import { ROUTES } from './app/config/routes';
-import { MovementHomePage } from './features/movement';
 import { ShopPage } from './pages/ShopPage';
 import { InitialLoadingScreen } from './components/shared';
 import { FloatingNavigation } from './features/cart';
 import { EarlyAccessGate } from './features/early-access';
 import { getEarlyAccessStatus } from './services/api/earlyAccessService';
 import { prepareInitialApplicationExperience, type InitialPreloadProgressHandler } from './features/homepage/initialHomepageResources';
-import { NavigationThemeProvider, RouteScrollRestoration, type NavigationTheme } from './features/navigation';
+import { NavigationThemeProvider, PrimaryNavigation, RouteScrollRestoration, type NavigationTheme } from './features/navigation';
 import { HomeEntryGate } from './features/entry-gateway';
 
-const MissionPage = lazy(() => import('./pages/MissionPage').then((module) => ({ default: module.MissionPage })));
-const ImpactPage = lazy(() => import('./pages/ImpactPage').then((module) => ({ default: module.ImpactPage })));
-const ImpactStoryPage = lazy(() => import('./pages/ImpactStoryPage').then((module) => ({ default: module.ImpactStoryPage })));
-const DonatePage = lazy(() => import('./pages/DonatePage').then((module) => ({ default: module.DonatePage })));
-const DonateCampaignPage = lazy(() => import('./pages/DonateCampaignPage').then((m) => ({ default: m.DonateCampaignPage })));
-const DonateStoryPage = lazy(() => import('./pages/DonateStoryPage').then((m) => ({ default: m.DonateStoryPage })));
-const DonateUpdatesPage = lazy(() => import('./pages/DonateUpdatesPage').then((m) => ({ default: m.DonateUpdatesPage })));
-const DonateDisbursementsPage = lazy(() => import('./pages/DonateDisbursementsPage').then((m) => ({ default: m.DonateDisbursementsPage })));
-const DonateDonorsPage = lazy(() => import('./pages/DonateDonorsPage').then((m) => ({ default: m.DonateDonorsPage })));
 const TermsPage = lazy(() => import('./pages/TermsPage').then((module) => ({ default: module.TermsPage })));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then((module) => ({ default: module.PrivacyPage })));
 const FaqPage = lazy(() => import('./pages/FaqPage').then((module) => ({ default: module.FaqPage })));
@@ -127,11 +117,6 @@ function clearRestoreCatalogFlag(locationState: Record<string, unknown> | null |
 function LegacyOrderRedirect() {
   const { orderNumber = '' } = useParams<{ orderNumber: string }>();
   return <Navigate to={`/account/orders/${encodeURIComponent(orderNumber)}`} replace />;
-}
-
-function LegacyJournalRedirect() {
-  const { slug = '' } = useParams<{ slug: string }>();
-  return <Navigate to={`/impact/${encodeURIComponent(slug)}`} replace />;
 }
 
 function resolveHomepageNavigationTheme(): NavigationTheme {
@@ -282,27 +267,20 @@ function App() {
             onTimeout={handleInitialLoadingTimeout}
           />
         ) : null}
+        {!shouldShowInitialLoading ? <PrimaryNavigation /> : null}
         {earlyAccessPhase === 'gated' ? (
           <>
             <RouteScrollRestoration />
             <Suspense fallback={null}>
               <Routes>
-                {/* Early Access now protects only the Shop/ecommerce experience.
-                    Movement pages stay public while Shop keeps its existing gate. */}
+                {/* Home is now Entry Gateway; Shop preserves the early-access flow. */}
                 <Route element={<MovementLayout />}>
-                  <Route path="/" element={<MainLayout><HomeEntryGate><MovementHomePage /></HomeEntryGate></MainLayout>} />
-                  <Route path="/mission" element={<MissionPage />} />
-                  <Route path="/impact" element={<ImpactPage />} />
-                  <Route path="/impact/:slug" element={<ImpactStoryPage />} />
-                  <Route path="/donate" element={<DonatePage />} />
+                  <Route path="/" element={<MainLayout><HomeEntryGate /></MainLayout>} />
                 </Route>
-                <Route path="/journal" element={<Navigate to={ROUTES.IMPACT} replace />} />
-                <Route path="/journal/:slug" element={<LegacyJournalRedirect />} />
-                <Route path="/donate/:campaignId/story" element={<DonateStoryPage />} />
-                <Route path="/donate/:campaignId/updates" element={<DonateUpdatesPage />} />
-                <Route path="/donate/:campaignId/disbursements" element={<DonateDisbursementsPage />} />
-                <Route path="/donate/:campaignId/donors" element={<DonateDonorsPage />} />
-                <Route path="/donate/campaigns/:slug" element={<DonateCampaignPage />} />
+                <Route path="/mission/*" element={<Navigate to={ROUTES.HOME} replace />} />
+                <Route path="/impact/*" element={<Navigate to={ROUTES.HOME} replace />} />
+                <Route path="/donate/*" element={<Navigate to={ROUTES.HOME} replace />} />
+                <Route path="/journal/*" element={<Navigate to={ROUTES.HOME} replace />} />
                 <Route path="*" element={<EarlyAccessGate chapter={earlyAccessChapter} onUnlocked={handleEarlyAccessUnlocked} />} />
               </Routes>
             </Suspense>
@@ -314,24 +292,15 @@ function App() {
         <Suspense fallback={null}>
           <Routes>
             <Route element={<MovementLayout />}>
-              <Route
-                path="/"
-                element={<MainLayout><HomeEntryGate><MovementHomePage /></HomeEntryGate></MainLayout>}
-              />
-              <Route path="/mission" element={<MissionPage />} />
+              <Route path="/" element={<MainLayout><HomeEntryGate /></MainLayout>} />
               <Route path="/shop" element={<MainLayout>{renderShopPage()}</MainLayout>} />
-              <Route path="/impact" element={<ImpactPage />} />
-              <Route path="/impact/:slug" element={<ImpactStoryPage />} />
-              <Route path="/donate" element={<DonatePage />} />
             </Route>
 
-            <Route path="/journal" element={<Navigate to={ROUTES.IMPACT} replace />} />
-            <Route path="/journal/:slug" element={<LegacyJournalRedirect />} />
-            <Route path="/donate/:campaignId/story" element={<DonateStoryPage />} />
-            <Route path="/donate/:campaignId/updates" element={<DonateUpdatesPage />} />
-            <Route path="/donate/:campaignId/disbursements" element={<DonateDisbursementsPage />} />
-            <Route path="/donate/:campaignId/donors" element={<DonateDonorsPage />} />
-                <Route path="/donate/campaigns/:slug" element={<DonateCampaignPage />} />
+            {/* Hidden marketing URLs return to the public entry gateway. */}
+                <Route path="/mission/*" element={<Navigate to={ROUTES.HOME} replace />} />
+                <Route path="/impact/*" element={<Navigate to={ROUTES.HOME} replace />} />
+                <Route path="/donate/*" element={<Navigate to={ROUTES.HOME} replace />} />
+                <Route path="/journal/*" element={<Navigate to={ROUTES.HOME} replace />} />
             <Route path="/collection" element={<Navigate to={ROUTES.SHOP} replace />} />
             <Route path="/collections" element={<Navigate to={ROUTES.SHOP} replace />} />
             <Route path="/terms" element={<TermsPage />} />
@@ -369,11 +338,11 @@ function App() {
             <Route path="/orders/:orderNumber" element={<LegacyOrderRedirect />} />
             <Route path="/wishlist" element={<Navigate to="/account/wishlist" replace />} />
 
-            <Route path="*" element={<MainLayout>{renderShopPage()}</MainLayout>} />
+            <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
           </Routes>
         </Suspense>
 
-        <FloatingNavigation />
+        {location.pathname !== ROUTES.HOME ? <FloatingNavigation /> : null}
         <Suspense fallback={null}>
           <MiniCartDrawer />
           <SearchOverlay />

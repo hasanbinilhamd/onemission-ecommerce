@@ -64,6 +64,10 @@ const FOOTER_NEWSLETTER_SUCCESS_POINTS = [
 const NAVIGATION_LINKS: readonly FooterLinkItem[] = [
   { label: "Home", href: ROUTES.HOME },
   { label: "Shop", href: ROUTES.SHOP },
+  { label: "Mission", href: ROUTES.MISSION },
+  { label: "Impact", href: ROUTES.IMPACT },
+  { label: "Donate", href: ROUTES.DONATE },
+  { label: "About", href: `${ROUTES.HOME}#onemission-vision` },
   { label: "Contact", href: "http://wa.me/6285798097779", isExternal: true },
 ] as const;
 

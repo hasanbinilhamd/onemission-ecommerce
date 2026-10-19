@@ -8,7 +8,7 @@ import { useNavigationTheme } from './NavigationThemeContext';
  */
 export function PrimaryNavigation() {
   const { pathname } = useLocation();
-  const { theme } = useNavigationTheme();
+  const { theme, colors } = useNavigationTheme();
 
   // The root Entry Gateway has its own centered brand logo.
   if (pathname === ROUTES.HOME) return null;
@@ -17,13 +17,17 @@ export function PrimaryNavigation() {
     <Link
       to={ROUTES.HOME}
       aria-label="ONEMISSION — back to the entry gateway"
-      className="fixed left-4 top-3 z-[60] inline-flex h-10 max-w-[44vw] items-center rounded-lg px-1.5 no-underline sm:left-6 sm:px-2"
+      className="fixed left-4 top-3 z-[60] inline-flex items-center justify-center gap-1 no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:left-8"
       style={{
-        backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.96)' : 'transparent',
-        transition: 'background-color 220ms ease',
+        padding: theme === 'dark' ? '6px 8px' : 0,
+        borderRadius: '9999px',
+        backgroundColor: colors.surfaceBackground,
+        border: theme === 'dark' ? `1px solid ${colors.surfaceBorder}` : '1px solid transparent',
+        boxShadow: colors.surfaceShadow,
+        transition: 'background-color 220ms ease, border-color 220ms ease, box-shadow 220ms ease, padding 220ms ease',
       }}
     >
-      <span className="relative block h-7 w-[116px] sm:h-8 sm:w-[146px]">
+      <span className="relative block h-9 w-[116px] sm:w-[146px]">
         <img
           src="/white_om_logo.png"
           alt="ONEMISSION"

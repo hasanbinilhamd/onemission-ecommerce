@@ -197,7 +197,7 @@ function EntryGateway({
         </header>
 
         <section
-          className="relative isolate mt-9 w-full sm:mt-5"
+          className="relative isolate mt-5 w-full"
           style={{ aspectRatio: isMobile ? "1.48 / 1" : "2.12 / 1" }}
           aria-label="ONEMISSION Awrah Fit product"
         >
@@ -233,7 +233,7 @@ function EntryGateway({
           />
         </section>
 
-        <section className="mt-9 grid w-full gap-3 sm:mt-5 sm:gap-4">
+        <section className="mt-5 grid w-full gap-3 sm:gap-4">
           <a
             href={shopeeUrl || undefined}
             onClick={onShopOnShopee}

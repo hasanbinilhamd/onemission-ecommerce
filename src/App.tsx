@@ -4,15 +4,13 @@ import { Toaster } from 'sonner';
 import { MainLayout } from './layouts/MainLayout';
 import { MovementLayout } from './layouts/MovementLayout';
 import { ROUTES } from './app/config/routes';
-import { ShopPage } from './pages/ShopPage';
-import { InitialLoadingScreen } from './components/shared';
-import { FloatingNavigation } from './features/cart';
 import { EarlyAccessGate } from './features/early-access';
 import { getEarlyAccessStatus } from './services/api/earlyAccessService';
-import { prepareInitialApplicationExperience, type InitialPreloadProgressHandler } from './features/homepage/initialHomepageResources';
 import { NavigationThemeProvider, PrimaryNavigation, RouteScrollRestoration, type NavigationTheme } from './features/navigation';
 import { HomeEntryGate } from './features/entry-gateway';
 
+const ShopPage = lazy(() => import('./pages/ShopPage').then((module) => ({ default: module.ShopPage })));
+const FloatingNavigation = lazy(() => import('./features/cart/FloatingNavigation').then((module) => ({ default: module.FloatingNavigation })));
 const TermsPage = lazy(() => import('./pages/TermsPage').then((module) => ({ default: module.TermsPage })));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then((module) => ({ default: module.PrivacyPage })));
 const FaqPage = lazy(() => import('./pages/FaqPage').then((module) => ({ default: module.FaqPage })));
@@ -129,7 +127,7 @@ function resolveHomepageNavigationTheme(): NavigationTheme {
     : 'dark';
 }
 
-type EarlyAccessPhase = 'booting' | 'gated' | 'unlocking' | 'ready';
+type EarlyAccessPhase = 'checking' | 'gated' | 'ready';
 
 function App() {
   const navigate = useNavigate();
@@ -139,9 +137,8 @@ function App() {
   const [navigationTheme, setNavigationTheme] = useState<NavigationTheme>(() => (
     location.pathname === '/shop' ? resolveHomepageNavigationTheme() : 'dark'
   ));
-  const [earlyAccessPhase, setEarlyAccessPhase] = useState<EarlyAccessPhase>('booting');
+  const [earlyAccessPhase, setEarlyAccessPhase] = useState<EarlyAccessPhase>('checking');
   const [earlyAccessChapter, setEarlyAccessChapter] = useState('CHAPTER 01');
-  const [loadingInstance, setLoadingInstance] = useState(0);
 
   const isShop = location.pathname === '/shop';
 
@@ -209,40 +206,31 @@ function App() {
     navigate(ROUTES.SHOP);
   }, [isShop, navigate]);
 
-  const prepareInitialBoot = useCallback(async (onProgress: InitialPreloadProgressHandler) => {
-    onProgress('boot', 10);
-    try {
-      const status = await getEarlyAccessStatus();
-      setEarlyAccessChapter(status.chapter || 'CHAPTER 01');
+  // Check Early Access in the background. The public Entry Gateway never waits
+  // for API calls, CMS data, image decoding or fonts before it can appear.
+  useEffect(() => {
+    let isActive = true;
 
-      if (status.enabled && !status.authenticated) {
-        onProgress('ready', 100);
-        setEarlyAccessPhase('gated');
-        return;
-      }
+    void getEarlyAccessStatus()
+      .then((status) => {
+        if (!isActive) return;
+        setEarlyAccessChapter(status.chapter || 'CHAPTER 01');
+        setEarlyAccessPhase(status.enabled && !status.authenticated ? 'gated' : 'ready');
+      })
+      .catch(() => {
+        // Preserve fail-closed access protection if the status API is down.
+        if (isActive) setEarlyAccessPhase('gated');
+      });
 
-      await prepareInitialApplicationExperience(onProgress);
-      setEarlyAccessPhase('ready');
-    } catch {
-      onProgress('ready', 100);
-      setEarlyAccessPhase('gated');
-    }
-  }, []);
-
-  const prepareUnlockedExperience = useCallback(async (onProgress: InitialPreloadProgressHandler) => {
-    await prepareInitialApplicationExperience(onProgress);
-    setEarlyAccessPhase('ready');
+    return () => {
+      isActive = false;
+    };
   }, []);
 
   const handleEarlyAccessUnlocked = useCallback(() => {
-    setEarlyAccessPhase('unlocking');
-    setLoadingInstance((current) => current + 1);
-  }, []);
-
-  const handleInitialLoadingTimeout = useCallback(() => {
-    setEarlyAccessPhase((currentPhase) => (
-      currentPhase === 'unlocking' ? 'ready' : 'gated'
-    ));
+    // Password verification already succeeded in EarlyAccessGate.
+    // No second preload/loading screen is needed before opening the shop.
+    setEarlyAccessPhase('ready');
   }, []);
 
   const renderShopPage = useCallback(() => (
@@ -254,53 +242,35 @@ function App() {
     />
   ), [handleCollectionSelect, handleProductSelect, heroIndex]);
 
-  const shouldShowInitialLoading = earlyAccessPhase === 'booting' || earlyAccessPhase === 'unlocking';
-  const loadingPrepare = earlyAccessPhase === 'unlocking' ? prepareUnlockedExperience : prepareInitialBoot;
-
   return (
     <NavigationThemeProvider theme={navigationTheme}>
-      <>
-        {shouldShowInitialLoading ? (
-          <InitialLoadingScreen
-            key={loadingInstance}
-            prepare={loadingPrepare}
-            onTimeout={handleInitialLoadingTimeout}
-          />
-        ) : null}
-        {!shouldShowInitialLoading ? <PrimaryNavigation /> : null}
-        {earlyAccessPhase === 'gated' ? (
-          <>
-            <RouteScrollRestoration />
-            <Suspense fallback={null}>
-              <Routes>
-                {/* Home is now Entry Gateway; Shop preserves the early-access flow. */}
-                <Route element={<MovementLayout />}>
-                  <Route path="/" element={<MainLayout><HomeEntryGate /></MainLayout>} />
-                </Route>
-                <Route path="/mission/*" element={<Navigate to={ROUTES.HOME} replace />} />
-                <Route path="/impact/*" element={<Navigate to={ROUTES.HOME} replace />} />
-                <Route path="/donate/*" element={<Navigate to={ROUTES.HOME} replace />} />
-                <Route path="/journal/*" element={<Navigate to={ROUTES.HOME} replace />} />
-                <Route path="*" element={<EarlyAccessGate chapter={earlyAccessChapter} onUnlocked={handleEarlyAccessUnlocked} />} />
-              </Routes>
-            </Suspense>
-          </>
-        ) : null}
-        {earlyAccessPhase === 'ready' ? (
-          <>
-        <RouteScrollRestoration />
-        <Suspense fallback={null}>
-          <Routes>
-            <Route element={<MovementLayout />}>
-              <Route path="/" element={<MainLayout><HomeEntryGate /></MainLayout>} />
-              <Route path="/shop" element={<MainLayout>{renderShopPage()}</MainLayout>} />
-            </Route>
+      <RouteScrollRestoration />
+      <PrimaryNavigation />
+      <Suspense fallback={null}>
+        <Routes>
+          {/* Entry Gateway is public and renders immediately, even during the
+              asynchronous Early Access status check. */}
+          <Route element={<MovementLayout />}>
+            <Route path="/" element={<MainLayout><HomeEntryGate /></MainLayout>} />
+            <Route
+              path="/shop"
+              element={
+                earlyAccessPhase === 'ready'
+                  ? <MainLayout>{renderShopPage()}</MainLayout>
+                  : earlyAccessPhase === 'gated'
+                    ? <EarlyAccessGate chapter={earlyAccessChapter} onUnlocked={handleEarlyAccessUnlocked} />
+                    : null
+              }
+            />
+          </Route>
 
-            {/* Hidden marketing URLs return to the public entry gateway. */}
-                <Route path="/mission/*" element={<Navigate to={ROUTES.HOME} replace />} />
-                <Route path="/impact/*" element={<Navigate to={ROUTES.HOME} replace />} />
-                <Route path="/donate/*" element={<Navigate to={ROUTES.HOME} replace />} />
-                <Route path="/journal/*" element={<Navigate to={ROUTES.HOME} replace />} />
+          <Route path="/mission/*" element={<Navigate to={ROUTES.HOME} replace />} />
+          <Route path="/impact/*" element={<Navigate to={ROUTES.HOME} replace />} />
+          <Route path="/donate/*" element={<Navigate to={ROUTES.HOME} replace />} />
+          <Route path="/journal/*" element={<Navigate to={ROUTES.HOME} replace />} />
+
+          {earlyAccessPhase === 'ready' ? (
+            <>
             <Route path="/collection" element={<Navigate to={ROUTES.SHOP} replace />} />
             <Route path="/collections" element={<Navigate to={ROUTES.SHOP} replace />} />
             <Route path="/terms" element={<TermsPage />} />
@@ -338,19 +308,31 @@ function App() {
             <Route path="/orders/:orderNumber" element={<LegacyOrderRedirect />} />
             <Route path="/wishlist" element={<Navigate to="/account/wishlist" replace />} />
 
-            <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
-          </Routes>
-        </Suspense>
+              <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
+            </>
+          ) : (
+            <Route
+              path="*"
+              element={
+                earlyAccessPhase === 'gated'
+                  ? <EarlyAccessGate chapter={earlyAccessChapter} onUnlocked={handleEarlyAccessUnlocked} />
+                  : null
+              }
+            />
+          )}
+        </Routes>
+      </Suspense>
 
-        {location.pathname !== ROUTES.HOME ? <FloatingNavigation /> : null}
+      {/* Commerce utilities are loaded only for shopping routes, not the
+          Entry Gateway's first paint. */}
+      {earlyAccessPhase === 'ready' && location.pathname !== ROUTES.HOME ? (
         <Suspense fallback={null}>
+          <FloatingNavigation />
           <MiniCartDrawer />
           <SearchOverlay />
         </Suspense>
-        <Toaster position="top-center" richColors />
-          </>
-        ) : null}
-      </>
+      ) : null}
+      <Toaster position="top-center" richColors />
     </NavigationThemeProvider>
   );
 }

@@ -160,6 +160,9 @@ function EntryGateway({
           <img
             src="/white_om_full_logo.png"
             alt="ONEMISSION"
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
             className="h-auto w-[min(78vw,360px)] object-contain"
           />
         </header>
@@ -188,6 +191,9 @@ function EntryGateway({
           <img
             src={ENTRY_GATEWAY_IMAGE_URL}
             alt="ONEMISSION Awrah Fit sportswear"
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
             className="relative z-10 block h-full w-full object-contain"
             style={{
               filter:

@@ -223,15 +223,29 @@ function EntryGateway({
             src={ENTRY_GATEWAY_IMAGE_URL}
             alt="ONEMISSION Awrah Fit sportswear campaign"
             className="absolute inset-0 h-full w-full object-cover"
-            style={{ objectPosition: isMobile ? "50% 34%" : "50% 32%" }}
+            style={{
+              objectPosition: isMobile ? "50% 34%" : "50% 32%",
+              filter: "brightness(1.16) contrast(1.06)",
+            }}
+          />
+
+          {/* Soft spotlight over the artwork lifts the black product from the dark backdrop. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(ellipse 34% 72% at 51% 49%, rgba(166,204,228,0.34) 0%, rgba(112,161,199,0.22) 38%, rgba(64,111,150,0.08) 67%, transparent 100%)",
+              mixBlendMode: "screen",
+            }}
           />
 
           <div
             aria-hidden="true"
-            className="absolute inset-0"
+            className="pointer-events-none absolute inset-0"
             style={{
               background:
-                "linear-gradient(90deg, rgba(3,11,18,0.76) 0%, rgba(3,11,18,0.14) 34%, rgba(3,11,18,0.10) 66%, rgba(3,11,18,0.62) 100%), linear-gradient(180deg, rgba(4,12,19,0.05) 38%, rgba(4,12,19,0.34) 100%)",
+                "linear-gradient(90deg, rgba(3,11,18,0.72) 0%, rgba(3,11,18,0.09) 35%, rgba(3,11,18,0.04) 63%, rgba(3,11,18,0.58) 100%), linear-gradient(180deg, rgba(4,12,19,0.03) 38%, rgba(4,12,19,0.23) 100%)",
             }}
           />
 

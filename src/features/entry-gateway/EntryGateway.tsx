@@ -7,6 +7,8 @@ import {
   Music2,
   ShoppingBag,
   Shirt,
+  Crown,
+  ThumbsUp,
   Youtube,
 } from "lucide-react";
 import { env } from "../../app/config/env";
@@ -29,8 +31,7 @@ let entryGatewayShown = false;
 
 const AWRAH_FIT_SHOPEE_URL =
   "https://shopee.co.id/product/1115876802/54869422914/";
-const ENTRY_GATEWAY_IMAGE_URL =
-  "https://assets.onemissionclo.com/Collection/awrah%20fit.png";
+const ENTRY_GATEWAY_IMAGE_URL = "/awrahfit.png";
 const COMMUNITY_LINKS = [
   {
     label: "Instagram",
@@ -309,7 +310,7 @@ function EntryGateway({
             }}
           >
             <div className="flex h-12 w-12 shrink-0 items-center justify-center border-r border-white/16 pr-5 sm:h-14 sm:w-16">
-              <Shirt size={30} strokeWidth={1.7} />
+              <ThumbsUp size={30} strokeWidth={1.7} />
             </div>
             <div className="min-w-0 flex-1">
               <p className="m-0 text-[19px] font-medium tracking-[-0.02em] sm:text-[24px]">

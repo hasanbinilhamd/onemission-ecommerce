@@ -1,5 +1,7 @@
-import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
+import { ROUTES } from "../../app/config/routes";
 import {
   ChevronRight,
   Globe2,
@@ -16,18 +18,16 @@ import { env } from "../../app/config/env";
 /**
  * Entry Gateway — ONEMISSION's lightweight link hub.
  *
- * The gateway appears on every full load of the root route and acts as the
+ * The gateway appears on every visit to the root route and acts as the
  * first choice screen before entering the complete ONEMISSION experience.
  *
  * Destinations:
  *   - Shop on Shopee (external)
- *   - Official Website (dismisses the gate and reveals the site)
+ *   - Official Website (navigates to /shop)
  *   - Awrah Fit (direct Shopee product link)
  *
  * No localStorage/sessionStorage persistence is used by design.
  */
-
-let entryGatewayShown = false;
 
 const AWRAH_FIT_SHOPEE_URL =
   "https://shopee.co.id/product/1115876802/54869422914/";
@@ -50,31 +50,12 @@ const COMMUNITY_LINKS = [
   },
 ] as const;
 
-function markEntryGatewayShown() {
-  entryGatewayShown = true;
-}
-
-function shouldShowEntryGateway(): boolean {
-  return !entryGatewayShown;
-}
-
-interface HomeEntryGateProps {
-  children: ReactNode;
-}
-
-/**
- * Mounted ONLY on the `/` route. Direct visits to /shop, /mission, /impact,
- * /donate and product pages never pass through here.
- */
-export function HomeEntryGate({ children }: HomeEntryGateProps) {
-  const [showGateway, setShowGateway] = useState(() =>
-    shouldShowEntryGateway(),
-  );
+/** The home route always displays the entry gateway when revisited. */
+export function HomeEntryGate() {
+  const navigate = useNavigate();
   const [shopeeMissing, setShopeeMissing] = useState(false);
 
   useEffect(() => {
-    if (!showGateway) return undefined;
-
     const rootElement = document.getElementById("root");
     if (rootElement) {
       try {
@@ -97,18 +78,12 @@ export function HomeEntryGate({ children }: HomeEntryGateProps) {
       }
       document.body.style.overflow = previousOverflow;
     };
-  }, [showGateway]);
-
-  if (!showGateway) {
-    return <>{children}</>;
-  }
+  }, []);
 
   const shopeeUrl = env.shopeeStoreUrl.trim();
 
   const handleEnterOnemission = () => {
-    markEntryGatewayShown();
-    setShowGateway(false);
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    navigate(ROUTES.SHOP);
   };
 
   const handleShopOnShopee = (event: MouseEvent<HTMLAnchorElement>) => {
@@ -118,11 +93,6 @@ export function HomeEntryGate({ children }: HomeEntryGateProps) {
       return;
     }
 
-    markEntryGatewayShown();
-  };
-
-  const handleOpenAwrahFit = () => {
-    markEntryGatewayShown();
   };
 
   if (typeof document === "undefined") return null;
@@ -131,7 +101,6 @@ export function HomeEntryGate({ children }: HomeEntryGateProps) {
     <EntryGateway
       onEnterOnemission={handleEnterOnemission}
       onShopOnShopee={handleShopOnShopee}
-      onOpenAwrahFit={handleOpenAwrahFit}
       shopeeUrl={shopeeUrl}
       shopeeMissing={shopeeMissing}
     />,
@@ -142,7 +111,6 @@ export function HomeEntryGate({ children }: HomeEntryGateProps) {
 interface EntryGatewayProps {
   onEnterOnemission: () => void;
   onShopOnShopee: (event: MouseEvent<HTMLAnchorElement>) => void;
-  onOpenAwrahFit: () => void;
   shopeeUrl: string;
   shopeeMissing: boolean;
 }
@@ -150,7 +118,6 @@ interface EntryGatewayProps {
 function EntryGateway({
   onEnterOnemission,
   onShopOnShopee,
-  onOpenAwrahFit,
   shopeeUrl,
   shopeeMissing,
 }: EntryGatewayProps) {
@@ -193,6 +160,9 @@ function EntryGateway({
           <img
             src="/white_om_full_logo.png"
             alt="ONEMISSION"
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
             className="h-auto w-[min(78vw,360px)] object-contain"
           />
         </header>
@@ -221,6 +191,9 @@ function EntryGateway({
           <img
             src={ENTRY_GATEWAY_IMAGE_URL}
             alt="ONEMISSION Awrah Fit sportswear"
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
             className="relative z-10 block h-full w-full object-contain"
             style={{
               filter:
@@ -300,7 +273,6 @@ function EntryGateway({
             href={AWRAH_FIT_SHOPEE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={onOpenAwrahFit}
             className="group flex min-h-[86px] w-full items-center gap-5 rounded-[24px] border border-white/16 px-5 py-4 text-left text-white transition-all duration-200 hover:-translate-y-0.5 hover:border-white/28 hover:bg-white/[0.075] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 sm:min-h-[98px] sm:px-7"
             style={{
               background:

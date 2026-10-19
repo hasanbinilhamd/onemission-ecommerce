@@ -4,25 +4,13 @@ import { Toaster } from 'sonner';
 import { MainLayout } from './layouts/MainLayout';
 import { MovementLayout } from './layouts/MovementLayout';
 import { ROUTES } from './app/config/routes';
-import { MovementHomePage } from './features/movement';
-import { ShopPage } from './pages/ShopPage';
-import { InitialLoadingScreen } from './components/shared';
-import { FloatingNavigation } from './features/cart';
 import { EarlyAccessGate } from './features/early-access';
 import { getEarlyAccessStatus } from './services/api/earlyAccessService';
-import { prepareInitialApplicationExperience, type InitialPreloadProgressHandler } from './features/homepage/initialHomepageResources';
-import { NavigationThemeProvider, RouteScrollRestoration, type NavigationTheme } from './features/navigation';
+import { NavigationThemeProvider, PrimaryNavigation, RouteScrollRestoration, type NavigationTheme } from './features/navigation';
 import { HomeEntryGate } from './features/entry-gateway';
 
-const MissionPage = lazy(() => import('./pages/MissionPage').then((module) => ({ default: module.MissionPage })));
-const ImpactPage = lazy(() => import('./pages/ImpactPage').then((module) => ({ default: module.ImpactPage })));
-const ImpactStoryPage = lazy(() => import('./pages/ImpactStoryPage').then((module) => ({ default: module.ImpactStoryPage })));
-const DonatePage = lazy(() => import('./pages/DonatePage').then((module) => ({ default: module.DonatePage })));
-const DonateCampaignPage = lazy(() => import('./pages/DonateCampaignPage').then((m) => ({ default: m.DonateCampaignPage })));
-const DonateStoryPage = lazy(() => import('./pages/DonateStoryPage').then((m) => ({ default: m.DonateStoryPage })));
-const DonateUpdatesPage = lazy(() => import('./pages/DonateUpdatesPage').then((m) => ({ default: m.DonateUpdatesPage })));
-const DonateDisbursementsPage = lazy(() => import('./pages/DonateDisbursementsPage').then((m) => ({ default: m.DonateDisbursementsPage })));
-const DonateDonorsPage = lazy(() => import('./pages/DonateDonorsPage').then((m) => ({ default: m.DonateDonorsPage })));
+const ShopPage = lazy(() => import('./pages/ShopPage').then((module) => ({ default: module.ShopPage })));
+const FloatingNavigation = lazy(() => import('./features/cart/FloatingNavigation').then((module) => ({ default: module.FloatingNavigation })));
 const TermsPage = lazy(() => import('./pages/TermsPage').then((module) => ({ default: module.TermsPage })));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then((module) => ({ default: module.PrivacyPage })));
 const FaqPage = lazy(() => import('./pages/FaqPage').then((module) => ({ default: module.FaqPage })));
@@ -129,11 +117,6 @@ function LegacyOrderRedirect() {
   return <Navigate to={`/account/orders/${encodeURIComponent(orderNumber)}`} replace />;
 }
 
-function LegacyJournalRedirect() {
-  const { slug = '' } = useParams<{ slug: string }>();
-  return <Navigate to={`/impact/${encodeURIComponent(slug)}`} replace />;
-}
-
 function resolveHomepageNavigationTheme(): NavigationTheme {
   if (typeof window === 'undefined') {
     return 'light';
@@ -144,7 +127,7 @@ function resolveHomepageNavigationTheme(): NavigationTheme {
     : 'dark';
 }
 
-type EarlyAccessPhase = 'booting' | 'gated' | 'unlocking' | 'ready';
+type EarlyAccessPhase = 'checking' | 'gated' | 'ready';
 
 function App() {
   const navigate = useNavigate();
@@ -154,9 +137,8 @@ function App() {
   const [navigationTheme, setNavigationTheme] = useState<NavigationTheme>(() => (
     location.pathname === '/shop' ? resolveHomepageNavigationTheme() : 'dark'
   ));
-  const [earlyAccessPhase, setEarlyAccessPhase] = useState<EarlyAccessPhase>('booting');
+  const [earlyAccessPhase, setEarlyAccessPhase] = useState<EarlyAccessPhase>('checking');
   const [earlyAccessChapter, setEarlyAccessChapter] = useState('CHAPTER 01');
-  const [loadingInstance, setLoadingInstance] = useState(0);
 
   const isShop = location.pathname === '/shop';
 
@@ -224,40 +206,31 @@ function App() {
     navigate(ROUTES.SHOP);
   }, [isShop, navigate]);
 
-  const prepareInitialBoot = useCallback(async (onProgress: InitialPreloadProgressHandler) => {
-    onProgress('boot', 10);
-    try {
-      const status = await getEarlyAccessStatus();
-      setEarlyAccessChapter(status.chapter || 'CHAPTER 01');
+  // Check Early Access in the background. The public Entry Gateway never waits
+  // for API calls, CMS data, image decoding or fonts before it can appear.
+  useEffect(() => {
+    let isActive = true;
 
-      if (status.enabled && !status.authenticated) {
-        onProgress('ready', 100);
-        setEarlyAccessPhase('gated');
-        return;
-      }
+    void getEarlyAccessStatus()
+      .then((status) => {
+        if (!isActive) return;
+        setEarlyAccessChapter(status.chapter || 'CHAPTER 01');
+        setEarlyAccessPhase(status.enabled && !status.authenticated ? 'gated' : 'ready');
+      })
+      .catch(() => {
+        // Preserve fail-closed access protection if the status API is down.
+        if (isActive) setEarlyAccessPhase('gated');
+      });
 
-      await prepareInitialApplicationExperience(onProgress);
-      setEarlyAccessPhase('ready');
-    } catch {
-      onProgress('ready', 100);
-      setEarlyAccessPhase('gated');
-    }
-  }, []);
-
-  const prepareUnlockedExperience = useCallback(async (onProgress: InitialPreloadProgressHandler) => {
-    await prepareInitialApplicationExperience(onProgress);
-    setEarlyAccessPhase('ready');
+    return () => {
+      isActive = false;
+    };
   }, []);
 
   const handleEarlyAccessUnlocked = useCallback(() => {
-    setEarlyAccessPhase('unlocking');
-    setLoadingInstance((current) => current + 1);
-  }, []);
-
-  const handleInitialLoadingTimeout = useCallback(() => {
-    setEarlyAccessPhase((currentPhase) => (
-      currentPhase === 'unlocking' ? 'ready' : 'gated'
-    ));
+    // Password verification already succeeded in EarlyAccessGate.
+    // No second preload/loading screen is needed before opening the shop.
+    setEarlyAccessPhase('ready');
   }, []);
 
   const renderShopPage = useCallback(() => (
@@ -269,119 +242,97 @@ function App() {
     />
   ), [handleCollectionSelect, handleProductSelect, heroIndex]);
 
-  const shouldShowInitialLoading = earlyAccessPhase === 'booting' || earlyAccessPhase === 'unlocking';
-  const loadingPrepare = earlyAccessPhase === 'unlocking' ? prepareUnlockedExperience : prepareInitialBoot;
-
   return (
     <NavigationThemeProvider theme={navigationTheme}>
-      <>
-        {shouldShowInitialLoading ? (
-          <InitialLoadingScreen
-            key={loadingInstance}
-            prepare={loadingPrepare}
-            onTimeout={handleInitialLoadingTimeout}
-          />
-        ) : null}
-        {earlyAccessPhase === 'gated' ? (
-          <>
-            <RouteScrollRestoration />
-            <Suspense fallback={null}>
-              <Routes>
-                {/* Early Access now protects only the Shop/ecommerce experience.
-                    Movement pages stay public while Shop keeps its existing gate. */}
-                <Route element={<MovementLayout />}>
-                  <Route path="/" element={<MainLayout><HomeEntryGate><MovementHomePage /></HomeEntryGate></MainLayout>} />
-                  <Route path="/mission" element={<MissionPage />} />
-                  <Route path="/impact" element={<ImpactPage />} />
-                  <Route path="/impact/:slug" element={<ImpactStoryPage />} />
-                  <Route path="/donate" element={<DonatePage />} />
-                </Route>
-                <Route path="/journal" element={<Navigate to={ROUTES.IMPACT} replace />} />
-                <Route path="/journal/:slug" element={<LegacyJournalRedirect />} />
-                <Route path="/donate/:campaignId/story" element={<DonateStoryPage />} />
-                <Route path="/donate/:campaignId/updates" element={<DonateUpdatesPage />} />
-                <Route path="/donate/:campaignId/disbursements" element={<DonateDisbursementsPage />} />
-                <Route path="/donate/:campaignId/donors" element={<DonateDonorsPage />} />
-                <Route path="/donate/campaigns/:slug" element={<DonateCampaignPage />} />
-                <Route path="*" element={<EarlyAccessGate chapter={earlyAccessChapter} onUnlocked={handleEarlyAccessUnlocked} />} />
-              </Routes>
-            </Suspense>
-          </>
-        ) : null}
-        {earlyAccessPhase === 'ready' ? (
-          <>
-        <RouteScrollRestoration />
-        <Suspense fallback={null}>
-          <Routes>
-            <Route element={<MovementLayout />}>
-              <Route
-                path="/"
-                element={<MainLayout><HomeEntryGate><MovementHomePage /></HomeEntryGate></MainLayout>}
-              />
-              <Route path="/mission" element={<MissionPage />} />
-              <Route path="/shop" element={<MainLayout>{renderShopPage()}</MainLayout>} />
-              <Route path="/impact" element={<ImpactPage />} />
-              <Route path="/impact/:slug" element={<ImpactStoryPage />} />
-              <Route path="/donate" element={<DonatePage />} />
-            </Route>
+      <RouteScrollRestoration />
+      <PrimaryNavigation />
+      <Suspense fallback={null}>
+        <Routes>
+          {/* Entry Gateway is public and renders immediately, even during the
+              asynchronous Early Access status check. */}
+          <Route element={<MovementLayout />}>
+            <Route path="/" element={<MainLayout><HomeEntryGate /></MainLayout>} />
+            <Route
+              path="/shop"
+              element={
+                earlyAccessPhase === 'ready'
+                  ? <MainLayout>{renderShopPage()}</MainLayout>
+                  : earlyAccessPhase === 'gated'
+                    ? <EarlyAccessGate chapter={earlyAccessChapter} onUnlocked={handleEarlyAccessUnlocked} />
+                    : null
+              }
+            />
+          </Route>
 
-            <Route path="/journal" element={<Navigate to={ROUTES.IMPACT} replace />} />
-            <Route path="/journal/:slug" element={<LegacyJournalRedirect />} />
-            <Route path="/donate/:campaignId/story" element={<DonateStoryPage />} />
-            <Route path="/donate/:campaignId/updates" element={<DonateUpdatesPage />} />
-            <Route path="/donate/:campaignId/disbursements" element={<DonateDisbursementsPage />} />
-            <Route path="/donate/:campaignId/donors" element={<DonateDonorsPage />} />
-                <Route path="/donate/campaigns/:slug" element={<DonateCampaignPage />} />
-            <Route path="/collection" element={<Navigate to={ROUTES.SHOP} replace />} />
-            <Route path="/collections" element={<Navigate to={ROUTES.SHOP} replace />} />
-            <Route path="/terms" element={<TermsPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
-            <Route path="/faq" element={<FaqPage />} />
-            <Route path="/product/:slug" element={<ProductDetailPage />} />
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/checkout" element={<CheckoutPage />} />
-            <Route path="/payment/success" element={<PaymentSuccessPage />} />
-            <Route path="/payment/pending" element={<PaymentPendingPage />} />
-            <Route path="/payment/expired" element={<PaymentExpiredPage />} />
-            <Route path="/payment/cancelled" element={<PaymentCancelledPage />} />
-            <Route path="/payment/failed" element={<PaymentFailedPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/verify-email" element={<VerifyEmailPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/track-order" element={<TrackOrderPage />} />
+          <Route path="/mission/*" element={<Navigate to={ROUTES.HOME} replace />} />
+          <Route path="/impact/*" element={<Navigate to={ROUTES.HOME} replace />} />
+          <Route path="/donate/*" element={<Navigate to={ROUTES.HOME} replace />} />
+          <Route path="/journal/*" element={<Navigate to={ROUTES.HOME} replace />} />
 
-            <Route path="/account" element={<AccountDashboardLayout />}>
-              <Route index element={<AccountPage />} />
-              <Route path="profile" element={<ProfilePage />} />
-              <Route path="address" element={<AddressesPage />} />
-              <Route path="orders" element={<MyOrdersPage />} />
-              <Route path="orders/:orderNumber" element={<OrderDetailPage />} />
-              <Route path="checkout-history" element={<CheckoutHistoryPage />} />
-              <Route path="wishlist" element={<WishlistPage />} />
-              <Route path="password" element={<ChangePasswordPage />} />
-            </Route>
+          {earlyAccessPhase === 'ready' ? (
+            <>
+              <Route path="/collection" element={<Navigate to={ROUTES.SHOP} replace />} />
+              <Route path="/collections" element={<Navigate to={ROUTES.SHOP} replace />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/faq" element={<FaqPage />} />
+              <Route path="/product/:slug" element={<ProductDetailPage />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/checkout" element={<CheckoutPage />} />
+              <Route path="/payment/success" element={<PaymentSuccessPage />} />
+              <Route path="/payment/pending" element={<PaymentPendingPage />} />
+              <Route path="/payment/expired" element={<PaymentExpiredPage />} />
+              <Route path="/payment/cancelled" element={<PaymentCancelledPage />} />
+              <Route path="/payment/failed" element={<PaymentFailedPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/verify-email" element={<VerifyEmailPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/track-order" element={<TrackOrderPage />} />
 
-            <Route path="/account/addresses" element={<Navigate to="/account/address" replace />} />
-            <Route path="/account/change-password" element={<Navigate to="/account/password" replace />} />
-            <Route path="/orders" element={<Navigate to="/account/orders" replace />} />
-            <Route path="/orders/:orderNumber" element={<LegacyOrderRedirect />} />
-            <Route path="/wishlist" element={<Navigate to="/account/wishlist" replace />} />
+              <Route path="/account" element={<AccountDashboardLayout />}>
+                <Route index element={<AccountPage />} />
+                <Route path="profile" element={<ProfilePage />} />
+                <Route path="address" element={<AddressesPage />} />
+                <Route path="orders" element={<MyOrdersPage />} />
+                <Route path="orders/:orderNumber" element={<OrderDetailPage />} />
+                <Route path="checkout-history" element={<CheckoutHistoryPage />} />
+                <Route path="wishlist" element={<WishlistPage />} />
+                <Route path="password" element={<ChangePasswordPage />} />
+              </Route>
 
-            <Route path="*" element={<MainLayout>{renderShopPage()}</MainLayout>} />
-          </Routes>
-        </Suspense>
+              <Route path="/account/addresses" element={<Navigate to="/account/address" replace />} />
+              <Route path="/account/change-password" element={<Navigate to="/account/password" replace />} />
+              <Route path="/orders" element={<Navigate to="/account/orders" replace />} />
+              <Route path="/orders/:orderNumber" element={<LegacyOrderRedirect />} />
+              <Route path="/wishlist" element={<Navigate to="/account/wishlist" replace />} />
 
-        <FloatingNavigation />
-        <Suspense fallback={null}>
-          <MiniCartDrawer />
-          <SearchOverlay />
-        </Suspense>
-        <Toaster position="top-center" richColors />
-          </>
-        ) : null}
-      </>
+              <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
+            </>
+          ) : (
+            <Route
+              path="*"
+              element={
+                earlyAccessPhase === 'gated'
+                  ? <EarlyAccessGate chapter={earlyAccessChapter} onUnlocked={handleEarlyAccessUnlocked} />
+                  : null
+              }
+            />
+          )}
+        </Routes>
+      </Suspense>
+
+      {/* Commerce utilities are loaded only for shopping routes, not the
+          Entry Gateway's first paint. */}
+      {earlyAccessPhase === 'ready' && location.pathname !== ROUTES.HOME ? (
+        <>
+          <Suspense fallback={null}><FloatingNavigation /></Suspense>
+          <Suspense fallback={null}><MiniCartDrawer /></Suspense>
+          <Suspense fallback={null}><SearchOverlay /></Suspense>
+        </>
+      ) : null}
+      <Toaster position="top-center" richColors />
     </NavigationThemeProvider>
   );
 }

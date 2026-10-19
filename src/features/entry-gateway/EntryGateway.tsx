@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import {
   ChevronRight,
@@ -10,10 +10,6 @@ import {
   Youtube,
 } from "lucide-react";
 import { env } from "../../app/config/env";
-import {
-  websiteService,
-  type WebsiteHeroItem,
-} from "../../services/api/websiteService";
 
 /**
  * Entry Gateway — ONEMISSION's lightweight link hub.
@@ -32,6 +28,8 @@ import {
 let entryGatewayShown = false;
 
 const AWRAH_FIT_PATH = "/product/awrah-fit-ultra-stretch";
+const ENTRY_GATEWAY_IMAGE_URL =
+  "https://assets.onemissionclo.com/Collection/awrah%20fit.png";
 const COMMUNITY_LINKS = [
   {
     label: "Instagram",
@@ -158,7 +156,6 @@ function EntryGateway({
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== "undefined" && window.innerWidth < 640,
   );
-  const [heroCmsItems, setHeroCmsItems] = useState<WebsiteHeroItem[]>([]);
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < 640);
@@ -166,44 +163,6 @@ function EntryGateway({
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  useEffect(() => {
-    let isActive = true;
-
-    websiteService
-      .getHeroItems()
-      .then((items) => {
-        if (!isActive) return;
-
-        setHeroCmsItems(
-          (Array.isArray(items) ? items : [])
-            .filter((item) => item.active !== false)
-            .sort(
-              (left, right) =>
-                Number(left.displayOrder || 0) -
-                Number(right.displayOrder || 0),
-            ),
-        );
-      })
-      .catch(() => {
-        if (isActive) setHeroCmsItems([]);
-      });
-
-    return () => {
-      isActive = false;
-    };
-  }, []);
-
-  const activeHero = heroCmsItems[0] ?? null;
-  const heroMediaUrl = useMemo(() => {
-    if (!activeHero) return "";
-
-    const mobileUrl = String(activeHero.mobileUrl || "").trim();
-    const desktopUrl = String(activeHero.desktopUrl || "").trim();
-
-    return isMobile && mobileUrl ? mobileUrl : desktopUrl;
-  }, [activeHero, isMobile]);
-
-  const heroMediaType = activeHero?.mediaType === "video" ? "video" : "image";
 
   return (
     <div
@@ -260,34 +219,12 @@ function EntryGateway({
           style={{ aspectRatio: isMobile ? "1.48 / 1" : "2.12 / 1" }}
           aria-label="ONEMISSION editorial campaign"
         >
-          {heroMediaUrl ? (
-            heroMediaType === "video" ? (
-              <video
-                src={heroMediaUrl}
-                autoPlay
-                muted
-                loop
-                playsInline
-                className="absolute inset-0 h-full w-full object-cover"
-                style={{ objectPosition: isMobile ? "50% 34%" : "50% 32%" }}
-              />
-            ) : (
-              <img
-                src={heroMediaUrl}
-                alt="ONEMISSION sportswear campaign"
-                className="absolute inset-0 h-full w-full object-cover"
-                style={{ objectPosition: isMobile ? "50% 34%" : "50% 32%" }}
-              />
-            )
-          ) : (
-            <div
-              className="absolute inset-0"
-              style={{
-                background:
-                  "radial-gradient(circle at 50% 18%, rgba(87,128,157,0.36), transparent 34%), linear-gradient(135deg, #142a3b 0%, #091622 56%, #07111a 100%)",
-              }}
-            />
-          )}
+          <img
+            src={ENTRY_GATEWAY_IMAGE_URL}
+            alt="ONEMISSION Awrah Fit sportswear campaign"
+            className="absolute inset-0 h-full w-full object-cover"
+            style={{ objectPosition: isMobile ? "50% 34%" : "50% 32%" }}
+          />
 
           <div
             aria-hidden="true"

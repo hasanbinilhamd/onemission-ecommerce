@@ -197,7 +197,7 @@ function EntryGateway({
         </header>
 
         <section
-          className="relative isolate mt-9 w-full sm:mt-10"
+          className="relative isolate mt-9 w-full sm:mt-5"
           style={{ aspectRatio: isMobile ? "1.48 / 1" : "2.12 / 1" }}
           aria-label="ONEMISSION Awrah Fit product"
         >
@@ -210,7 +210,7 @@ function EntryGateway({
               className="h-[88%] w-[74%] rounded-full"
               style={{
                 background:
-                  "radial-gradient(ellipse at center, rgba(248,251,255,0.56) 0%, rgba(218,236,255,0.30) 25%, rgba(132,182,226,0.14) 49%, rgba(82,134,183,0.04) 68%, transparent 80%)",
+                  "radial-gradient(ellipse at center, rgba(248,251,255,0.56) 20%, rgba(218,236,255,0.30) 40%, rgba(132,182,226,0.14) 49%, rgba(82,134,183,0.04) 68%, transparent 80%)",
                 filter: "blur(30px)",
                 transform: "scale(1.13)",
               }}
@@ -233,7 +233,7 @@ function EntryGateway({
           />
         </section>
 
-        <section className="mt-9 grid w-full gap-3 sm:mt-10 sm:gap-4">
+        <section className="mt-9 grid w-full gap-3 sm:mt-5 sm:gap-4">
           <a
             href={shopeeUrl || undefined}
             onClick={onShopOnShopee}
@@ -256,7 +256,7 @@ function EntryGateway({
                 Shop on Shopee
               </p>
               <p className="m-0 mt-1 text-[12px] text-white/58 sm:text-[14px]">
-                Discover our latest collection.
+                Get free ongkir.
               </p>
             </div>
             <ChevronRight
@@ -285,7 +285,7 @@ function EntryGateway({
                 Official Website
               </p>
               <p className="m-0 mt-1 text-[12px] text-white/58 sm:text-[14px]">
-                Explore the full ONEMISSION experience.
+                Grab special offers.
               </p>
             </div>
             <ChevronRight
@@ -316,7 +316,7 @@ function EntryGateway({
                 Awrah Fit
               </p>
               <p className="m-0 mt-1 text-[12px] text-white/58 sm:text-[14px]">
-                Modest fit. Higher purpose.
+                Most valuable products.
               </p>
             </div>
             <ChevronRight

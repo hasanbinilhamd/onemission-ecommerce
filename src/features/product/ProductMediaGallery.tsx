@@ -47,6 +47,7 @@ function buildGalleryItems(product: Product): ProductGalleryItem[] {
 
   if (Array.isArray(product.galleryItems) && product.galleryItems.length > 0) {
     [...product.galleryItems]
+      .filter((item) => item.mediaType !== 'video')
       .sort((left, right) => left.sortOrder - right.sortOrder || left.id.localeCompare(right.id))
       .forEach((item, index) => {
         pushUniqueItem({

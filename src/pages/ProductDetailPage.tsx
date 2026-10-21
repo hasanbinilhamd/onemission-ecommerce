@@ -9,6 +9,7 @@ import { EmptyState } from '../components/shared/EmptyState';
 import { LoadingSkeleton } from '../components/shared/LoadingSkeleton';
 import { productService } from '../services/product';
 import { ProductMediaGallery } from '../features/product/ProductMediaGallery';
+import { ProductReviewVideoSlider } from '../features/product/ProductReviewVideoSlider';
 import { ProductShowcaseSection } from '../features/product/ProductShowcaseSection';
 import { CustomerReviewsSection, RatingStars } from '../features/reviews';
 import { formatCurrency } from '../utils/formatting';
@@ -671,6 +672,10 @@ function ProductDetailContent() {
 
           <div className="lg:hidden">
             {renderProductAccordion()}
+          </div>
+
+          <div className="lg:col-span-5">
+            <ProductReviewVideoSlider product={product} />
           </div>
 
           <div className="lg:col-span-3">

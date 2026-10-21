@@ -8,8 +8,6 @@ import {
   Instagram,
   Music2,
   ShoppingBag,
-  Shirt,
-  Crown,
   ThumbsUp,
   Youtube,
 } from "lucide-react";

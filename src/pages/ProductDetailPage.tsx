@@ -555,15 +555,18 @@ function ProductDetailContent() {
               {product.name}
             </h1>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '18px' }}>
-              <RatingStars value={averageRating} size={16} />
-              <span style={{ fontSize: '16px', fontWeight: 600, color: '#111827' }}>
-                {averageRating > 0 ? averageRating.toFixed(1) : '0.0'}
-              </span>
-              <span style={{ fontSize: '14px', color: '#6B7280' }}>
-                ({reviewCount} Review{reviewCount === 1 ? '' : 's'})
-              </span>
-            </div>
+            {/* HIDE REVIEWS FOR NOW */}
+            {false && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '18px' }}>
+                <RatingStars value={averageRating} size={16} />
+                <span style={{ fontSize: '16px', fontWeight: 600, color: '#111827' }}>
+                  {averageRating > 0 ? averageRating.toFixed(1) : '0.0'}
+                </span>
+                <span style={{ fontSize: '14px', color: '#6B7280' }}>
+                  ({reviewCount} Review{reviewCount === 1 ? '' : 's'})
+                </span>
+              </div>
+            )}
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', marginBottom: '16px' }}>
               <p style={{ margin: 0, fontSize: '22px', fontWeight: 600, color: '#111827' }}>
@@ -682,9 +685,12 @@ function ProductDetailContent() {
             <ProductShowcaseSection items={product.productShowcaseItems} productName={product.name} />
           </div>
 
-          <div className="lg:col-span-3">
-            <CustomerReviewsSection product={product} />
-          </div>
+          {/* HIDE REVIEWS SECTION FOR NOW */}
+          {false && (
+            <div className="lg:col-span-3">
+              <CustomerReviewsSection product={product!} />
+            </div>
+          )}
         </div>
 
         {relatedProducts.length > 0 && (

@@ -92,7 +92,6 @@ export function HomeEntryGate() {
       setShopeeMissing(true);
       return;
     }
-
   };
 
   if (typeof document === "undefined") return null;
@@ -230,7 +229,7 @@ function EntryGateway({
                 Shop on Shopee
               </p>
               <p className="m-0 mt-1 text-[12px] text-white/58 sm:text-[14px]">
-                Get free ongkir.
+                Get special offers.
               </p>
             </div>
             <ChevronRight
@@ -259,7 +258,7 @@ function EntryGateway({
                 Official Website
               </p>
               <p className="m-0 mt-1 text-[12px] text-white/58 sm:text-[14px]">
-                Grab special offers.
+                Discover exclusive deals.
               </p>
             </div>
             <ChevronRight
